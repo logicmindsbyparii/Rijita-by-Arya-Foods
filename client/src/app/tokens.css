@@ -1,0 +1,146 @@
+/* ============================================================
+   HALLMARK DESIGN TOKENS
+   Redesign: Photographic macrostructure · genre: editorial
+   Theme: curated (brand-green + gold) — OKLCH refined
+   ============================================================ */
+
+/* ── Colors (OKLCH — perceptually uniform) ── */
+:root {
+  /* Paper — warm off-white, cream-leaning for photographic contrast */
+  --color-paper:    oklch(99%  0.006  90);
+  --color-paper-2:  oklch(96%  0.008  90);
+  --color-paper-3:  oklch(91%  0.012  90);
+
+  /* Ink — warm dark, never pure black */
+  --color-ink:      oklch(13%  0.012  75);
+  --color-ink-2:    oklch(21%  0.010  75);
+  --color-ink-3:    oklch(36%  0.008  75);
+
+  /* Brand green (kept from #1B5E20, refined OKLCH) */
+  --color-brand:    oklch(46%  0.16  138);
+  --color-brand-light:  oklch(68%  0.12  138);
+  --color-brand-dark:   oklch(28%  0.14  138);
+
+  /* Gold accent (kept from #D4A545, refined OKLCH) */
+  --color-accent:   oklch(70%  0.15   76);
+  --color-accent-light: oklch(80%  0.10   76);
+  --color-accent-dark:  oklch(53%  0.14   76);
+
+  /* Neutrals — warmer, more photographic */
+  --color-neutral:  oklch(52%  0.008  70);
+  --color-muted:    oklch(62%  0.006  70);
+  --color-rule:     oklch(88%  0.006  80);
+
+  /* Surface tokens */
+  --color-surface:       oklch(99%  0.004  90);
+  --color-surface-2:     oklch(97%  0.006  90);
+  --color-surface-hover: oklch(93%  0.010  90);
+
+  /* Ink alpha variants — hairlines, scrims, soft fills (Tailwind can't
+     apply /opacity to var() colors, so expose explicit alpha steps) */
+  --color-ink-faint: oklch(13% 0.012 75 / 0.05);
+  --color-ink-soft:  oklch(13% 0.012 75 / 0.08);
+  --color-ink-mid:   oklch(13% 0.012 75 / 0.14);
+
+  /* Paper alpha scrims — photographic hero overlays */
+  --color-paper-20: oklch(99% 0.006 90 / 0.20);
+  --color-paper-35: oklch(99% 0.006 90 / 0.35);
+  --color-paper-50: oklch(99% 0.006 90 / 0.50);
+  --color-paper-60: oklch(99% 0.006 90 / 0.60);
+  --color-paper-75: oklch(99% 0.006 90 / 0.75);
+  --color-paper-90: oklch(99% 0.006 90 / 0.90);
+
+  /* Focus ring */
+  --color-focus:   oklch(60%  0.20  76);   /* gold-based */
+  --color-focus-brand: oklch(53% 0.20 138); /* green-based */
+
+  /* Feedback */
+  --color-success: oklch(58% 0.16 138);
+  --color-error:   oklch(53% 0.20  28);
+  --color-warning: oklch(68% 0.16  76);
+
+  /* Legacy HSL support */
+  --background: 36 100% 99%;
+  --foreground: 20 14% 10%;
+  --primary: 122 46% 34%;
+  --primary-foreground: 140 30% 95%;
+  --accent: 40 62% 55%;
+}
+
+/* No dark mode. The storefront is a single light theme — every surface in
+   the component tree is an explicit light value, and no toggle ships. */
+
+/* ── Spacing scale (4pt base) ── */
+:root {
+  --space-3xs: 0.125rem;  /*  2px */
+  --space-2xs: 0.25rem;   /*  4px */
+  --space-xs:  0.5rem;    /*  8px */
+  --space-sm:  0.75rem;   /* 12px */
+  --space-md:  1rem;      /* 16px */
+  --space-lg:  1.5rem;    /* 24px */
+  --space-xl:  2.5rem;    /* 40px */
+  --space-2xl: 4rem;      /* 64px */
+  --space-3xl: 6rem;      /* 96px */
+  --space-4xl: 9rem;      /* 144px */
+}
+
+/* ── Typography scale (major third 1.25) ── */
+:root {
+  --text-xs:   0.64rem;   /* 10.24px */
+  --text-sm:   0.8rem;    /* 12.8px  */
+  --text-base: 1rem;      /* 16px    */
+  --text-md:   1.25rem;   /* 20px    */
+  --text-lg:   1.5625rem; /* 25px    */
+  --text-xl:   1.9531rem; /* 31.25px */
+  --text-2xl:  2.4414rem;
+  --text-3xl:  3.0518rem;
+  --text-4xl:  3.8147rem;
+  --text-display: clamp(2.25rem, 4.5vw + 0.5rem, 4.5rem);
+  --text-display-s: clamp(1.75rem, 3vw + 0.25rem, 3rem);
+  --text-caption: 0.7rem; /* for photographic annotations */
+}
+
+/* ── Easing tokens ── */
+:root {
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);     /* entering */
+  --ease-in:     cubic-bezier(0.7,  0, 0.84, 0);    /* leaving  */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);    /* toggles  */
+}
+
+/* ── Duration tokens ── */
+:root {
+  --dur-micro: 120ms;   /* press, tick */
+  --dur-short: 220ms;   /* hover, tooltip */
+  --dur-long:  420ms;   /* modal, page reveal */
+}
+
+/* ── Z-index scale ── */
+:root {
+  --z-base:     1;
+  --z-raised:   10;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-sticky-nav: 300;
+  --z-modal:    400;
+  --z-toast:    500;
+  --z-tooltip:  600;
+}
+
+/* ── Radius tokens ── */
+:root {
+  --radius-sm:  0.375rem;  /*  6px */
+  --radius-md:  0.75rem;   /* 12px */
+  --radius-lg:  1rem;      /* 16px */
+  --radius-xl:  1.5rem;    /* 24px */
+  --radius-full: 9999px;
+}
+
+/* ── Layout tokens ── */
+:root {
+  --max-width-content: 1400px;
+  --max-width-prose: 65ch;
+  --header-height: 112px;
+  --header-height-scrolled: 60px;
+  --safe-top: env(safe-area-inset-top, 8px);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}

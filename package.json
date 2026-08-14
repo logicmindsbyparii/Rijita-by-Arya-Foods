@@ -1,0 +1,24 @@
+{
+  "name": "rijita-by-aryafoods",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Premium Ecommerce Platform for RIJITA by Arya Foods",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:server && npm run build:client",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "install:all": "cd client && npm install && cd ../server && npm install",
+    "start": "cd server && npm start",
+    "tunnel:admin": "npx ngrok http 3002",
+    "tunnel:client": "npx ngrok http 3000",
+    "tunnel:server": "npx ngrok http 5001",
+    "tunnel:lt:admin": "npx localtunnel --port 3002",
+    "tunnel:lt:client": "npx localtunnel --port 3000"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

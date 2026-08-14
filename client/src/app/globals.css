@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "./tokens.css";
+
+/* ============================================================
+   HALLMARK · genre: editorial · macrostructure: 08 Photographic
+   theme: curated (brand-green + gold) · enrichment: photography-led
+   nav: N11 mega-menu · footer: Ft3 index columns
+   design-system: DESIGN.md (project root)
+   Pre-emit critique: P4 H4 E4 S5 R4 V4
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* HSL shims — consumed by the shadcn-derived primitives (card, input,
+       badge) via bg-background / text-foreground / border-border. */
+    --background: 40 30% 99%;
+    --foreground: 130 15% 12%;
+    --primary: 132 60% 27%;      /* Exact Logo Green #1B6E2A */
+    --primary-foreground: 130 30% 98%;
+    --secondary: 130 25% 95%;
+    --secondary-foreground: 130 50% 20%;
+    --muted: 130 10% 92%;
+    --muted-foreground: 130 10% 40%;
+    --accent-hsl: 42 65% 55%;    /* Logo Gold #D4A545 */
+    --accent-foreground: 40 100% 97%;
+    --card: 0 0% 100%;
+    --card-foreground: 130 15% 12%;
+    --border: 130 15% 88%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: clip;
+  }
+  body {
+    overflow-x: clip;
+    @apply bg-background text-foreground font-body;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* ============================================================
+   KEYFRAMES
+   Marquee lives in tailwind.config.ts (animation: marquee) —
+   single source of truth for the ticker's seamless -33.33% loop.
+   ============================================================ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Reduced motion — respect user preferences ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+@layer utilities {
+
+  /* Skeleton shimmer — the one loading treatment, used by <Skeleton>
+     and every route-level loading.tsx */
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.08) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shimmer-bg { animation: none; }
+  }
+
+  /* Card hover — single signal: translate */
+  .card-hover {
+    transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short) var(--ease-out);
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 24px oklch(14% 0.012 80 / 0.08);
+  }
+
+  /* Focus ring — appears instantly, never transitions in */
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================================
+   CLICK RIPPLE — CartDrawer checkout button
+   ============================================================ */
+.click-ripple {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.click-ripple::after {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, currentColor 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10);
+  opacity: 0;
+  transition: transform 0.4s, opacity 0.8s;
+}
+@media (hover: hover) {
+  .click-ripple:active::after {
+    transform: scale(0);
+    opacity: 0.18;
+    transition: 0s;
+  }
+}
+
+/* ============================================================
+   SWIPER UTILITY
+   ============================================================ */
+/* Hide default Swiper nav arrows (not using Navigation module in hero) */
+.swiper-button-next,
+.swiper-button-prev {
+  display: none !important;
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  header,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.7em;
+    color: #666;
+  }
+}

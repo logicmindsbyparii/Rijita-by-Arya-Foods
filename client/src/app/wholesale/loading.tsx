@@ -1,0 +1,20 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function WholesaleLoading() {
+  return (
+    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <Skeleton className="h-10 w-1/3 rounded-lg" />
+        <Skeleton className="h-4 w-2/3 rounded-md" />
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="aspect-[4/3] rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/server/venv/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/server",
+    "${workspaceFolder}/server/app"
+  ],
+  "css.lint.unknownAtRules": "ignore"
+}
