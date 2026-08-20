@@ -77,6 +77,23 @@ class Settings(BaseSettings):
             return True
         return bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
 
+    @property
+    def effective_log_level(self) -> str:
+        """LOG_LEVEL, with its "debug" default kept out of production.
+
+        The default exists for local work, but a deployed host that never sets
+        LOG_LEVEL would inherit it and log every request body and query at DEBUG
+        — noise that also drags PII into the platform's log retention.
+
+        An explicit value always wins, including "debug": model_fields_set
+        distinguishes a value that actually came from the environment or .env
+        from the fallback, so temporarily raising verbosity on a live host to
+        chase a bug still works exactly as you would expect.
+        """
+        if self.is_production and "LOG_LEVEL" not in self.model_fields_set:
+            return "info"
+        return self.LOG_LEVEL
+
 
 settings = Settings()
 

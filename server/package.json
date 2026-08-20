@@ -6,6 +6,7 @@
     "dev": "venv/bin/python main.py",
     "build": "venv/bin/pip install -r requirements.txt",
     "start": "venv/bin/python main.py",
+    "test": "venv/bin/python -m unittest discover -s tests -t tests -v",
     "seed": "cross-env NODE_OPTIONS=\"--no-deprecation\" tsx src/seeds/seed.ts"
   },
   "devDependencies": {

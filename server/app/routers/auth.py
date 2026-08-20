@@ -24,6 +24,25 @@ from app.models.user import (
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
+REFRESH_COOKIE_NAME = "refreshToken"
+REFRESH_COOKIE_PATH = "/api/auth"
+
+
+def _refresh_cookie_flags() -> dict:
+    """Attributes that the set and the delete must agree on.
+
+    A delete whose path/samesite/secure differ from the set is treated by the
+    browser as a *different* cookie, so the original survives and logout
+    silently fails. Both call sites previously spelled these out by hand, which
+    is the drift the logout docstring warns about — deriving them from one place
+    is what actually prevents it.
+    """
+    return {
+        "path": REFRESH_COOKIE_PATH,
+        "httponly": True,
+        "samesite": "lax",
+        "secure": settings.is_production,
+    }
 
 
 def set_refresh_cookie(response: Response, token: str) -> None:
@@ -35,14 +54,16 @@ def set_refresh_cookie(response: Response, token: str) -> None:
     once keeps the flags from drifting apart again.
     """
     response.set_cookie(
-        key="refreshToken",
+        key=REFRESH_COOKIE_NAME,
         value=token,
-        httponly=True,
         max_age=REFRESH_COOKIE_MAX_AGE,
-        path="/api/auth",
-        samesite="lax",
-        secure=settings.is_production,
+        **_refresh_cookie_flags(),
     )
+
+
+def clear_refresh_cookie(response: Response) -> None:
+    """Remove the refresh-token cookie, matching how it was set."""
+    response.delete_cookie(key=REFRESH_COOKIE_NAME, **_refresh_cookie_flags())
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: UserRegisterSchema, response: Response):
@@ -184,15 +205,9 @@ async def logout(response: Response):
 
     The delete must repeat the same path/samesite/secure flags the cookie was
     set with, or the browser treats it as a different cookie and keeps the
-    original.
+    original — hence clear_refresh_cookie rather than a hand-written delete.
     """
-    response.delete_cookie(
-        key="refreshToken",
-        path="/api/auth",
-        httponly=True,
-        samesite="lax",
-        secure=settings.is_production,
-    )
+    clear_refresh_cookie(response)
     return {"success": True, "data": {}, "message": "Logged out"}
 
 @router.get("/profile")
