@@ -73,6 +73,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }, [settings]);
 
   const isAdmin = pathname?.startsWith("/admin");
+  console.log("PATHNAME", pathname, "IS_ADMIN", isAdmin);
 
   if (isAdmin) {
     return (
