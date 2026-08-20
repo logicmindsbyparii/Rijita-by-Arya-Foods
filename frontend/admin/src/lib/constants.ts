@@ -1,1 +1,0 @@
-export { INDIAN_STATES, DELIVERY_THRESHOLD, DELIVERY_CHARGE, GST_RATE } from "@shared/constants";
