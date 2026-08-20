@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import { adminApi } from "@/lib/api";
+import { adminApi, productApi } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Collection } from "@/types";
+import type { Collection, Product } from "@/types";
 
 export default function AdminCollections() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -224,9 +224,37 @@ function CollectionModal({
     slug: editItem?.slug || "",
     description: editItem?.description || "",
     isActive: editItem?.isActive ?? true,
+    products:
+      (editItem?.products as any[])?.map((p) => (typeof p === "string" ? p : (p as Product)?._id)).filter(Boolean) || [],
   });
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+
+  // Load the full product list once for the product picker.
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingProducts(true);
+    productApi
+      .adminGetProducts({ limit: 100 })
+      .then((res) => {
+        if (cancelled) return;
+        const data = res.data || res;
+        const prods = data.products || data || [];
+        setAllProducts(Array.isArray(prods) ? prods : []);
+      })
+      .catch(() => {
+        if (!cancelled) setAllProducts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProducts(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +267,7 @@ function CollectionModal({
       fd.append("slug", form.slug || form.name.toLowerCase().replace(/\s+/g, "-"));
       fd.append("description", form.description);
       fd.append("isActive", String(form.isActive));
+      fd.append("products", JSON.stringify(form.products));
       if (imageFile) fd.append("image", imageFile);
 
       if (editItem) {
@@ -268,7 +297,7 @@ function CollectionModal({
           <h2 className="text-lg font-semibold font-display">
             {editItem ? "Edit Collection" : "Create Collection"}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
+          <button onClick={onClose} aria-label="Close collection form" className="p-2 hover:bg-muted rounded-full transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -315,6 +344,66 @@ function CollectionModal({
               onChange={(e) => setImageFile(e.target.files?.[0] || null)}
               className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Products in This Collection</label>
+            <div className="rounded-xl border border-border overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
+                <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <input
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Search products..."
+                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+              <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                {loadingProducts ? (
+                  <div className="flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading products...
+                  </div>
+                ) : allProducts.length === 0 ? (
+                  <p className="px-2 py-3 text-sm text-muted-foreground">No products available.</p>
+                ) : (
+                  allProducts
+                    .filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                    .map((p) => {
+                      const checked = form.products.includes(p._id);
+                      return (
+                        <label
+                          key={p._id}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer hover:bg-muted/40 transition-colors",
+                            checked && "bg-brand-50/60"
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setForm({
+                                ...form,
+                                products: checked
+                                  ? form.products.filter((id) => id !== p._id)
+                                  : [...form.products, p._id],
+                              })
+                            }
+                            className="w-4 h-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+                          />
+                          <span className="text-sm truncate">{p.name}</span>
+                        </label>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+            {form.products.length > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-2 text-right">
+                {form.products.length} product{form.products.length !== 1 ? "s" : ""} selected
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

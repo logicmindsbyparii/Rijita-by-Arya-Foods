@@ -129,6 +129,15 @@
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
+
+  /* Hide scrollbars on horizontal scroll areas (filter bars, shelves) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ============================================================
@@ -180,7 +189,7 @@
   }
   body {
     background: white !important;
-    color: black !important;
+    color: var(--color-ink) !important;
   }
   a[href]::after {
     content: " (" attr(href) ")";

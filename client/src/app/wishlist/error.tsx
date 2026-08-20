@@ -28,7 +28,7 @@ export default function Error({
         <div className="flex flex-wrap justify-center gap-4">
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 px-6 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-ui hover:shadow-lg"
+            className="inline-flex items-center gap-2 px-6 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-ui hover:shadow-lg"
           >
             <RefreshCw size={16} />
             Try Again

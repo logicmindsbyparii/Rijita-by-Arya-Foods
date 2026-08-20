@@ -25,10 +25,17 @@ import {
   IndianRupee,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useCart } from "@/lib/cart-context";
+import { useCart, variantKey } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
-import { formatPrice, getImageUrl } from "@/lib/utils";
+import { formatPrice, getImageUrl, applyWhatsAppTemplate } from "@/lib/utils";
 import { INDIAN_STATES } from "@/lib/constants";
+import {
+  AppliedCoupon,
+  getDiscountAmount,
+  readStoredCoupon,
+  writeStoredCoupon,
+  clearStoredCoupon,
+} from "@/lib/coupons";
 import { orderApi, contentApi } from "@/lib/api";
 
 interface CartDrawerProps {
@@ -40,6 +47,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
   const { items, itemCount, subtotal, updateQuantity, removeItem, clearCart } = useCart();
   const { user } = useAuth();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
@@ -47,9 +55,12 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [useExistingAddress, setUseExistingAddress] = useState<number | null>(null);
   const [couponCode, setCouponCode] = useState("");
-  const [couponDiscount, setCouponDiscount] = useState(0);
+  // Stores the coupon *definition*, not a frozen rupee amount, so the discount
+  // is recomputed from the live subtotal — same approach as the cart page.
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponId, setCouponId] = useState<string | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const [checkout, setCheckout] = useState({
     fullName: user?.name || "",
     phone: user?.phone || "",
@@ -66,29 +77,99 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
     queryFn: () => contentApi.getSiteSettings(),
     staleTime: 5 * 60 * 1000,
   });
+  // Suggested coupons come from the live catalogue — a hardcoded code (e.g.
+  // "JAIN10") that doesn't exist would make the chip a guaranteed "invalid
+  // coupon" dead end for customers.
+  const { data: couponsData } = useQuery({
+    queryKey: ["coupons"],
+    queryFn: () => contentApi.getCoupons(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const suggestedCoupons = (couponsData?.data?.coupons ?? []).slice(0, 3);
   const settings = settingsData?.data?.settings;
   const whatsappNumber = settings?.whatsapp?.number || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
-  const freeShippingThreshold = settings?.shipping?.freeShippingThreshold ?? 499;
-  const standardDeliveryCharge = settings?.shipping?.standardDeliveryCharge ?? 49;
-  const gstRate = settings?.gst?.rate ?? 5;
+  // 0 (or negative) values mean "unset" — use the real defaults, matching the
+  // server, so a corrupt settings doc can't silently make delivery free.
+  const freeShippingThreshold = settings?.shipping?.freeShippingThreshold > 0 ? settings.shipping.freeShippingThreshold : 499;
+  const standardDeliveryCharge = settings?.shipping?.standardDeliveryCharge > 0 ? settings.shipping.standardDeliveryCharge : 49;
+  const gstRate = settings?.gst?.rate > 0 ? settings.gst.rate : 5;
   const deliveryCharge = subtotal >= freeShippingThreshold ? 0 : standardDeliveryCharge;
+  // Derived every render from the current subtotal, so editing the cart keeps
+  // the displayed discount honest (and drops it below minOrderAmount).
+  const couponDiscount = appliedCoupon ? getDiscountAmount(subtotal, appliedCoupon) : 0;
   const discountedSubtotal = Math.max(0, subtotal - couponDiscount);
   const gstAmount = Math.round(discountedSubtotal * (gstRate / 100));
   const total = discountedSubtotal + deliveryCharge + gstAmount;
 
+  // The parent passes a fresh inline arrow for onClose on every render, so the
+  // modal effect below must not depend on its identity — otherwise it tears
+  // down and re-runs on each Header render, re-capturing the "previously
+  // focused" element and yanking focus back to the top of the drawer while the
+  // customer is typing.
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Modal behaviour: Escape to close, focus moved into the panel on open and
+  // restored on close, and Tab cycled within the panel. Without the trap,
+  // tabbing walked straight out of the drawer into the page behind it while the
+  // overlay still covered everything — the links were unreachable by mouse but
+  // still focusable by keyboard.
+  useEffect(() => {
+    if (!open) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const FOCUSABLE =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (el) => el.offsetParent !== null || el === document.activeElement
+      );
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
-    if (open) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
-    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+
+    // Defer: the panel animates in, and focusing before paint fights the
+    // framer-motion mount.
+    const focusTimer = setTimeout(() => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const target = panel.querySelector<HTMLElement>(FOCUSABLE);
+      (target ?? panel).focus();
+    }, 50);
+
     return () => {
+      clearTimeout(focusTimer);
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
+      previouslyFocused?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   useEffect(() => {
     if (user) {
@@ -110,6 +191,16 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
     if (!open) {
       setShowCheckout(false);
       setOrderDone(false);
+      setConfirmingClear(false);
+      setErrors({});
+      return;
+    }
+    // Pick up a coupon applied on the cart page or a previous drawer session, so
+    // the drawer quotes the same total the cart and checkout pages do.
+    const stored = readStoredCoupon();
+    if (stored) {
+      setAppliedCoupon(stored);
+      setCouponCode(stored.code);
     }
   }, [open]);
 
@@ -123,15 +214,25 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
       const res = await contentApi.validateCoupon(couponCode, subtotal);
       const couponData = res?.data?.coupon || res?.data;
       if (!couponData || !couponData.code) throw new Error('Invalid coupon');
-      const discAmount = couponData.type === 'percentage'
-        ? Math.min(subtotal * (couponData.value / 100), couponData.maxDiscount || Infinity)
-        : Math.min(couponData.value, subtotal);
-      setCouponDiscount(Math.round(discAmount));
+      const coupon: AppliedCoupon = {
+        code: couponData.code,
+        type: couponData.type,
+        value: couponData.value,
+        maxDiscount: couponData.maxDiscount,
+        minOrderAmount: couponData.minOrderAmount ?? 0,
+        description: couponData.description,
+      };
+      setAppliedCoupon(coupon);
+      setCouponCode(coupon.code);
       setCouponId(couponData._id || null);
-      toast.success(`Coupon applied! You save ${formatPrice(Math.round(discAmount))}`);
+      // Share the coupon with the cart page and checkout, like they share it
+      // with each other — otherwise a coupon applied here vanished the moment
+      // the customer moved on to the full checkout page.
+      writeStoredCoupon(coupon);
+      toast.success(`Coupon applied! You save ${formatPrice(getDiscountAmount(subtotal, coupon))}`);
     } catch (err: any) {
       toast.error(err.message || "Invalid coupon code");
-      setCouponDiscount(0);
+      setAppliedCoupon(null);
       setCouponId(null);
     } finally {
       setApplyingCoupon(false);
@@ -139,15 +240,16 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
   };
 
   const removeCouponCode = () => {
-    setCouponDiscount(0);
+    setAppliedCoupon(null);
     setCouponId(null);
     setCouponCode("");
+    clearStoredCoupon();
   };
 
   const generateWhatsAppMessage = useCallback(() => {
     const lines = items.map(
       (item, i) =>
-        `${i + 1}. ${item.product.name} - ${item.variant.weightValue}${item.variant.weightUnit} x ${item.quantity} = ₹${item.variant.sellingPrice * item.quantity}`
+        `${i + 1}. ${item.product.name} - ${item.variant.weight?.trim() || `${item.variant.weightValue ?? ""}${item.variant.weightUnit ?? ""}`.trim()} x ${item.quantity} = ₹${item.variant.sellingPrice * item.quantity}`
     );
     const message = [
       `*New Order - RIJITA by Arya Foods*`,
@@ -167,11 +269,12 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
       `Address: ${checkout.addressLine1}${checkout.addressLine2 ? ", " + checkout.addressLine2 : ""}`,
       `City: ${checkout.city}, ${checkout.state}`,
       `Pincode: ${checkout.pincode}`,
-      couponCode ? `Coupon: ${couponCode}` : null,
+      appliedCoupon ? `Coupon: ${appliedCoupon.code}` : null,
       checkout.notes ? `\n*Notes:* ${checkout.notes}` : "",
     ].filter(Boolean).join("\n");
-    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-  }, [items, subtotal, deliveryCharge, total, checkout, user, couponDiscount, couponCode, gstAmount, whatsappNumber]);
+    const withTemplate = applyWhatsAppTemplate(message, settings?.whatsapp?.messageTemplate);
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(withTemplate)}`;
+  }, [items, subtotal, deliveryCharge, total, checkout, user, couponDiscount, appliedCoupon, gstAmount, whatsappNumber, settings]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -200,6 +303,8 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
         items: items.map((item) => ({
           product: item.product._id,
           variant: item.variant._id,
+          // Variants have no _id in this catalogue — SKU is the reliable match
+          sku: item.variant.sku,
           quantity: item.quantity,
         })),
         shippingAddress: {
@@ -211,7 +316,9 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
           state: checkout.state.trim(),
           pincode: checkout.pincode.trim(),
         },
-        couponCode: couponCode || undefined,
+        // The server-validated code, never the raw input text — sending a code
+        // the user mistyped makes the server reject the entire order.
+        couponCode: appliedCoupon?.code || undefined,
         notes: checkout.notes.trim() || undefined,
       };
 
@@ -224,12 +331,31 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
       setOrderDone(true);
 
       if (order) {
+        // The order exists on the server now. The WhatsApp link is already
+        // built from `waLink`, so the cart has done its job — clearing it here
+        // (rather than only inside openWhatsApp) stops a customer who closes
+        // the drawer without sending the message from re-submitting the same
+        // cart as a second order.
+        clearCart();
+        // This order consumed the coupon — don't re-offer it on the next cart.
+        clearStoredCoupon();
+        setAppliedCoupon(null);
+        setCouponCode("");
         toast.success(`Order #${order.orderNumber} placed!`, { duration: 5000 });
       }
     } catch (err: any) {
-      setOrderUrl(generateWhatsAppMessage());
-      setOrderDone(true);
-      toast.success("Demo order created! Send details on WhatsApp to confirm.", { duration: 5000 });
+      // A real server rejection (out of stock, invalid coupon, validation)
+      // means NO order was created — surface the error instead of pretending
+      // the order went through. Only a network failure falls back to the
+      // WhatsApp message path, since the order may not have reached us.
+      if (err?.status) {
+        toast.error(err.message || "Failed to place order");
+        setOrderDone(false);
+      } else {
+        setOrderUrl(generateWhatsAppMessage());
+        setOrderDone(true);
+        toast.success("Couldn't reach the server — send your order on WhatsApp and we'll create it for you.", { duration: 5000 });
+      }
     } finally {
       setOrdering(false);
     }
@@ -257,40 +383,46 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            aria-hidden="true"
+            className="fixed inset-0 z-[var(--z-modal)] bg-brand-950/50 backdrop-blur-sm"
           />
-          <div className="fixed inset-0 z-50 flex justify-end" ref={drawerRef}>
+          <div className="fixed inset-0 z-[var(--z-modal)] flex justify-end" ref={drawerRef}>
             <motion.div
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cart-drawer-title"
+              tabIndex={-1}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="w-full sm:max-w-md bg-white shadow-2xl flex flex-col h-full sm:h-[calc(100%-2rem)] m-0 sm:m-4 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-border/50"
+              className="w-full sm:max-w-md bg-paper-2 shadow-2xl flex flex-col h-full sm:h-[calc(100%-7rem)] m-0 sm:m-4 sm:mt-24 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-rule/60 focus:outline-none"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b shrink-0 bg-gradient-to-r from-brand-50 to-amber-50">
+              <div className="flex items-center justify-between p-4 border-b shrink-0 bg-paper-3">
                 <div className="flex items-center gap-2">
                   {(showCheckout || orderDone) && (
                     <motion.button
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       onClick={() => { setShowCheckout(false); setOrderDone(false); setErrors({}); }}
-                      className="p-2 hover:bg-white/60 rounded-lg transition-colors"
+                      className="p-2 hover:bg-paper-2 rounded-lg transition-colors"
                       aria-label="Go back"
                     >
                       <ArrowLeft className="h-4 w-4 text-brand-700" />
                     </motion.button>
                   )}
-                  <div className="p-2 rounded-lg bg-amber-500/10">
-                    <ShoppingBag className="h-4 w-4 text-amber-600" />
+                  <div className="p-2 rounded-lg bg-gold-500/15">
+                    <ShoppingBag className="h-4 w-4 text-gold-700" />
                   </div>
-                  <h2 className="text-lg font-display font-bold text-brand-900">
+                  <h2 id="cart-drawer-title" className="text-lg font-display font-bold text-ink">
                     {orderDone ? "Order Placed!" : showCheckout ? "Checkout" : `Cart (${itemCount})`}
                   </h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/60 transition-colors text-stone-400 hover:text-stone-600"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/60 transition-colors text-ink-3 hover:text-ink-2"
                   aria-label="Close cart"
                 >
                   <X className="h-4 w-4" />
@@ -308,17 +440,17 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center"
+                    className="w-24 h-24 rounded-full bg-brand-600/10 flex items-center justify-center"
                   >
-                    <BadgeCheck className="h-12 w-12 text-green-600" />
+                    <BadgeCheck className="h-12 w-12 text-brand-700" />
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <p className="text-xl font-bold text-brand-900">Order Submitted!</p>
-                    <p className="text-sm text-stone-500 mt-2 max-w-xs">
+                    <p className="text-xl font-bold text-ink">Order submitted</p>
+                    <p className="text-sm text-ink-2 mt-2 max-w-xs">
                       Send your order details on WhatsApp to confirm and make payment.
                     </p>
                   </motion.div>
@@ -327,7 +459,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                     onClick={openWhatsApp}
-                    className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-ui shadow-lg shadow-green-600/25 active:scale-[0.98]"
+                    className="w-full py-4 bg-whatsapp hover:bg-whatsapp-600 hover:-translate-y-0.5 hover:shadow-xl text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-ui shadow-lg shadow-whatsapp/25 active:scale-[0.98]"
                   >
                     <MessageCircle className="h-4 w-4" />
                     Send on WhatsApp
@@ -336,7 +468,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="text-xs text-stone-400 flex items-center gap-2"
+                    className="text-xs text-ink-3 flex items-center gap-2"
                   >
                     <Check size={12} /> Cart will be cleared after sending
                   </motion.p>
@@ -346,106 +478,106 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-medium text-stone-500 mb-2 block">Full Name *</label>
+                      <label className="text-xs font-medium text-ink-2 mb-2 block">Full Name *</label>
                       <div className="relative">
-                        <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
                         <input
                           type="text"
                           value={checkout.fullName}
                           onChange={(e) => updateField("fullName", e.target.value)}
-                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 ${errors.fullName ? "border-red-300 focus:ring-red-400" : "border-stone-200"}`}
+                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.fullName ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="Your full name"
                         />
                       </div>
-                      {errors.fullName && <p className="text-xs text-red-500 mt-2">{errors.fullName}</p>}
+                      {errors.fullName && <p className="text-xs text-rose-500 mt-2">{errors.fullName}</p>}
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-stone-500 mb-2 block">Phone *</label>
+                      <label className="text-xs font-medium text-ink-2 mb-2 block">Phone *</label>
                       <div className="relative">
-                        <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
                         <input
                           type="tel"
                           inputMode="numeric"
                           value={checkout.phone}
                           onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 ${errors.phone ? "border-red-300 focus:ring-red-400" : "border-stone-200"}`}
+                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.phone ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="10-digit phone number"
                         />
                       </div>
-                      {errors.phone && <p className="text-xs text-red-500 mt-2">{errors.phone}</p>}
+                      {errors.phone && <p className="text-xs text-rose-500 mt-2">{errors.phone}</p>}
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-stone-500 mb-2 block">Address *</label>
+                      <label className="text-xs font-medium text-ink-2 mb-2 block">Address *</label>
                       <div className="relative">
-                        <MapPin size={14} className="absolute left-4 top-4 text-stone-400" />
+                        <MapPin size={14} className="absolute left-4 top-4 text-ink-3" />
                         <input
                           type="text"
                           value={checkout.addressLine1}
                           onChange={(e) => updateField("addressLine1", e.target.value)}
-                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 ${errors.addressLine1 ? "border-red-300 focus:ring-red-400" : "border-stone-200"}`}
+                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.addressLine1 ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="House, street, area"
                         />
                       </div>
-                      {errors.addressLine1 && <p className="text-xs text-red-500 mt-2">{errors.addressLine1}</p>}
+                      {errors.addressLine1 && <p className="text-xs text-rose-500 mt-2">{errors.addressLine1}</p>}
                     </div>
 
                     <input
                       type="text"
                       value={checkout.addressLine2}
                       onChange={(e) => updateField("addressLine2", e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border-2 border-stone-200 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="w-full px-4 py-2 rounded-xl border-2 border-rule text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600"
                       placeholder="Landmark (optional)"
                     />
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-medium text-stone-500 mb-2 block">City *</label>
+                        <label className="text-xs font-medium text-ink-2 mb-2 block">City *</label>
                         <input
                           type="text"
                           value={checkout.city}
                           onChange={(e) => updateField("city", e.target.value)}
-                          className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 ${errors.city ? "border-red-300 focus:ring-red-400" : "border-stone-200"}`}
+                          className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.city ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="City"
                         />
-                        {errors.city && <p className="text-xs text-red-500 mt-2">{errors.city}</p>}
+                        {errors.city && <p className="text-xs text-rose-500 mt-2">{errors.city}</p>}
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-stone-500 mb-2 block">State *</label>
+                        <label className="text-xs font-medium text-ink-2 mb-2 block">State *</label>
                         <select
                           value={checkout.state}
                           onChange={(e) => updateField("state", e.target.value)}
-                          className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 ${errors.state ? "border-red-300 focus:ring-red-400" : "border-stone-200"}`}
+                          className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.state ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                         >
                           <option value="">Select</option>
                           {INDIAN_STATES.map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
-                        {errors.state && <p className="text-xs text-red-500 mt-2">{errors.state}</p>}
+                        {errors.state && <p className="text-xs text-rose-500 mt-2">{errors.state}</p>}
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-stone-500 mb-2 block">Pincode *</label>
+                      <label className="text-xs font-medium text-ink-2 mb-2 block">Pincode *</label>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={checkout.pincode}
                         onChange={(e) => updateField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 ${errors.pincode ? "border-red-300 focus:ring-red-400" : "border-stone-200"}`}
+                        className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.pincode ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                         placeholder="6-digit pincode"
                       />
-                      {errors.pincode && <p className="text-xs text-red-500 mt-2">{errors.pincode}</p>}
+                      {errors.pincode && <p className="text-xs text-rose-500 mt-2">{errors.pincode}</p>}
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-stone-500 mb-2 block">Order Notes</label>
+                      <label className="text-xs font-medium text-ink-2 mb-2 block">Order Notes</label>
                       <textarea
                         value={checkout.notes}
                         onChange={(e) => updateField("notes", e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border-2 border-stone-200 text-sm transition-ui bg-stone-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none"
+                        className="w-full px-4 py-2 rounded-xl border-2 border-rule text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 resize-none"
                         rows={2}
                         placeholder="Special instructions..."
                       />
@@ -453,22 +585,22 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                   </div>
 
                   {/* Coupon Section */}
-                  <div className="bg-white rounded-xl p-4 border border-stone-200 space-y-2">
+                  <div className="bg-paper rounded-xl p-4 border border-rule space-y-2">
                     <div className="flex items-center gap-2">
-                      <Tag size={14} className="text-amber-600" />
-                      <span className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Coupon</span>
+                      <Tag size={14} className="text-gold-600" />
+                      <span className="text-xs font-semibold text-ink uppercase tracking-wider">Coupon</span>
                     </div>
                     {couponDiscount > 0 ? (
-                      <div className="flex items-center justify-between bg-green-50 rounded-lg px-4 py-2 border border-green-200">
+                      <div className="flex items-center justify-between bg-brand-600/10 rounded-lg px-4 py-2 border border-brand-600/20">
                         <div className="flex items-center gap-2">
-                          <Check size={14} className="text-green-600" />
+                          <Check size={14} className="text-brand-700" />
                           <div>
-                            <p className="text-xs font-semibold text-green-700">{couponCode}</p>
-                            <p className="text-xs text-green-600 tabular-nums">-{formatPrice(couponDiscount)} discount</p>
+                            <p className="text-xs font-semibold text-brand-800">{couponCode}</p>
+                            <p className="text-xs text-brand-700 tabular-nums">-{formatPrice(couponDiscount)} discount</p>
                           </div>
                         </div>
-                        <button onClick={removeCouponCode} className="p-2 hover:bg-green-100 rounded-full transition-colors" aria-label="Remove coupon">
-                          <X size={12} className="text-green-600" />
+                        <button onClick={removeCouponCode} className="p-2 hover:bg-brand-600/10 rounded-full transition-colors" aria-label="Remove coupon">
+                          <X size={12} className="text-brand-700" />
                         </button>
                       </div>
                     ) : (
@@ -479,64 +611,66 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                             value={couponCode}
                             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                             placeholder="Enter code"
-                            className="flex-1 px-4 py-2 text-xs rounded-lg border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-ui uppercase font-mono"
+                            className="flex-1 px-4 py-2 text-xs rounded-lg border border-rule bg-paper focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui uppercase font-mono"
                           />
                           <button
                             onClick={applyCouponCode}
                             disabled={applyingCoupon || !couponCode.trim()}
-                            className="px-4 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-brand-950 rounded-lg transition-ui"
+                            className="px-4 py-2 text-xs font-bold bg-gold-500 hover:bg-gold-600 disabled:bg-gold-300 text-brand-950 rounded-lg transition-ui"
                           >
                             {applyingCoupon ? <Loader2 size={12} className="animate-spin" /> : "Apply"}
                           </button>
                         </div>
-                        <div className="flex items-center gap-2 pt-2">
-                          <span className="text-xs font-semibold text-stone-400">Suggested:</span>
-                          {["JAIN10", "WELCOME10"].map((code) => (
-                            <button
-                              key={code}
-                              type="button"
-                              onClick={() => { setCouponCode(code); }}
-                              className="text-xs font-bold text-amber-800 bg-amber-100/80 border border-amber-300 px-2 py-0 rounded-md hover:bg-amber-200 transition-colors"
-                            >
-                              {code}
-                            </button>
-                          ))}
-                        </div>
+                        {suggestedCoupons.length > 0 && (
+                          <div className="flex items-center gap-2 pt-2">
+                            <span className="text-xs font-semibold text-ink-3">Suggested:</span>
+                            {suggestedCoupons.map((c: any) => (
+                              <button
+                                key={c.code}
+                                type="button"
+                                onClick={() => { setCouponCode(c.code); }}
+                                className="text-xs font-bold text-gold-800 bg-gold-500/15 border border-gold-500/30 px-2 py-0 rounded-md hover:bg-gold-500/25 transition-colors"
+                              >
+                                {c.code}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
 
-                  <div className="bg-brand-50/50 rounded-xl p-4 space-y-2 text-sm border border-brand-100">
+                  <div className="bg-brand-600/5 rounded-xl p-4 space-y-2 text-sm border border-brand-600/15">
                     <div className="flex justify-between">
-                      <span className="text-stone-500">Items</span>
-                      <span className="text-stone-700 font-medium">{itemCount}</span>
+                      <span className="text-ink-2">Items</span>
+                      <span className="text-ink font-medium">{itemCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-stone-500">Subtotal</span>
+                      <span className="text-ink-2">Subtotal</span>
                       <span className="font-semibold text-brand-700 tabular-nums">{formatPrice(subtotal)}</span>
                     </div>
                     {couponDiscount > 0 && (
-                      <div className="flex justify-between text-green-600 tabular-nums">
+                      <div className="flex justify-between text-brand-700 tabular-nums">
                         <span>Discount</span>
                         <span>-{formatPrice(couponDiscount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xs">
-                      <span className="text-stone-500 flex items-center gap-2">
+                      <span className="text-ink-2 flex items-center gap-2">
                         <Truck size={10} /> Delivery
                       </span>
-                      <span className={deliveryCharge === 0 ? "text-green-600 font-medium" : "text-stone-500"}>
+                      <span className={deliveryCharge === 0 ? "text-brand-700 font-medium" : "text-ink-2"}>
                         {deliveryCharge === 0 ? "FREE" : formatPrice(deliveryCharge)}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-stone-500 flex items-center gap-2">
+                      <span className="text-ink-2 flex items-center gap-2">
                         <IndianRupee size={10} /> GST ({gstRate}%)
                       </span>
-                      <span className="text-stone-500 tabular-nums">{formatPrice(gstAmount)}</span>
+                      <span className="text-ink-2 tabular-nums">{formatPrice(gstAmount)}</span>
                     </div>
-                    <div className="border-t border-brand-100 pt-2 mt-2 flex justify-between font-semibold">
-                      <span>Total</span>
+                    <div className="border-t border-brand-600/15 pt-2 mt-2 flex justify-between font-semibold">
+                      <span className="text-ink">Total</span>
                       <span className="text-brand-700 tabular-nums">{formatPrice(total)}</span>
                     </div>
                   </div>
@@ -551,19 +685,19 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                         animate={{ opacity: 1, y: 0 }}
                         className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center"
                       >
-                        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-brand-100 to-amber-100 flex items-center justify-center">
-                          <ShoppingBag className="h-12 w-12 text-brand-400" />
+                        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-brand-600/10 to-gold-500/15 flex items-center justify-center">
+                          <ShoppingBag className="h-12 w-12 text-brand-600" />
                         </div>
                         <div>
-                          <p className="text-xl font-display font-bold text-brand-900">Your Cart is Empty</p>
-                          <p className="text-sm text-stone-500 mt-2">
+                          <p className="text-xl font-display font-bold text-ink">Your Cart is Empty</p>
+                          <p className="text-sm text-ink-2 mt-2">
                             Add some delicious traditional snacks to get started!
                           </p>
                         </div>
                         <Link
                           href="/products"
                           onClick={onClose}
-                          className="px-6 py-4 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600 transition-ui shadow-lg shadow-amber-500/20 active:scale-[0.98]"
+                          className="px-6 py-4 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-ui shadow-lg shadow-brand-700/20 active:scale-[0.98]"
                         >
                           Browse Products
                         </Link>
@@ -574,12 +708,12 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                           const itemTotal = item.variant.sellingPrice * item.quantity;
                           return (
                             <motion.div
-                              key={`${item.product._id}-${item.variant._id}`}
+                              key={`${item.product._id}-${variantKey(item.variant)}`}
                               layout
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                              className="flex gap-4 p-4 rounded-xl bg-stone-50/50 border border-stone-200/60 hover:border-amber-200 transition-ui"
+                              className="group relative flex gap-4 p-4 rounded-xl bg-paper border border-rule/60 hover:border-gold-400/40 transition-ui hover:-translate-y-1 hover:shadow-lg overflow-hidden"
                             >
                               <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-brand-50 flex-shrink-0">
                                 {item.product.images?.[0] ? (
@@ -587,36 +721,37 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                                     src={getImageUrl(item.product.images[0])}
                                     alt={item.product.name}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                                     sizes="64px"
                                   />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center"><Package size={28} className="text-stone-300" /></div>
+                                  <div className="w-full h-full flex items-center justify-center"><Package size={28} className="text-ink-3" /></div>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start">
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium truncate text-stone-800">
+                                    <p className="text-sm font-medium truncate text-ink">
                                       {item.product.name}
                                     </p>
-                                    <p className="text-xs text-stone-500 mt-0 tabular-nums">
-                                      {item.variant.weightValue}{item.variant.weightUnit} - {formatPrice(item.variant.sellingPrice)}/pc
+                                    <p className="text-xs text-ink-2 mt-0 tabular-nums">
+                                      {item.variant.weight?.trim() || `${item.variant.weightValue ?? ""}${item.variant.weightUnit ?? ""}`.trim()}{" "}
+                                      - {formatPrice(item.variant.sellingPrice)}
                                     </p>
                                   </div>
                                   <button
-                                    onClick={() => removeItem(item.product._id, item.variant._id ?? "")}
-                                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-ui flex-shrink-0"
+                                    onClick={() => removeItem(item.product._id, variantKey(item.variant))}
+                                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-ink-3 hover:text-rose-500 hover:bg-red-50 rounded-lg transition-ui flex-shrink-0"
                                     aria-label="Remove item"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </button>
                                 </div>
                                 <div className="flex items-center justify-between mt-2">
-                                  <div className="flex items-center border border-stone-200 rounded-lg bg-white overflow-hidden">
+                                  <div className="flex items-center border border-rule rounded-lg bg-white overflow-hidden">
                                     <button
-                                      onClick={() => updateQuantity(item.product._id, item.variant._id ?? "", item.quantity - 1)}
-                                      className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-stone-50 transition-colors text-stone-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                                      onClick={() => updateQuantity(item.product._id, variantKey(item.variant), item.quantity - 1)}
+                                      className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-paper-3 transition-colors text-ink-2 disabled:opacity-30 disabled:cursor-not-allowed"
                                       disabled={item.quantity <= 1}
                                       aria-label="Decrease quantity"
                                     >
@@ -627,13 +762,13 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                                       initial={{ scale: 0.8, opacity: 0.5 }}
                                       animate={{ scale: 1, opacity: 1 }}
                                       transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                                      className="inline-block px-2 text-sm font-semibold min-w-[24px] text-center text-stone-700 tabular-nums"
+                                      className="inline-block px-2 text-sm font-semibold min-w-[24px] text-center text-ink tabular-nums"
                                     >
                                       {item.quantity}
                                     </motion.span>
                                     <button
-                                      onClick={() => updateQuantity(item.product._id, item.variant._id ?? "", item.quantity + 1)}
-                                      className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-stone-50 transition-colors text-stone-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                                      onClick={() => updateQuantity(item.product._id, variantKey(item.variant), item.quantity + 1)}
+                                      className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-paper-3 transition-colors text-ink-2 disabled:opacity-30 disabled:cursor-not-allowed"
                                       disabled={item.quantity >= item.variant.stock}
                                       aria-label="Increase quantity"
                                     >
@@ -659,9 +794,9 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                   </div>
 
                   {items.length > 0 && (
-                    <div className="border-t border-stone-200 p-4 space-y-4 shrink-0 bg-gradient-to-t from-white via-white to-transparent">
+                    <div className="border-t border-rule p-4 space-y-4 shrink-0 bg-gradient-to-t from-paper-2 via-paper-2 to-transparent">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-stone-500">Subtotal ({itemCount} items)</span>
+                        <span className="text-sm text-ink-2">Subtotal ({itemCount} items)</span>
                         <motion.span
                           key={subtotal}
                           initial={{ scale: 0.95, opacity: 0.8 }}
@@ -672,29 +807,42 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                           {formatPrice(subtotal)}
                         </motion.span>
                       </div>
-                      {subtotal < 499 && (
+                      {subtotal < freeShippingThreshold && (
                         <motion.div
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-4 py-2 border border-amber-200/50"
+                          className="flex items-center gap-2 text-xs text-gold-800 bg-gold-500/10 rounded-lg px-4 py-2 border border-gold-500/25"
                         >
                           <Truck size={12} className="shrink-0 tabular-nums" />
-                          Add {formatPrice(499 - subtotal)} more for <strong>FREE delivery</strong>!
+                          Add {formatPrice(freeShippingThreshold - subtotal)} more for <strong>FREE delivery</strong>!
                         </motion.div>
                       )}
                       <button
                         onClick={() => setShowCheckout(true)}
-                        className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-ui shadow-lg shadow-emerald-900/20 active:scale-[0.98] click-ripple"
+                        className="w-full py-4 bg-brand-600 hover:bg-brand-700 hover:-translate-y-0.5 hover:shadow-xl text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-ui shadow-lg shadow-brand-700/20 active:scale-[0.98] click-ripple"
                       >
                         Proceed to Checkout
                       </button>
                       <button
                         onClick={() => {
-                          clearCart();
+                          // Destructive and irreversible — a stray tap next to
+                          // "Proceed to Checkout" used to wipe the whole cart
+                          // with no way back.
+                          if (confirmingClear) {
+                            clearCart();
+                            setConfirmingClear(false);
+                          } else {
+                            setConfirmingClear(true);
+                          }
                         }}
-                        className="w-full py-2 text-xs text-stone-400 hover:text-red-500 transition-colors"
+                        onBlur={() => setConfirmingClear(false)}
+                        className={`w-full py-2 text-xs transition-colors ${
+                          confirmingClear
+                            ? "text-red-600 font-semibold"
+                            : "text-ink-3 hover:text-rose-500"
+                        }`}
                       >
-                        Clear Cart
+                        {confirmingClear ? "Tap again to confirm" : "Clear Cart"}
                       </button>
                     </div>
                   )}
@@ -703,9 +851,9 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
 
               {/* Checkout Footer */}
               {showCheckout && !orderDone && (
-                <div className="border-t border-stone-200 p-4 space-y-4 shrink-0 bg-gradient-to-t from-white to-transparent">
+                <div className="border-t border-rule p-4 space-y-4 shrink-0 bg-gradient-to-t from-paper-2 to-transparent">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-stone-600">Total</span>
+                    <span className="text-sm text-ink-2">Total</span>
                     <motion.span
                       key={total}
                       initial={{ scale: 0.95, opacity: 0.8 }}
@@ -719,7 +867,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                   <button
                     onClick={handlePlaceOrder}
                     disabled={ordering}
-                    className="w-full py-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-ui shadow-lg shadow-green-600/25 active:scale-[0.98] disabled:active:scale-100"
+                    className="w-full py-4 bg-whatsapp hover:bg-whatsapp-600 hover:-translate-y-0.5 hover:shadow-xl disabled:bg-whatsapp-400 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-ui shadow-lg shadow-whatsapp/25 active:scale-[0.98] disabled:active:scale-100"
                   >
                     {ordering ? (
                       <>
@@ -733,15 +881,9 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                       </>
                     )}
                   </button>
-                  <p className="text-xs text-center text-stone-400">
+                  <p className="text-xs text-center text-ink-3">
                     By placing this order, you agree to our Terms & Conditions
                   </p>
-                  <Link
-                    href="/orders/demo"
-                    className="block text-center text-xs text-stone-400 hover:text-amber-600 underline underline-offset-2 transition-colors"
-                  >
-                    🧪 Try Demo Order (no API required)
-                  </Link>
                 </div>
               )}
             </motion.div>

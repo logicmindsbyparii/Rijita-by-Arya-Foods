@@ -21,32 +21,32 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-brand-800 text-white border border-brand-900 font-bold " +
-          "hover:bg-brand-900 hover:border-brand-950 shadow-sm hover:shadow-md " +
-          "focus-visible:bg-brand-900",
+          "bg-brand-600 text-white border border-brand-700 font-bold " +
+          "hover:bg-brand-700 hover:border-brand-800 shadow-sm hover:shadow-md " +
+          "focus-visible:bg-brand-700",
         brand:
-          "bg-brand-700 text-white border border-brand-800 font-bold " +
-          "hover:bg-brand-800 hover:border-brand-900 shadow-sm " +
-          "focus-visible:bg-brand-800",
+          "bg-brand-600 text-white border border-brand-700 font-bold " +
+          "hover:bg-brand-700 hover:border-brand-800 shadow-sm " +
+          "focus-visible:bg-brand-700",
         gold:
-          "bg-amber-400 text-brand-950 border border-amber-500 font-extrabold " +
-          "hover:bg-amber-500 hover:text-brand-950 shadow-sm " +
-          "focus-visible:bg-amber-500",
+          "bg-gold-500 text-brand-950 border border-gold-600 font-extrabold " +
+          "hover:bg-gold-400 hover:text-brand-950 shadow-sm " +
+          "focus-visible:bg-gold-400",
         destructive:
           "bg-red-600 text-white border border-red-700 font-bold " +
           "hover:bg-red-700 focus-visible:bg-red-700",
         outline:
-          "border-2 border-stone-300 bg-white text-stone-800 font-bold " +
-          "hover:bg-stone-100 hover:border-brand-600 hover:text-brand-900 " +
-          "focus-visible:bg-stone-100 focus-visible:border-brand-600",
+          "border-2 border-ink-faint bg-white/60 text-ink font-bold " +
+          "hover:bg-white hover:border-brand-600 hover:text-brand-900 " +
+          "focus-visible:bg-white focus-visible:border-brand-600",
         secondary:
-          "bg-stone-100 text-stone-800 border border-stone-200 font-semibold " +
-          "hover:bg-stone-200 hover:text-stone-900 " +
-          "focus-visible:bg-stone-200",
+          "bg-paper-2 text-ink border border-rule font-semibold " +
+          "hover:bg-paper-3 hover:text-ink " +
+          "focus-visible:bg-paper-3",
         ghost:
-          "bg-transparent text-stone-700 font-semibold border border-transparent " +
-          "hover:bg-stone-100 hover:text-stone-900 " +
-          "focus-visible:bg-stone-100",
+          "bg-transparent text-ink-2 font-semibold border border-transparent " +
+          "hover:bg-paper-3 hover:text-ink " +
+          "focus-visible:bg-paper-3",
         link:
           "text-brand-700 font-bold underline-offset-4 hover:underline " +
           "focus-visible:underline bg-transparent border-none",

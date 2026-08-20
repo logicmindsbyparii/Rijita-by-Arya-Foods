@@ -32,15 +32,22 @@ import {
   Square,
   Layers,
   RefreshCw,
+  Rocket,
+  Printer,
+  Receipt,
+  ClipboardList,
+  ExternalLink,
+  Ban,
+  PlugZap,
 } from "lucide-react";
-import { orderApi } from "@/lib/api";
+import { orderApi, shippingApi } from "@/lib/api";
 import { cn, formatPrice, formatDate, generateWhatsAppUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Order } from "@/types";
+import type { Order, CourierOption, ShiprocketStatus } from "@/types";
 
 /* Hallmark · component: admin-orders-page · genre: modern-minimal
  * macrostructure: Query (list) · accent: cool-indigo
@@ -109,6 +116,13 @@ export default function AdminOrders() {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [summary, setSummary] = useState({ total: 0, pending: 0, delivered: 0, revenue: 0 });
 
+  // Shiprocket
+  const [shiprocket, setShiprocket] = useState<ShiprocketStatus | null>(null);
+  const [courierOptions, setCourierOptions] = useState<{ weight: number; couriers: CourierOption[] } | null>(null);
+  const [loadingCouriers, setLoadingCouriers] = useState(false);
+  const [selectedCourier, setSelectedCourier] = useState("");
+  const [shipAction, setShipAction] = useState<string | null>(null);
+
   const limit = 15;
 
   const loadOrders = useCallback(async () => {
@@ -160,6 +174,83 @@ export default function AdminOrders() {
     }, 400);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  // Shiprocket connection status — drives whether the shipping panel is usable
+  useEffect(() => {
+    shippingApi
+      .getStatus()
+      .then((res) => setShiprocket(res?.data ?? null))
+      .catch(() => setShiprocket(null));
+  }, []);
+
+  const expandedOrder = orders.find((o) => o._id === expandedId) || null;
+  const expandedAwb = expandedOrder?.shipping?.awbCode || "";
+  const expandedStatus = expandedOrder?.status || "";
+
+  // Fetch live courier rates for the expanded order, but only while an AWB is
+  // still to be assigned — that is the only screen where the picker is shown.
+  useEffect(() => {
+    setCourierOptions(null);
+    setSelectedCourier("");
+
+    if (!expandedId || !shiprocket?.connected) return;
+    if (expandedAwb) return;
+    if (["cancelled", "returned"].includes(expandedStatus)) return;
+
+    let cancelled = false;
+    setLoadingCouriers(true);
+    shippingApi
+      .getCourierOptions(expandedId)
+      .then((res) => { if (!cancelled) setCourierOptions(res?.data ?? null); })
+      .catch(() => { if (!cancelled) setCourierOptions(null); })
+      .finally(() => { if (!cancelled) setLoadingCouriers(false); });
+
+    return () => { cancelled = true; };
+  }, [expandedId, expandedAwb, expandedStatus, shiprocket?.connected]);
+
+  const runShipAction = async (key: string, fn: () => Promise<any>, fallbackMessage: string) => {
+    try {
+      setShipAction(key);
+      const res = await fn();
+      toast.success(res?.message || fallbackMessage);
+      await loadOrders();
+      return res;
+    } catch (err: any) {
+      toast.error(err.message || "Shiprocket request failed");
+      return null;
+    } finally {
+      setShipAction(null);
+    }
+  };
+
+  const handleCreateShipment = async (order: Order) => {
+    const res = await runShipAction(
+      "create",
+      () => shippingApi.createShipment(order._id, {
+        courierId: selectedCourier || undefined,
+        autoAssignAwb: true,
+      }),
+      "Order pushed to Shiprocket"
+    );
+    if (res?.data?.awbError) toast.error(`AWB not assigned: ${res.data.awbError}`);
+  };
+
+  const handleOpenDocument = async (key: string, request: () => Promise<any>, field: string, label: string) => {
+    const res = await runShipAction(key, request, `${label} generated`);
+    const url = res?.data?.[field];
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCancelShipment = async (order: Order) => {
+    if (!window.confirm(
+      `Cancel the Shiprocket shipment for order #${order.orderNumber}? The courier pickup will be called off.`
+    )) return;
+    await runShipAction(
+      "cancel",
+      () => shippingApi.cancelShipment(order._id, { cancelOrder: true }),
+      "Shipment cancelled"
+    );
+  };
 
   const handleDeleteOrder = async (orderId: string, orderNumber: string) => {
     if (!window.confirm(`Are you sure you want to permanently delete order #${orderNumber}? This cannot be undone.`)) return;
@@ -324,6 +415,37 @@ export default function AdminOrders() {
           );
         })}
       </div>
+
+      {/* Shiprocket connection banner — only when something needs attention */}
+      {shiprocket && (!shiprocket.configured || !shiprocket.connected || !shiprocket.webhookConfigured) && (
+        <div
+          className={cn(
+            "p-4 rounded-2xl border text-sm flex items-start gap-4",
+            shiprocket.configured && shiprocket.connected
+              ? "bg-amber-50 border-amber-200 text-amber-800"
+              : "bg-red-50 border-red-200 text-red-800"
+          )}
+        >
+          <PlugZap className="h-4 w-4 mt-0 shrink-0" />
+          <div>
+            {!shiprocket.configured ? (
+              <p>
+                Shiprocket is not configured — set <code className="font-mono text-xs">SHIPROCKET_EMAIL</code>,{" "}
+                <code className="font-mono text-xs">SHIPROCKET_PASSWORD</code> and{" "}
+                <code className="font-mono text-xs">SHIPROCKET_PICKUP_PINCODE</code> in the server environment.
+              </p>
+            ) : !shiprocket.connected ? (
+              <p>Shiprocket credentials were rejected{shiprocket.error ? `: ${shiprocket.error}` : "."}</p>
+            ) : (
+              <p>
+                Shiprocket is connected, but the status webhook is not set up. Add{" "}
+                <code className="font-mono text-xs">SHIPROCKET_WEBHOOK_TOKEN</code> and point Shiprocket at{" "}
+                <code className="font-mono text-xs">/api/shipping/webhook/shiprocket</code> for real-time updates.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
@@ -822,6 +944,319 @@ export default function AdminOrders() {
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Shiprocket */}
+                              <div
+                                className="p-4 rounded-xl border border-border bg-gradient-to-br from-indigo-50/50 to-transparent"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                    <Rocket className="h-4 w-4" />
+                                    Shiprocket
+                                  </h4>
+                                  {order.shipping?.status && (
+                                    <Badge className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200 capitalize">
+                                      {order.shipping.status.toLowerCase()}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {!shiprocket?.configured ? (
+                                  <p className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <PlugZap className="h-4 w-4 mt-0 shrink-0" />
+                                    Shiprocket is not configured. Add <code className="font-mono text-xs">SHIPROCKET_EMAIL</code> and{" "}
+                                    <code className="font-mono text-xs">SHIPROCKET_PASSWORD</code> to the server environment.
+                                  </p>
+                                ) : !shiprocket?.connected ? (
+                                  <p className="text-sm text-red-600 flex items-start gap-2">
+                                    <AlertTriangle className="h-4 w-4 mt-0 shrink-0" />
+                                    Could not connect to Shiprocket{shiprocket?.error ? `: ${shiprocket.error}` : "."}
+                                  </p>
+                                ) : (
+                                  <div className="space-y-4">
+                                    {/* Shipment details */}
+                                    {order.shipping?.shipmentId && (
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">AWB</p>
+                                          <p className="font-mono text-xs font-medium mt-0 tabular-nums">
+                                            {order.shipping.awbCode || "Not assigned"}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">Courier</p>
+                                          <p className="font-medium mt-0 truncate">{order.shipping.courierName || "—"}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">Billed weight</p>
+                                          <p className="font-medium mt-0 tabular-nums">
+                                            {order.shipping.appliedWeight ? `${order.shipping.appliedWeight} kg` : "—"}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">Pickup</p>
+                                          <p className="font-medium mt-0">
+                                            {order.shipping.pickupScheduledDate || "Not scheduled"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {order.shipping?.error && (
+                                      <p className="text-xs text-red-600 flex items-start gap-2">
+                                        <AlertTriangle className="h-4 w-4 mt-0 shrink-0" />
+                                        {order.shipping.error}
+                                      </p>
+                                    )}
+
+                                    {/* Courier picker — shown until an AWB exists */}
+                                    {!order.shipping?.awbCode && !["cancelled", "returned"].includes(order.status) && (
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <select
+                                          value={selectedCourier}
+                                          onChange={(e) => setSelectedCourier(e.target.value)}
+                                          disabled={loadingCouriers || !courierOptions?.couriers?.length}
+                                          className="flex h-10 rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all disabled:opacity-50 max-w-full"
+                                        >
+                                          <option value="">
+                                            {loadingCouriers
+                                              ? "Loading couriers..."
+                                              : courierOptions?.couriers?.length
+                                              ? "Cheapest available courier"
+                                              : "No courier rates available"}
+                                          </option>
+                                          {courierOptions?.couriers?.map((c) => (
+                                            <option key={c.id} value={String(c.id)}>
+                                              {c.name} — {formatPrice(Number(c.rate) || 0)}
+                                              {c.estimatedDays ? ` · ${c.estimatedDays}d` : ""}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        {courierOptions?.weight && (
+                                          <span className="text-xs text-muted-foreground tabular-nums">
+                                            Parcel weight {courierOptions.weight} kg
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="flex flex-wrap gap-2">
+                                      {!order.shipping?.shipmentId || order.shipping?.cancelledAt ? (
+                                        <Button
+                                          size="sm"
+                                          className="gap-2"
+                                          disabled={
+                                            shipAction !== null ||
+                                            ["cancelled", "returned"].includes(order.status)
+                                          }
+                                          onClick={() => handleCreateShipment(order)}
+                                        >
+                                          {shipAction === "create" ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <Rocket className="h-4 w-4" />
+                                          )}
+                                          Push to Shiprocket
+                                        </Button>
+                                      ) : (
+                                        <>
+                                          {!order.shipping.awbCode && (
+                                            <Button
+                                              size="sm"
+                                              className="gap-2"
+                                              disabled={shipAction !== null}
+                                              onClick={() =>
+                                                runShipAction(
+                                                  "awb",
+                                                  () => shippingApi.assignAwb(order._id, selectedCourier || undefined),
+                                                  "AWB assigned"
+                                                )
+                                              }
+                                            >
+                                              {shipAction === "awb" ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <Truck className="h-4 w-4" />
+                                              )}
+                                              Assign AWB
+                                            </Button>
+                                          )}
+
+                                          {order.shipping.awbCode && !order.shipping.pickupScheduledDate && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="gap-2"
+                                              disabled={shipAction !== null}
+                                              onClick={() =>
+                                                runShipAction(
+                                                  "pickup",
+                                                  () => shippingApi.schedulePickup(order._id),
+                                                  "Pickup scheduled"
+                                                )
+                                              }
+                                            >
+                                              {shipAction === "pickup" ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <Package className="h-4 w-4" />
+                                              )}
+                                              Schedule Pickup
+                                            </Button>
+                                          )}
+
+                                          {order.shipping.awbCode && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="gap-2"
+                                              disabled={shipAction !== null}
+                                              onClick={() =>
+                                                handleOpenDocument(
+                                                  "label",
+                                                  () => shippingApi.generateLabel(order._id),
+                                                  "labelUrl",
+                                                  "Label"
+                                                )
+                                              }
+                                            >
+                                              {shipAction === "label" ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <Printer className="h-4 w-4" />
+                                              )}
+                                              Label
+                                            </Button>
+                                          )}
+
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="gap-2"
+                                            disabled={shipAction !== null}
+                                            onClick={() =>
+                                              handleOpenDocument(
+                                                "invoice",
+                                                () => shippingApi.generateInvoice(order._id),
+                                                "invoiceUrl",
+                                                "Invoice"
+                                              )
+                                            }
+                                          >
+                                            {shipAction === "invoice" ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <Receipt className="h-4 w-4" />
+                                            )}
+                                            Invoice
+                                          </Button>
+
+                                          {order.shipping.awbCode && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="gap-2"
+                                              disabled={shipAction !== null}
+                                              onClick={() =>
+                                                handleOpenDocument(
+                                                  "manifest",
+                                                  () => shippingApi.generateManifest(order._id),
+                                                  "manifestUrl",
+                                                  "Manifest"
+                                                )
+                                              }
+                                            >
+                                              {shipAction === "manifest" ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <ClipboardList className="h-4 w-4" />
+                                              )}
+                                              Manifest
+                                            </Button>
+                                          )}
+
+                                          {order.shipping.awbCode && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="gap-2"
+                                              disabled={shipAction !== null}
+                                              onClick={() =>
+                                                runShipAction(
+                                                  "track",
+                                                  () => shippingApi.refreshTracking(order._id),
+                                                  "Tracking refreshed"
+                                                )
+                                              }
+                                            >
+                                              {shipAction === "track" ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <RefreshCw className="h-4 w-4" />
+                                              )}
+                                              Refresh Tracking
+                                            </Button>
+                                          )}
+
+                                          {order.shipping.trackUrl && (
+                                            <a
+                                              href={order.shipping.trackUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-xs font-medium hover:border-brand-400 hover:text-brand-600 transition-all"
+                                            >
+                                              <ExternalLink className="h-4 w-4" />
+                                              Courier Page
+                                            </a>
+                                          )}
+
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                            disabled={shipAction !== null}
+                                            onClick={() => handleCancelShipment(order)}
+                                          >
+                                            {shipAction === "cancel" ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <Ban className="h-4 w-4" />
+                                            )}
+                                            Cancel Shipment
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+
+                                    {/* Courier scan history */}
+                                    {(order.shipping?.scans?.length || 0) > 0 && (
+                                      <div className="pt-4 border-t border-border space-y-2 max-h-40 overflow-y-auto">
+                                        {order.shipping?.scans?.map((scan, k) => (
+                                          <div key={k} className="flex items-start gap-4 text-xs">
+                                            <div
+                                              className={cn(
+                                                "w-2 h-2 mt-2 rounded-full shrink-0",
+                                                k === 0 ? "bg-indigo-500" : "bg-border"
+                                              )}
+                                            />
+                                            <div className="min-w-0">
+                                              <p className="font-medium capitalize">
+                                                {(scan.status || scan.activity || "Update").toLowerCase()}
+                                              </p>
+                                              <p className="text-muted-foreground">
+                                                {scan.date}
+                                                {scan.location && ` — ${scan.location}`}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -862,7 +1297,7 @@ export default function AdminOrders() {
           >
             <div className="bg-white rounded-2xl shadow-xl border border-border px-4 py-4 flex items-center gap-4 min-w-[400px] max-w-[600px]">
               <div className="flex items-center gap-2 shrink-0">
-                <button onClick={toggleSelectAll} className="p-0 rounded hover:bg-muted transition-colors">
+                <button onClick={toggleSelectAll} aria-label="Toggle select all orders" className="p-0 rounded hover:bg-muted transition-colors">
                   <CheckSquare className="h-4 w-4 text-brand-600" />
                 </button>
                 <span className="text-sm font-medium">

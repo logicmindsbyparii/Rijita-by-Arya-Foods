@@ -32,14 +32,14 @@ import {
   Tag,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { adminApi } from "@/lib/api";
+import { adminApi, productApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Recipe } from "@/types";
+import type { Product, Recipe } from "@/types";
 
 const difficultyConfig: Record<string, { label: string; color: string }> = {
   easy: { label: "Easy", color: "bg-green-100 text-green-700 border-green-200" },
@@ -61,6 +61,7 @@ interface RecipeForm {
   metaTitle: string;
   metaDescription: string;
   isPublished: boolean;
+  products: string[];
 }
 
 const defaultForm: RecipeForm = {
@@ -77,6 +78,7 @@ const defaultForm: RecipeForm = {
   metaTitle: "",
   metaDescription: "",
   isPublished: true,
+  products: [],
 };
 
 export default function AdminRecipes() {
@@ -116,6 +118,9 @@ export default function AdminRecipes() {
   }, [fetchRecipes]);
 
   const handleDelete = async (id: string) => {
+    // Was a single unguarded click — see the same fix on the blogs list. Recipes
+    // carry ingredients and step-by-step instructions that cannot be recovered.
+    if (!window.confirm("Delete this recipe permanently? This cannot be undone.")) return;
     try {
       setDeleting(id);
       await adminApi.deleteRecipe(id);
@@ -370,11 +375,38 @@ function RecipeModal({
           metaTitle: (editItem as any)?.metaTitle || "",
           metaDescription: (editItem as any)?.metaDescription || "",
           isPublished: editItem.isPublished ?? true,
+          products: (editItem.products as any[])?.map((p) => (typeof p === "string" ? p : (p as Product)?._id)).filter(Boolean) || [],
         }
       : defaultForm
   );
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+
+  // Load the full product list once for the "products used" picker.
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingProducts(true);
+    productApi
+      .adminGetProducts({ limit: 100 })
+      .then((res) => {
+        if (cancelled) return;
+        const data = res.data || res;
+        const prods = data.products || data || [];
+        setAllProducts(Array.isArray(prods) ? prods : []);
+      })
+      .catch(() => {
+        if (!cancelled) setAllProducts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProducts(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const generateSlug = (title: string) =>
     title.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
@@ -400,11 +432,13 @@ function RecipeModal({
       fd.append("difficulty", form.difficulty);
       fd.append("tags", JSON.stringify(form.tags.split(",").map((t: string) => t.trim()).filter(Boolean)));
       fd.append("isPublished", String(form.isPublished));
-      if (editItem) {
-        fd.append("metaTitle", form.metaTitle);
-        fd.append("metaDescription", form.metaDescription);
+      fd.append("metaTitle", form.metaTitle);
+      fd.append("metaDescription", form.metaDescription);
+      fd.append("products", JSON.stringify(form.products));
+      if (imageFile) {
+        fd.append("featuredImage", imageFile);
+        fd.append("image", imageFile);
       }
-      if (imageFile) fd.append("image", imageFile);
 
       if (editItem) {
         await adminApi.updateRecipe(editItem._id, fd);
@@ -443,7 +477,7 @@ function RecipeModal({
               <UtensilsCrossed className="h-4 w-4 text-brand-500" />
               {editItem ? "Edit Recipe" : "New Recipe"}
             </h2>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
+            <button onClick={onClose} aria-label="Close recipe form" className="p-2 rounded-lg hover:bg-muted transition-colors">
               <X size={18} />
             </button>
           </div>
@@ -530,6 +564,66 @@ function RecipeModal({
             </div>
 
             <div>
+              <label className="block text-sm font-medium mb-2">Products Used in This Recipe</label>
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <input
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Search products..."
+                    className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                  {loadingProducts ? (
+                    <div className="flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading products...
+                    </div>
+                  ) : allProducts.length === 0 ? (
+                    <p className="px-2 py-3 text-sm text-muted-foreground">No products available.</p>
+                  ) : (
+                    allProducts
+                      .filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                      .map((p) => {
+                        const checked = form.products.includes(p._id);
+                        return (
+                          <label
+                            key={p._id}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer hover:bg-muted/40 transition-colors",
+                              checked && "bg-brand-50/60"
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setForm({
+                                  ...form,
+                                  products: checked
+                                    ? form.products.filter((id) => id !== p._id)
+                                    : [...form.products, p._id],
+                                })
+                              }
+                              className="w-4 h-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+                            />
+                            <span className="text-sm truncate">{p.name}</span>
+                          </label>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+              {form.products.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-2 text-right">
+                  {form.products.length} product{form.products.length !== 1 ? "s" : ""} selected
+                </p>
+              )}
+            </div>
+
+            <div>
               <label className="block text-sm font-medium mb-2">Featured Image</label>
               <label className="flex items-center gap-4 px-4 py-4 rounded-xl border border-dashed border-border hover:border-brand-500 cursor-pointer transition-colors bg-background">
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -539,6 +633,36 @@ function RecipeModal({
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
               </label>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                SEO Settings
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Meta Title</label>
+                  <Input
+                    value={form.metaTitle}
+                    onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
+                    placeholder="SEO title (auto-generated if empty)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Meta Description</label>
+                  <textarea
+                    value={form.metaDescription}
+                    onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
+                    rows={2}
+                    maxLength={160}
+                    className="flex w-full rounded-xl border border-border bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all resize-none"
+                    placeholder="Brief description for search engines"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-2 text-right">
+                    {form.metaDescription.length}/160
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-4 pt-2">

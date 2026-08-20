@@ -98,7 +98,7 @@ export default function GalleryPage() {
   }, [selectedId, goToPrev, goToNext]);
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -106,14 +106,14 @@ export default function GalleryPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 rounded-full text-brand-700 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 border border-brand-600/20 bg-brand-600/10 rounded-full text-brand-700 text-sm font-medium mb-4">
             <Camera size={16} />
             Our Gallery
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-            A Visual <span className="text-brand-600">Journey</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink mb-4 tracking-tight">
+            A Visual <span className="font-serif italic font-medium text-gold-600">Journey</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+          <p className="text-ink-2 max-w-2xl mx-auto text-lg [text-wrap:pretty]">
             Take a glimpse into our world — from our kitchen to your table. Every
             image tells a story of quality, tradition, and passion.
           </p>
@@ -122,19 +122,19 @@ export default function GalleryPage() {
         {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search gallery..."
               aria-label="Search gallery"
-              className="w-full pl-10 pr-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-ui text-sm"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-rule bg-paper-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui text-sm"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-full transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-paper-2 rounded-full transition-colors"
                 aria-label="Clear search"
               >
                 <X size={14} />
@@ -147,8 +147,8 @@ export default function GalleryPage() {
               className={cn(
                 "p-2 rounded-xl border transition-ui",
                 layout === "grid"
-                  ? "bg-brand-50 border-brand-200 text-brand-600 shadow-sm"
-                  : "hover:bg-muted"
+                  ? "bg-brand-600/10 border-brand-600/30 text-brand-700 shadow-sm"
+                  : "border-rule hover:bg-paper-2"
               )}
               aria-label="Grid layout"
             >
@@ -159,8 +159,8 @@ export default function GalleryPage() {
               className={cn(
                 "p-2 rounded-xl border transition-ui",
                 layout === "masonry"
-                  ? "bg-brand-50 border-brand-200 text-brand-600 shadow-sm"
-                  : "hover:bg-muted"
+                  ? "bg-brand-600/10 border-brand-600/30 text-brand-700 shadow-sm"
+                  : "border-rule hover:bg-paper-2"
               )}
               aria-label="Masonry layout"
             >
@@ -176,10 +176,10 @@ export default function GalleryPage() {
               key={cat.id}
               onClick={() => setCategory(cat.id)}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-ui",
+                "px-4 py-2 rounded-xl text-sm font-semibold transition-ui",
                 category === cat.id
-                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-                  : "bg-muted text-muted-foreground hover:bg-brand-50 hover:text-brand-600"
+                  ? "bg-brand-600 text-white shadow-md shadow-brand-700/20"
+                  : "bg-paper-2 border border-rule text-ink-2 hover:border-brand-500 hover:text-brand-700"
               )}
             >
               {cat.label}
@@ -222,7 +222,7 @@ export default function GalleryPage() {
                   transition={{ delay: i * 0.03, duration: 0.4 }}
                   onClick={() => setSelectedId(img.id)}
                   className={cn(
-                    "group relative overflow-hidden rounded-xl bg-gradient-to-br from-brand-50 to-amber-50 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                    "group relative overflow-hidden rounded-xl bg-gradient-to-br from-paper-2 to-brand-600/10 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)]",
                     layout === "masonry" && "break-inside-avoid mb-4"
                   )}
                 >
@@ -241,9 +241,9 @@ export default function GalleryPage() {
                       loading="lazy"
                     />
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                        <h4 className="text-white font-medium text-sm">{img.title}</h4>
+                        <h4 className="text-white font-display font-bold text-sm">{img.title}</h4>
                         <p className="text-white/70 text-xs mt-0 line-clamp-2">{img.description}</p>
                       </div>
                     </div>
@@ -263,7 +263,7 @@ export default function GalleryPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/95 p-4"
             onClick={() => setSelectedId(null)}
           >
             {/* Close button */}

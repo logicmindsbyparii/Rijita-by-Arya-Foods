@@ -8,12 +8,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { authApi } from "@/lib/api";
-import { formatPrice, getImageUrl } from "@/lib/utils";
+import { formatPrice, getImageUrl, getPrimaryVariant } from "@/lib/utils";
 import { Product } from "@/types";
 
 export default function WishlistPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, updateUser } = useAuth();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -28,7 +28,14 @@ export default function WishlistPage() {
 
   const removeMutation = useMutation({
     mutationFn: (productId: string) => authApi.toggleWishlist(productId),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // toggleWishlist returns the updated string-ID list — mirror it into the
+      // auth context so ProductCard hearts everywhere reflect the removal
+      // without a re-login.
+      const updatedList = data?.data?.wishlist;
+      if (Array.isArray(updatedList)) {
+        updateUser({ wishlist: updatedList });
+      }
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     },
   });
@@ -46,7 +53,7 @@ export default function WishlistPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-cream pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-screen bg-cream pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-display font-bold mb-8">My Wishlist</h1>
 
@@ -56,7 +63,7 @@ export default function WishlistPage() {
             <p className="text-stone-500 mb-4">Your wishlist is empty</p>
             <Link
               href="/products"
-              className="inline-block px-6 py-2 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
+              className="inline-block px-6 py-2 bg-brand-600 text-white rounded-xl font-medium hover:bg-brand-700 transition-colors"
             >
               Browse Products
             </Link>
@@ -75,7 +82,7 @@ export default function WishlistPage() {
                     />
                   </div>
                   <p className="text-sm font-medium line-clamp-2 mb-2">{product.name}</p>
-                  <p className="text-sm font-bold text-brand-600 tabular-nums">{formatPrice(product.variants?.[0]?.sellingPrice ?? 0)}</p>
+                  <p className="text-sm font-bold text-brand-600 tabular-nums">{formatPrice(getPrimaryVariant(product.variants)?.sellingPrice ?? 0)}</p>
                 </Link>
                 <button
                   onClick={() => removeMutation.mutate(product._id)}

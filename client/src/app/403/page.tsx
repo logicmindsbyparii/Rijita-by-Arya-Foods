@@ -14,7 +14,7 @@ export default function ForbiddenPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/"
-            className="px-6 py-4 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
+            className="px-6 py-4 bg-brand-600 text-white rounded-xl font-medium hover:bg-brand-700 transition-colors"
           >
             Go Home
           </Link>

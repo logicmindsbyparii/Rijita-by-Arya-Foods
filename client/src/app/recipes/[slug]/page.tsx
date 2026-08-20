@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { contentApi } from "@/lib/api";
-import { cn, formatPrice, getImageUrl, handleImageError } from "@/lib/utils";
+import { cn, formatPrice, getImageUrl, handleImageError, getPrimaryVariant } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,7 +64,7 @@ export default function RecipeDetailPage() {
   if (isError) {
     const is404 = (error as any)?.status === 404;
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           {is404 ? (
             <>
@@ -106,7 +106,7 @@ export default function RecipeDetailPage() {
 
   if (!recipe) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
             <Package size={44} className="text-muted-foreground" />
@@ -124,7 +124,7 @@ export default function RecipeDetailPage() {
   ) || []) as Product[];
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-20">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.nav
           initial={{ opacity: 0, y: -8 }}
@@ -251,8 +251,9 @@ export default function RecipeDetailPage() {
               <h2 className="text-2xl font-display font-bold mb-4">Products Used in This Recipe</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {relatedProducts.map((product) => {
-                  const price = product.variants?.[0]?.sellingPrice || 0;
-                  const mrp = product.variants?.[0]?.mrp || 0;
+                  const variant = getPrimaryVariant(product.variants);
+                  const price = variant?.sellingPrice || 0;
+                  const mrp = variant?.mrp || 0;
                   return (
                     <Link
                       key={product._id}
@@ -305,7 +306,7 @@ export default function RecipeDetailPage() {
 
 function RecipeDetailSkeleton() {
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-20">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-6 pt-4">
           <Skeleton className="h-4 w-48" />

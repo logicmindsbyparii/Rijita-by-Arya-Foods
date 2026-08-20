@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Marcellus, Plus_Jakarta_Sans, Cinzel, Playfair_Display } from "next/font/google";
+import { Marcellus, Plus_Jakarta_Sans, Cinzel, Playfair_Display, Outfit } from "next/font/google";
 import { QueryProvider, LayoutWrapper } from "@/lib/providers";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
@@ -18,6 +18,7 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
   display: "swap",
+  style: ["normal", "italic"],
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
@@ -26,6 +27,14 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   display: "swap",
   weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+/* Display face per DESIGN.md — Outfit Sans weight 800/900. The serif is
+   reserved for the italic-gold editorial accent (see font-serif below). */
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
 });
 
 const cinzel = Cinzel({
@@ -124,7 +133,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${marcellus.variable} ${jakarta.variable} ${cinzel.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${playfair.variable} ${marcellus.variable} ${jakarta.variable} ${cinzel.variable} ${outfit.variable}`} suppressHydrationWarning>
       <head>
         <StructuredData />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />

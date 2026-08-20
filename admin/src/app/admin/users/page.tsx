@@ -27,6 +27,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { cn, formatDate, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,12 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // The server refuses to let an admin deactivate or delete their own account
+  // (it would end the session mid-request, and for a lone superadmin lock the
+  // panel for good). Hide the actions rather than offering them and failing.
+  const { user: currentUser } = useAuth();
+  const isSelf = (u: User) => !!currentUser && u._id === currentUser._id;
 
   // Close delete dropdown on outside click
   useEffect(() => {
@@ -131,6 +138,14 @@ export default function AdminUsers() {
 
   const handleSubmitUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Mirror the server's 6-character floor. Without this the only feedback is
+    // the raw 422 body ("String should have at least 6 characters"), which
+    // does not name the field it came from.
+    const needsPassword = !editingUser || !!formData.password;
+    if (needsPassword && formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
     try {
       setSaving(true);
       if (editingUser) {
@@ -373,22 +388,30 @@ export default function AdminUsers() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="absolute right-0 top-full mt-2 z-40 bg-white rounded-xl border border-border shadow-xl p-2 min-w-[160px]"
                               >
-                                <button
-                                  onClick={() => handleToggleStatus(user)}
-                                  className="flex items-center gap-2 w-full px-4 py-2 text-xs rounded-lg hover:bg-muted transition-colors text-left"
-                                >
-                                  {user.isActive ? (
-                                    <><Ban className="h-4 w-4 text-orange-500" /> Deactivate</>
-                                  ) : (
-                                    <><CheckCircle2 className="h-4 w-4 text-green-500" /> Activate</>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteUser(user._id)}
-                                  className="flex items-center gap-2 w-full px-4 py-2 text-xs rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4" /> Delete
-                                </button>
+                                {isSelf(user) ? (
+                                  <p className="px-4 py-2 text-xs text-muted-foreground leading-snug">
+                                    You can&apos;t deactivate or delete your own account.
+                                  </p>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => handleToggleStatus(user)}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs rounded-lg hover:bg-muted transition-colors text-left"
+                                    >
+                                      {user.isActive ? (
+                                        <><Ban className="h-4 w-4 text-orange-500" /> Deactivate</>
+                                      ) : (
+                                        <><CheckCircle2 className="h-4 w-4 text-green-500" /> Activate</>
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteUser(user._id)}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4" /> Delete
+                                    </button>
+                                  </>
+                                )}
                               </motion.div>
                             )}
                           </AnimatePresence>
@@ -519,12 +542,18 @@ export default function AdminUsers() {
                       <select
                         value={formData.role}
                         onChange={(e) => setFormData((f) => ({ ...f, role: e.target.value as any }))}
-                        className="flex h-12 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
+                        disabled={!!editingUser && isSelf(editingUser)}
+                        className="flex h-12 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <option value="customer">Customer</option>
                         <option value="admin">Admin</option>
                         <option value="superadmin">Super Admin</option>
                       </select>
+                      {!!editingUser && isSelf(editingUser) && (
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          You can&apos;t change your own role.
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Status</label>

@@ -4,7 +4,9 @@ import secrets
 import hashlib
 from datetime import datetime, timedelta, timezone
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
 
+from app.config import settings
 from app.db import get_db, to_object_id, is_valid_object_id
 from app.utils.auth import (
     hash_password, verify_password,
@@ -20,6 +22,27 @@ from app.models.user import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
+
+
+def set_refresh_cookie(response: Response, token: str) -> None:
+    """Attach the refresh-token cookie with consistent, environment-aware flags.
+
+    The three call sites (register, login, refresh) each rolled their own
+    `set_cookie` and all three omitted `secure`, so in production this
+    long-lived credential was allowed to travel over plain HTTP. Setting it here
+    once keeps the flags from drifting apart again.
+    """
+    response.set_cookie(
+        key="refreshToken",
+        value=token,
+        httponly=True,
+        max_age=REFRESH_COOKIE_MAX_AGE,
+        path="/api/auth",
+        samesite="lax",
+        secure=settings.NODE_ENV == "production",
+    )
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: UserRegisterSchema, response: Response):
@@ -45,7 +68,16 @@ async def register(body: UserRegisterSchema, response: Response):
         "updatedAt": datetime.now(timezone.utc)
     }
     
-    res = await db.users.insert_one(user_doc)
+    # The find_one check above is not atomic — two submissions of the same form
+    # (a double-click, or a retry after a slow response) can both pass it. The
+    # unique index on users.email is what actually stops the duplicate account,
+    # but unhandled it surfaced as a 500 "Internal server error"; catch it so the
+    # second request gets the same clear message as the non-racing case.
+    try:
+        res = await db.users.insert_one(user_doc)
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     user_id = str(res.inserted_id)
     user_doc["_id"] = user_id
     
@@ -53,14 +85,7 @@ async def register(body: UserRegisterSchema, response: Response):
     access_token = generate_access_token(payload)
     refresh_token = generate_refresh_token(payload)
     
-    response.set_cookie(
-        key="refreshToken",
-        value=refresh_token,
-        httponly=True,
-        max_age=30 * 24 * 60 * 60,
-        path="/api/auth",
-        samesite="lax"
-    )
+    set_refresh_cookie(response, refresh_token)
     
     serialized_user = serialize_doc(user_doc)
     serialized_user.pop("password", None)
@@ -94,14 +119,7 @@ async def login(body: UserLoginSchema, response: Response):
     access_token = generate_access_token(payload)
     refresh_token = generate_refresh_token(payload)
     
-    response.set_cookie(
-        key="refreshToken",
-        value=refresh_token,
-        httponly=True,
-        max_age=30 * 24 * 60 * 60,
-        path="/api/auth",
-        samesite="lax"
-    )
+    set_refresh_cookie(response, refresh_token)
     
     serialized_user = serialize_doc(user)
     serialized_user.pop("password", None)
@@ -142,14 +160,7 @@ async def refresh_token(request: Request, response: Response, body: Optional[dic
         new_access_token = generate_access_token(payload)
         new_refresh_token = generate_refresh_token(payload)
         
-        response.set_cookie(
-            key="refreshToken",
-            value=new_refresh_token,
-            httponly=True,
-            max_age=30 * 24 * 60 * 60,
-            path="/api/auth",
-            samesite="lax"
-        )
+        set_refresh_cookie(response, new_refresh_token)
         
         return {
             "success": True,
@@ -161,24 +172,42 @@ async def refresh_token(request: Request, response: Response, body: Optional[dic
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
+@router.post("/logout")
+async def logout(response: Response):
+    """Clear the refresh-token cookie.
+
+    Signing out only cleared the client's localStorage, but the refresh cookie
+    is httpOnly with a 30-day lifetime and JS cannot touch it — so after
+    "logging out" (on a shared machine, say) a bare POST to /auth/refresh-token
+    still minted a fresh access token, because that endpoint falls back to the
+    cookie when no token is in the body. The session outlived the logout.
+
+    The delete must repeat the same path/samesite/secure flags the cookie was
+    set with, or the browser treats it as a different cookie and keeps the
+    original.
+    """
+    response.delete_cookie(
+        key="refreshToken",
+        path="/api/auth",
+        httponly=True,
+        samesite="lax",
+        secure=settings.NODE_ENV == "production",
+    )
+    return {"success": True, "data": {}, "message": "Logged out"}
+
 @router.get("/profile")
 async def get_profile(current_user: dict = Depends(get_current_user)):
     db = get_db()
-    # Populate wishlist products
     user_obj = await db.users.find_one({"_id": to_object_id(current_user["_id"])})
     if not user_obj:
         raise HTTPException(status_code=404, detail="User not found")
-    wishlist_ids = [to_object_id(pid) for pid in user_obj.get("wishlist", []) if is_valid_object_id(pid)]
-    
-    wishlist_products = []
-    if wishlist_ids:
-        cursor = db.products.find({"_id": {"$in": wishlist_ids}})
-        wishlist_products = await cursor.to_list(length=100)
-    
+
+    # Keep wishlist as the raw product-ID list — the client (ProductCard,
+    # User type) matches against string IDs. Populated product objects are
+    # served by GET /auth/wishlist, which is what the wishlist page consumes.
     serialized_user = serialize_doc(user_obj)
     serialized_user.pop("password", None)
-    serialized_user["wishlist"] = serialize_doc(wishlist_products)
-    
+
     return {"success": True, "data": {"user": serialized_user}}
 
 @router.put("/profile")
@@ -215,7 +244,17 @@ async def change_password(body: ChangePasswordSchema, current_user: dict = Depen
         
     if not verify_password(body.currentPassword, user.get("password", "")):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-        
+
+    # Registration and reset-password both enforce this, but change-password did
+    # not — so the one path an *already logged-in* user takes was the one place a
+    # 1-character password could be set, quietly undoing the rule everywhere else.
+    if len(body.newPassword) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    if verify_password(body.newPassword, user.get("password", "")):
+        raise HTTPException(status_code=400, detail="New password must be different from your current password")
+
+
     await db.users.update_one(
         {"_id": user["_id"]},
         {"$set": {"password": hash_password(body.newPassword), "updatedAt": datetime.now(timezone.utc)}}
@@ -283,8 +322,18 @@ async def delete_address(address_id: str, current_user: dict = Depends(get_curre
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    addresses = [a for a in user.get("addresses", []) if str(a.get("_id")) != address_id]
-    
+    existing = user.get("addresses", [])
+    removed = [a for a in existing if str(a.get("_id")) == address_id]
+    addresses = [a for a in existing if str(a.get("_id")) != address_id]
+
+    # Deleting the default address used to leave the account with no default at
+    # all, so checkout had nothing to preselect and the customer had to re-pick
+    # an address every time. Promote the next one instead.
+    if removed and removed[0].get("isDefault") and addresses:
+        if not any(a.get("isDefault") for a in addresses):
+            addresses[0]["isDefault"] = True
+
+
     await db.users.update_one(
         {"_id": user["_id"]},
         {"$set": {"addresses": addresses, "updatedAt": datetime.now(timezone.utc)}}
@@ -318,6 +367,16 @@ async def toggle_wishlist(product_id: str, current_user: dict = Depends(get_curr
         wishlist.remove(product_id)
         msg = "Removed from wishlist"
     else:
+        # Only validate on the *add* path, so a product that was later deleted can
+        # still be removed from an existing wishlist. Previously any string at all
+        # was accepted and stored — GET /auth/wishlist silently drops entries that
+        # aren't valid ids, so junk accumulated invisibly and "Added to wishlist"
+        # was reported for products that never existed.
+        if not is_valid_object_id(product_id):
+            raise HTTPException(status_code=400, detail="Invalid product ID")
+        product = await db.products.find_one({"_id": to_object_id(product_id)}, {"_id": 1})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
         wishlist.append(product_id)
         msg = "Added to wishlist"
         

@@ -1,20 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-interface FetchOptions extends RequestInit {
-  params?: Record<string, string | number | boolean | undefined>;
-}
-
-class ApiError extends Error {
-  status: number;
-  data: any;
-
-  constructor(message: string, status: number, data?: any) {
-    super(message);
-    this.status = status;
-    this.data = data;
-    this.name = "ApiError";
-  }
-}
+import { API_BASE, ApiError, FetchOptions, parseResponseBody, extractErrorMessage } from "@shared/api";
 
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
@@ -74,10 +58,15 @@ async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): 
     headers["Content-Type"] = "application/json";
   }
 
-  let response = await fetch(url, {
-    ...fetchOpts,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, { ...fetchOpts, headers });
+  } catch {
+    // fetch only rejects on network-level failure (server unreachable, DNS,
+    // CORS preflight, offline). Surface that as an ApiError so callers can use
+    // the same `err.message` path they use for HTTP errors.
+    throw new ApiError("Unable to reach the server. Please check your connection.", 0);
+  }
 
   if (response.status === 401 && typeof window !== "undefined") {
     if (!isRefreshing) {
@@ -92,7 +81,11 @@ async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): 
     if (refreshed) {
       const newToken = localStorage.getItem("accessToken");
       if (newToken) headers["Authorization"] = `Bearer ${newToken}`;
-      response = await fetch(url, { ...fetchOpts, headers });
+      try {
+        response = await fetch(url, { ...fetchOpts, headers });
+      } catch {
+        throw new ApiError("Unable to reach the server. Please check your connection.", 0);
+      }
     } else {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
@@ -104,13 +97,13 @@ async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): 
     }
   }
 
-  const data = await response.json();
+  const data = await parseResponseBody(response);
 
   if (!response.ok) {
-    throw new ApiError(data.message || "API Error", response.status, data);
+    throw new ApiError(extractErrorMessage(data, response.status), response.status, data);
   }
 
-  return data;
+  return data as T;
 }
 
 // ==================== AUTH API ====================
@@ -124,8 +117,14 @@ export const authApi = {
   refreshToken: (refreshToken: string) =>
     fetchApi("/auth/refresh-token", { method: "POST", body: JSON.stringify({ refreshToken }) }),
 
+  /** Clears the httpOnly refresh cookie server-side — localStorage alone can't. */
+  logout: () => fetchApi("/auth/logout", { method: "POST", credentials: "include" }),
+
   forgotPassword: (email: string) =>
     fetchApi("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+
+  resetPassword: (token: string, password: string) =>
+    fetchApi("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) }),
 
   getProfile: () => fetchApi("/auth/profile"),
 
@@ -197,6 +196,21 @@ export const orderApi = {
     fetchApi(`/orders/track/${phone}`),
 };
 
+// ==================== SHIPPING API (Shiprocket) ====================
+export const shippingApi = {
+  /** Pincode serviceability + live courier rates for checkout. */
+  checkServiceability: (data: {
+    deliveryPincode: string;
+    items?: Array<{ product: string; variant?: string; sku?: string; quantity: number }>;
+    weight?: number;
+    cod?: boolean;
+    declaredValue?: number;
+  }) => fetchApi("/shipping/serviceability", { method: "POST", body: JSON.stringify(data) }),
+
+  /** Live courier tracking for one order. */
+  trackShipment: (orderNumber: string) => fetchApi(`/shipping/track/${orderNumber}`),
+};
+
 // ==================== CONTENT API ====================
 export const contentApi = {
   getBlogs: (params?: { page?: number; category?: string }) =>
@@ -213,7 +227,7 @@ export const contentApi = {
     fetchApi("/contact", { method: "POST", body: JSON.stringify(data) }),
 
   subscribe: (email: string) =>
-    fetchApi("/subscribe", { method: "POST", body: JSON.stringify({ email }) }),
+    fetchApi("/subscribers/subscribe", { method: "POST", body: JSON.stringify({ email }) }),
 
   getCollections: () => fetchApi("/collections"),
 
@@ -224,9 +238,15 @@ export const contentApi = {
   validateCoupon: (code: string, subtotal: number) =>
     fetchApi("/coupons/validate", { method: "POST", body: JSON.stringify({ code, subtotal }) }),
 
+  /** Coupons currently valid at checkout — powers the Offers page. */
+  getCoupons: () => fetchApi("/coupons"),
+
   // Reviews
+  // The product page renders its own "show more" pagination from the returned
+  // list, so fetch the full set (not the server default of 10) — otherwise the
+  // tab count and load-more button are silently capped at 10 reviews.
   getProductReviews: (productId: string) =>
-    fetchApi(`/reviews/product/${productId}`),
+    fetchApi(`/reviews/product/${productId}`, { params: { limit: 100 } }),
 
   createReview: (data: { productId: string; rating: number; title?: string; comment: string }) =>
     fetchApi("/reviews", { method: "POST", body: JSON.stringify(data) })

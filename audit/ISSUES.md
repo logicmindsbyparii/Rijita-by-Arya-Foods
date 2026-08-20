@@ -172,3 +172,154 @@ Format per issue:
   - `admin/src/components/layout/Header.tsx`: removed the Wishlist button, Cart button + `CartDrawer` render, the dropdown/mobile-menu links to `/orders` and `/wishlist` (nonexistent in admin), and `/auth/login`+`/auth/register` links (replaced the sign-in link with `/admin/login`). Removed now-unused `useCart`/`CartDrawer`/`ShoppingBag`/`Heart` imports and state.
   - Deleted: `admin/src/app/robots.ts`, `admin/src/components/seo/StructuredData.tsx`, `admin/src/lib/cart-context.tsx`, `admin/src/components/cart/CartDrawer.tsx`, `admin/src/components/products/ProductCard.tsx`, `admin/src/components/home/` (entire dir), `admin/src/components/checkout/PaymentModal.tsx` (dup), `admin/src/__tests__/cart-context.test.tsx`.
   - Verified: `tsc --noEmit` clean for admin after all removals (no dangling imports).
+
+---
+
+## SESSION: FastAPI-backend audit (the previously-audited `server/src/**` is not the running API)
+
+> **Read this before trusting anything above.** Every issue logged above this line was found and
+> fixed in `server/src/**` — TypeScript/Express/Mongoose. That is **not the API this project runs.**
+> `server/package.json`'s `dev` and `start` scripts both execute `venv/bin/python main.py`, which
+> boots **FastAPI from `server/app/**`**. The TS tree is reachable from exactly one live entry point:
+> `npm run seed` (`tsx src/seeds/seed.ts`), so it is dead for serving traffic but still owns the
+> shape of all seeded data. The critical fixes above were since re-implemented in Python, but the
+> Python code carried its own separate defects — listed below, all found by reading `server/app/**`
+> directly and verified against the running server and the real MongoDB.
+
+### [py/orders — money] Coupon usage limit could be exceeded by concurrent checkouts
+- **Where:** server/app/routers/orders.py `place_order`.
+- **What:** The `usageLimit` check was a plain read (`usedCount >= usageLimit`), and the increment happened separately after the order insert. Two checkouts arriving together both read `usedCount == limit-1`, both passed, and both redeemed — taking the coupon past its cap. A "first 100 customers" promotion could be honoured well past 100.
+- **Fix needed:** reserve the redemption with a single atomic conditional update, and release it on every failure path.
+- **Status:** FIXED — the increment now runs *before* the insert as `update_one({code, usedCount: {$lt: limit}}, {$inc: {usedCount: 1}})` and is treated as failed if `modified_count == 0`. Released again if the insert throws or if the stock-deduction rollback unwinds the order, so a failed order still never burns a use (the property the old ordering was protecting).
+
+### [py/orders — money] An item with no variant id and no SKU silently billed the wrong variant
+- **Where:** server/app/routers/orders.py `place_order`, variant-matching loop.
+- **What:** Match condition was `str(v.get("_id")) == v_id or v.get("sku") == item.sku`. Variants in this catalogue carry **no `_id`** (confirmed in the live DB: variant keys are weight/weightValue/weightUnit/mrp/sellingPrice/stock/discount/sku), so sku is the only real identity. When an item arrived with neither field, `v.get("sku") == item.sku` reduced to `None == None` and matched the first variant that also lacked a sku — charging that variant's price for a weight the customer never chose.
+- **Fix needed:** reject an item that carries neither a variant id nor a sku.
+- **Status:** FIXED — explicit 400 "Missing variant selection" before the loop.
+
+### [py/orders — privacy] Phone order-lookup used an unanchored regex
+- **Where:** server/app/routers/orders.py `get_order_by_phone`.
+- **What:** Input is correctly forced to exactly 10 digits, but the query was `{"$regex": digits}` — a substring match. Any stored number longer than 10 digits (a legacy row with a country prefix, or a typo'd 11th digit) was returned in full — name, address, line items, total — to anyone who guessed a 10-digit fragment of it.
+- **Status:** FIXED — anchored to `^...$`. Verified live: a real 10-digit lookup still returns its order; a 1-digit probe is still rejected 400.
+
+### [py/orders] Rate-limiter dict grew without bound
+- **Where:** server/app/routers/orders.py `_phone_lookup_allowed`.
+- **What:** Expired entries were trimmed *within* a key but keys themselves were never removed, so every distinct IP+phone pair ever attempted stayed resident forever. Scanning phone numbers doubled as a memory leak against a long-lived server process.
+- **Status:** FIXED — fully-expired keys are now evicted on each call.
+
+### [py/auth] `except Exception` swallowed the HTTPExceptions raised beside it
+- **Where:** server/app/utils/auth.py `get_current_user`.
+- **What:** `HTTPException` is an `Exception`, so the specific reasons raised inside the `try` ("User not found", "Account deactivated") were caught by the generic handler and rewritten as "Not authorized, token invalid". A deactivated user was told their token was bad — implying re-login would help, when only an admin can restore the account.
+- **Status:** FIXED — `except HTTPException: raise` added before the generic clause. Verified live: a token for a nonexistent user now returns "User not found"; a malformed token still returns "Not authorized, token invalid".
+
+### [py/auth] change-password was the one path with no minimum-length rule
+- **Where:** server/app/routers/auth.py `change_password`.
+- **What:** `register` and `reset_password` both enforce ≥6 characters; change-password enforced nothing, so any logged-in user could set a 1-character password and quietly defeat the rule everywhere else.
+- **Status:** FIXED — same ≥6 check, plus a new "must differ from current password" check. Both verified live (400 with the right message; no mutation occurred).
+
+### [py/auth — security] Refresh-token cookie was never marked `secure`
+- **Where:** server/app/routers/auth.py — three separate `set_cookie` calls (register, login, refresh-token).
+- **What:** All three set `httponly`/`samesite` but omitted `secure`, so this 30-day credential was allowed to travel over plain HTTP in production.
+- **Status:** FIXED — consolidated into one `set_refresh_cookie()` helper with `secure=(NODE_ENV == "production")`, so the flags cannot drift apart across the three call sites again.
+
+### [py/auth] Wishlist accepted any string as a product id
+- **Where:** server/app/routers/auth.py `toggle_wishlist`.
+- **What:** No validation at all — `POST /auth/wishlist/anything` stored `"anything"` and answered "Added to wishlist". `GET /auth/wishlist` silently drops entries that aren't valid ids, so the junk accumulated invisibly and the "added" item never appeared.
+- **Status:** FIXED — validates ObjectId form and product existence on the *add* path only (so a since-deleted product can still be removed). Verified live: 400 for a malformed id, 404 for a well-formed but nonexistent one.
+
+### [py/auth — UX] Deleting your default address left the account with no default
+- **Where:** server/app/routers/auth.py `delete_address`.
+- **What:** The delete simply filtered the list, so removing the default left every remaining address non-default and checkout had nothing to preselect.
+- **Status:** FIXED — promotes the next address when the deleted one was the default.
+
+### [py/auth] Registration race returned a raw 500
+- **Where:** server/app/routers/auth.py `register`.
+- **What:** The `find_one` duplicate check isn't atomic; a double-submit had both requests pass it, and the unique index on `users.email` then raised an unhandled `DuplicateKeyError` → 500 "Internal server error".
+- **Status:** FIXED — `DuplicateKeyError` caught and returned as the same 400 "Email already registered" the non-racing path gives.
+
+### [py/products — catalogue] Price and stock filters matched across *different* variants
+- **Where:** server/app/routers/products.py `get_products` (minPrice/maxPrice) and `admin_get_products` (low-stock).
+- **What:** Both used a dotted array path — `{"variants.sellingPrice": {"$gte": 100, "$lte": 200}}`. On an array field MongoDB satisfies each operator independently, so a product with a 50g pack at ₹50 and a 5kg pack at ₹5000 matched a ₹100–₹200 filter: one variant cleared `$lte`, a *different* one cleared `$gte`. Identical flaw in the low-stock filter (`{"$gt": 0, "$lte": 10}`), which flagged products with one sold-out variant and one fully-stocked variant as needing restock.
+- **Status:** FIXED — both rewritten as `$elemMatch` so a single variant must satisfy the whole range. Verified empirically against the real MongoDB with a two-variant fixture: the old query matched it (1), the new one does not (0), for both filters. Confirmed the live storefront price filter still returns correct results with no out-of-range leaks.
+
+### [py/all — admin-facing] Duplicate slugs returned a raw 500 and lost the form
+- **Where:** 11 call sites: products.py (create/update), categories.py (create/update), content.py (blogs, recipes, collections — create and update each).
+- **What:** `slug` carries a unique index on products/categories/blogs/recipes, but every path fed `generate_slug(name)` straight in with no collision handling. A second product named "Organic Turmeric" — or *any* name made only of punctuation, which slugifies to the empty string — hit the index and surfaced to the admin as "Internal server error" with the whole filled-in form lost.
+- **Status:** FIXED — added `ensure_unique_slug()` in helpers.py (suffixes `-2`, `-3`, …; falls back to a usable slug when the name slugifies to empty; takes `exclude_id` so an update doesn't collide with itself) and wired it into all 11 sites. Verified against the real DB: collision → `organic-turmeric-3`, empty → `item`, self-update → keeps its own slug.
+
+### [py/products — data integrity] `variants.sku` is UNIQUE in the live DB but the app neither declared nor enforced it
+- **Where:** server/app/db.py `ensure_indexes`, server/app/routers/products.py create/update.
+- **What:** The live database carries a **unique** index on `variants.sku` — created by the Mongoose seed schema (`sku: {type: String, required: true, unique: true}`), *not* by anything in the Python app. Two failures follow. (1) `ensure_indexes()` never declares it, so a deployment against a fresh database would silently come up **without** that constraint — and since variants have no `_id`, duplicate SKUs make order placement resolve a cart line to the wrong product's variant. (2) Neither create nor update validated SKUs, so on the existing database a duplicate produced an unhandled `DuplicateKeyError` → 500, and a blank SKU produced a saved-but-permanently-unorderable variant.
+- **Status:** FIXED — index declared in `ensure_indexes`; new `validate_variants()` enforces at-least-one-variant, non-empty SKU, positive selling price, no duplicate SKU within the product, and no SKU already owned by another product. Runs *before* image uploads are written, so a rejected product no longer orphans files in uploads/. Verified live via the admin API — all four rejection cases return actionable 400s ("SKU RIJ-500-MLC is already used by 'Mahalaxmi Chevdo'") and no test product was created.
+
+### [py/db — reliability] One failing index silently skipped every index declared after it
+- **Where:** server/app/db.py `ensure_indexes`.
+- **What:** ~20 `create_index` awaits sat inside a single `try/except` that only logged a warning. The first failure — most plausibly a `unique` index rejected by pre-existing duplicate data — aborted the whole function, so every index below it was never created. A single duplicate email could leave orders without their unique `orderNumber` index and coupons without their unique `code` index, with nothing but one warning line to show for it.
+- **Status:** FIXED — restructured into a spec list with per-index error isolation; logs a created/failed count and names each failure instead of dying at the first one.
+
+### [py→client/checkout — money] Applied coupon was never re-checked when the cart changed
+- **Where:** client/src/app/checkout/page.tsx — `applyCoupon` / the coupon summary block.
+- **What:** The discount is computed once, against the subtotal as it stood when the code was applied — but the cart stays editable while the checkout page is open, because the header (rendered on every storefront page, checkout included) opens a cart drawer with quantity +/- and remove controls. Removing items left the *old* discount on screen: a 10% coupon applied at ₹270 kept showing −₹27 after the cart dropped to ₹180. Worse, WELCOME10 has a ₹199 minimum, so at ₹180 the server rejects it — and since the coupon code is sent with the order, `POST /orders` failed the **entire order** with "Minimum order: ₹199", with nothing on the page pointing at the coupon as the cause. The customer sees a generic failure on a filled-in checkout form.
+- **Fix needed:** re-validate the applied coupon whenever the subtotal moves; drop it and say so if it no longer qualifies.
+- **Status:** FIXED — added a debounced effect keyed on `subtotal` that re-runs `applyCoupon` for the currently-applied code, plus a `silentSuccess` option so a still-valid coupon doesn't re-toast on every quantity tap while a *failure* still surfaces its reason. Verified live in the browser end to end: applied WELCOME10 at ₹270 (showed −₹27, total ₹304 = 243 + 49 delivery + 12 GST), then clicked the drawer's decrease-quantity control to drop to ₹180 — the discount line disappeared and the total corrected to ₹238 (180 + 49 + 9 GST). Confirmed the dead-end was real by calling the API directly: `POST /coupons/validate {WELCOME10, 180}` → 400 "Minimum order: ₹199", vs 200 with `discount: 27` at 270.
+
+### [py→client/cart — money] The cart trusted a localStorage snapshot forever; price and stock were never refreshed
+- **Where:** client/src/lib/cart-context.tsx.
+- **What:** Each cart line stores a full *copy* of the product and variant taken at "Add to Cart", persisted in localStorage indefinitely (carts survive for weeks). Nothing ever re-read the catalogue — the cart page and drawer fetch only settings and coupons. Three consequences, all silent: (1) **a price change was invisible** — the customer saw the old `sellingPrice` in the cart, the drawer, and all the way through the checkout summary, while the server computes the charge from the database at order time and billed the new one; (2) the "can't add more" guards (`disabled={item.quantity >= variant.stock}`) compare against the *snapshotted* stock, so they enforce a number that may no longer be true; (3) a product since sold out, deactivated or deleted stayed in the cart looking orderable and only failed at Place Order, after the address form was filled in.
+- **Fix needed:** re-check the saved cart against the live catalogue once after it loads.
+- **Status:** FIXED — added a one-shot revalidation effect in `CartProvider`: fetches each distinct product in the cart, drops lines whose product or variant is gone/inactive/out of stock, clamps quantities to real stock, refreshes price and product data, and reports what changed via toasts. Deliberately fail-safe — a product that simply couldn't be fetched (offline, 500) is left untouched rather than dropped, and if *every* fetch fails the cart is not modified at all, so a flaky network can never empty someone's cart. Verified live: seeded a cart with a deliberately stale price (₹1 vs the real ₹90), stale stock (999 vs the real 10) and an impossible quantity (99), loaded /cart, and the line self-corrected to ₹90 / stock 10 / qty 10 with subtotal ₹900 and both "Price updated" and "Quantity reduced to available stock" toasts.
+
+### [py→client/cart] ADD_ITEM merged quantities past available stock
+- **Where:** client/src/lib/cart-context.tsx `cartReducer`, `ADD_ITEM`.
+- **What:** `items[i].quantity + quantity` with no ceiling. The product detail page caps each individual add at the variant's stock, but nothing capped the running total — adding a full-stock quantity twice put more in the cart than exists. The overage only surfaced as a 409 "Insufficient stock" at Place Order.
+- **Status:** FIXED — merged (and initial) quantity is now clamped to the variant's stock.
+
+### [tooling] `client/.next` build cache corrupted by out-of-band file churn — every storefront route 500'd
+- **What:** Not a code defect, recorded because it looks exactly like one. A `git stash`/`pop` cycle rewrote 69 client files underneath the running dev server; Next.js's incremental cache went stale and *every* route (`/`, `/products`, `/cart`, `/checkout`, `/about`, `/orders`) began returning HTTP 500 with `Error: Cannot find module './682.js'` from `.next/server/webpack-runtime`. No console errors in the browser — only the SSR response revealed it.
+- **Fix:** `rm -rf client/.next` and let the dev server rebuild (it is gitignored, regenerable build output). All routes returned 200 afterward. Worth remembering: a sudden all-routes 500 after a branch switch or stash is almost always this, not the application code.
+
+### [py→admin — data loss] Blogs, Recipes and Reviews deleted permanently on a single unguarded click
+- **Where:** admin/src/app/admin/blogs/page.tsx:107, recipes/page.tsx:120, reviews/page.tsx:82 — `handleDelete` called straight from the row's `onClick`.
+- **What:** Seven of the ten admin list pages confirm before deleting (products/users use a modal or an inline two-step, categories/coupons/collections/contacts/orders use `window.confirm`). These three did not: one click on the trash icon issued the DELETE immediately. The server hard-deletes — there is no soft-delete flag and no undo anywhere in the codebase — so a misclick permanently destroyed an authored blog post or a recipe's full ingredient list and instructions. The reviews case is the easiest to hit, because Delete sits directly beside Approve in the moderation row, and deleting a review also recomputes the product's rating, silently moving the star average on the storefront.
+- **Fix needed:** guard all three with the confirmation pattern already used by the rest of the panel.
+- **Status:** FIXED — added `window.confirm` guards matching the existing contacts/collections pattern, with copy that states the action is permanent. Admin `tsc --noEmit` clean. Verified by consistency check: all 10 admin list pages now guard destructive deletes (products/users via their existing modal/inline patterns, the other 8 via `window.confirm`). Not browser-verified — `window.confirm` blocks automated drivers — but the change is a one-line early return in an established pattern.
+- **Note on method:** the first grep for this (`confirm(|Are you sure`) produced false positives on products and false negatives on users, both of which use state-driven modals (`deleteConfirm` / `confirmDelete`) rather than the native dialog. Each page was opened and read before being called a bug.
+
+### [contract] Every admin and client API call resolves to a real FastAPI route
+- **What:** Because the storefront and admin panel were originally written against the Express API in `server/src`, endpoint drift was the most likely class of breakage after the FastAPI migration. Checked systematically rather than by sampling: parsed all `fetchApi(...)` call sites out of `admin/src/lib/api.ts` (65) and `client/src/lib/api.ts` (44), normalised path params, and matched each method+path against the 118 endpoints in the running server's own `/openapi.json`.
+- **Result:** clean — all 109 call sites resolve to a registered route. No dead or renamed endpoints survive from the Express era. `admin/analytics/top-products` was spot-checked further and does return the `revenue` field the analytics page reads, so the ₹0-revenue bug logged earlier against the TS controller does not exist in the Python one.
+
+## Efficiency & remaining-coverage pass
+
+### [py/perf] N+1 query patterns on the hottest list endpoints
+- **Where:** content.py `get_latest_reviews` and `admin_get_reviews`, orders.py `admin_get_orders`, analytics.py `get_order_status_analytics`.
+- **What:** Each resolved its related documents one row at a time inside the response loop. `admin_get_orders` paginates 20 orders and issued a `users.find_one` per order — 20 extra round trips to Atlas on every load and every filter change of the admin's busiest screen. `admin_get_reviews` was worse at two per row (product *and* user) — 40 per page. `get_order_status_analytics` ran eight sequential `count_documents`, one per status.
+- **Status:** FIXED — all four now batch: a single `$in` query per related collection (projected to just the fields used), then an in-memory join; the status breakdown became one `$group` aggregation with the counts merged back onto the full status list so statuses with zero orders still render. Verified live that each endpoint returns the identical shape it did before (`/admin/orders` still nests the full `{_id,name,email,phone}` user object, `/admin/reviews` still nests product and user).
+
+### [py/perf — public DoS surface] `/reviews/latest` took an unbounded `limit`
+- **Where:** content.py `get_latest_reviews`.
+- **What:** Public, unauthenticated, and feeds the homepage testimonial strip. `limit` went straight to Mongo with no ceiling (unlike every paginated endpoint, which routes through `paginate_query`'s cap of 100). Combined with the N+1 above, a single request for `?limit=100000` meant loading 100k documents *and* firing 100k product queries.
+- **Status:** FIXED — clamped to 1–50 and batched. Verified live: `?limit=99999` now returns 8 (all that exist) instead of attempting the full scan.
+
+### [py/data-integrity] Deleting a product orphaned its reviews and wishlist entries forever
+- **Where:** products.py `delete_product`.
+- **What:** It deleted only the product document. Reviews kept pointing at the dead id while still flagged `isApproved`, and `/reviews/latest` selects purely on `isApproved` — so those reviews carried on being served to the homepage with a null `productName`, detached from any product a visitor could click. Wishlist entries lingered the same way, invisibly: `GET /auth/wishlist` silently drops ids that no longer resolve, so the row stayed in the user document forever.
+- **Status:** FIXED — deletion now cascades: `reviews.delete_many({product})` plus a `$pull` of the id from every user's wishlist (matching both the string and ObjectId forms the two write paths produce), and reports the counts it cleaned. Verified live end to end: created a throwaway product, attached a real review and wishlist entry, deleted it → `{"reviewsDeleted":1,"wishlistsUpdated":1}` and zero leftovers in all three collections.
+- **Pre-existing data, NOT fixed — needs a human decision:** the current database already holds 8 approved reviews whose product references resolve to nothing (0 of 7 distinct product ids still exist), left over from before this cascade. They are what makes the homepage testimonial strip render entries with no product name. Deleting real customer-written reviews is a content decision, not a code fix, so they were left in place — clearing them is a one-line `db.reviews.delete_many` once someone confirms that is wanted.
+
+### [a11y] Newsletter subscribe button had no accessible name on mobile
+- **Where:** client/src/components/layout/Footer.tsx:239.
+- **What:** The button's only text label is `<span className="hidden sm:inline">Join</span>`, so below the `sm` breakpoint it collapses to a bare `<Send/>` icon with no name at all — a screen reader on a phone announced only "button" on the newsletter form. Invisible at desktop width, which is why it survived earlier passes.
+- **Status:** FIXED — added `aria-label="Subscribe to newsletter"`. Verified in the browser at 375×812: the button reports `text: ""` (confirming the label really is hidden there) with `aria-label: "Subscribe to newsletter"`, and the homepage now has **0 unnamed controls out of 132**.
+
+### [a11y] Four admin icon-only buttons had no accessible name
+- **Where:** admin blogs/recipes/collections modal close buttons and the orders "select all" toggle.
+- **Status:** FIXED — `aria-label` added to each ("Close blog form", "Close recipe form", "Close collection form", "Toggle select all orders"). Admin `tsc` clean. Not browser-verified (all four sit behind admin auth inside modals); the change is a single static attribute.
+
+### Method note — three heuristics that lied, and how they were caught
+Grep/regex scans produced false positives on every a11y sweep, and each was checked by opening the file before any claim was made:
+1. "Pages with delete but no confirm" flagged products (uses a `deleteConfirm` modal) and missed users (uses `confirmDelete`). Only blogs/recipes/reviews were genuinely unguarded.
+2. "Icon-only buttons" flagged 12; 8 were false — the regex stripped `{...}` expressions that *contained* the visible label ("Sign in", "Add to Cart", "Apply").
+3. "Form controls with no label" flagged 205; all sampled were false — `[^>]*` cannot span an arrow function, so `onChange={(e) => ...}` truncated the attribute capture before `placeholder`/`aria-label`.
+The reliable check turned out to be the browser: enumerating every control on a rendered page and computing its accessible name. That found 0 unnamed on /products (113 controls) and pinpointed the single real footer defect at mobile width.

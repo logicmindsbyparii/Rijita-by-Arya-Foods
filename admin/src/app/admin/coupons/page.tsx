@@ -135,11 +135,15 @@ export default function AdminCoupons() {
     const now = new Date();
     const active = coupons.filter(c => {
       if (!c.isActive) return false;
-      const expires = new Date(c.expiresAt);
-      const starts = new Date(c.startsAt);
-      return now >= starts && now <= expires;
+      const starts = c.startsAt ? new Date(c.startsAt) : new Date(0);
+      // null expiresAt = never expires
+      const expires = c.expiresAt ? new Date(c.expiresAt).getTime() : Number.POSITIVE_INFINITY;
+      return now.getTime() >= starts.getTime() && now.getTime() <= expires;
     }).length;
-    const expired = coupons.filter(c => new Date(c.expiresAt) < now).length;
+    const expired = coupons.filter(c => {
+      if (!c.expiresAt) return false;
+      return new Date(c.expiresAt) < now;
+    }).length;
     setStats({ total: total, active, expired });
   }, [coupons, total]);
 

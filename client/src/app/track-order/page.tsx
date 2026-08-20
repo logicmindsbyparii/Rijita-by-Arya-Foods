@@ -16,11 +16,12 @@ import {
   ShoppingBag,
   IndianRupee,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
-import { orderApi, contentApi } from "@/lib/api";
+import { orderApi, contentApi, shippingApi } from "@/lib/api";
 import { cn, formatPrice, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { Order } from "@/types";
+import type { Order, ShipmentTracking } from "@/types";
 
 const statusSteps = [
   { key: "pending", label: "Order Placed", icon: ShoppingBag },
@@ -41,6 +42,7 @@ function getActiveStep(status: string): number {
 export default function TrackOrderPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
+  const [shipment, setShipment] = useState<ShipmentTracking | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
@@ -56,10 +58,23 @@ export default function TrackOrderPage() {
     setLoading(true);
     setError("");
     setOrder(null);
+    setShipment(null);
     setSearched(true);
+    const lookupNumber = orderNumber.trim().toUpperCase();
     try {
-      const res = await orderApi.getOrderByNumber(orderNumber.trim().toUpperCase());
-      setOrder(res?.data?.order || res?.data);
+      const res = await orderApi.getOrderByNumber(lookupNumber);
+      const found: Order | null = res?.data?.order || res?.data || null;
+      setOrder(found);
+
+      // Live courier tracking is a bonus — a failure must not break the lookup
+      if (found?.shipping?.awbCode || found?.shipping?.shipmentId) {
+        try {
+          const tracked = await shippingApi.trackShipment(lookupNumber);
+          setShipment(tracked?.data?.tracking ?? null);
+        } catch {
+          setShipment(null);
+        }
+      }
     } catch (err: any) {
       setError(err?.data?.message || err?.message || "Order not found. Please check your order number.");
     } finally {
@@ -71,7 +86,7 @@ export default function TrackOrderPage() {
   const activeStep = order && !isCancelled ? getActiveStep(order.status) : -1;
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -237,6 +252,69 @@ export default function TrackOrderPage() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* Courier Shipment */}
+              {(order.shipping?.awbCode || shipment?.awb) && (
+                <div className="bg-white rounded-2xl border p-6">
+                  <h3 className="font-display font-bold text-lg mb-4">Courier Shipment</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Courier</p>
+                      <p className="font-medium mt-0">
+                        {shipment?.courierName || order.shipping?.courierName || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tracking number</p>
+                      <p className="font-mono text-xs font-medium mt-0 tabular-nums">
+                        {shipment?.awb || order.shipping?.awbCode}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Expected delivery</p>
+                      <p className="font-medium mt-0">
+                        {shipment?.expectedDeliveryDate || order.shipping?.expectedDeliveryDate || "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {(shipment?.trackUrl || order.shipping?.trackUrl) && (
+                    <a
+                      href={shipment?.trackUrl || order.shipping?.trackUrl || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
+                    >
+                      Track on courier website
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+
+                  {shipment?.scans && shipment.scans.length > 0 && (
+                    <div className="mt-6 pt-4 border-t space-y-4">
+                      {shipment.scans.map((scan, i) => (
+                        <div key={i} className="flex items-start gap-4 text-sm">
+                          <div
+                            className={cn(
+                              "w-2 h-2 mt-2 rounded-full flex-shrink-0",
+                              i === 0 ? "bg-brand-500" : "bg-border"
+                            )}
+                          />
+                          <div>
+                            <p className="font-medium capitalize">
+                              {(scan.status || scan.activity || "Update").toLowerCase()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {scan.date}
+                              {scan.location && ` — ${scan.location}`}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

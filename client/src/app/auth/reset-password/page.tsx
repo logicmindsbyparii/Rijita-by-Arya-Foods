@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { authApi } from "@/lib/api";
 
 // Client component that uses useSearchParams
 function ResetPasswordForm() {
@@ -42,61 +43,59 @@ function ResetPasswordForm() {
     }
     setIsSubmitting(true);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-      const res = await fetch(`${API_BASE}/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to reset password");
+      // Uses the shared API layer so the request goes through the Next.js
+      // rewrite (relative /api in the browser) instead of a hardcoded
+      // localhost URL that breaks for remote visitors.
+      await authApi.resetPassword(token, password);
       setSuccess(true);
       toast.success("Password reset successfully!");
       setTimeout(() => router.push("/auth/login"), 2500);
     } catch (err: any) {
-      toast.error(err.message || "Failed to reset password");
+      toast.error(err?.data?.message || err?.message || "Failed to reset password");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-cream to-amber-50 p-4">
+    <div className="relative min-h-dvh flex items-center justify-center bg-paper p-4 overflow-hidden">
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gold-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-brand-600/5 blur-3xl pointer-events-none" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="relative w-full max-w-md"
       >
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl shadow-brand-500/10 border border-white/60 p-8">
+        <div className="bg-paper-2 rounded-3xl shadow-xl shadow-ink/5 border border-rule p-8">
           <div className="mb-6">
             <Link
               href="/auth/login"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+              className="inline-flex items-center gap-2 text-sm text-ink-2 hover:text-ink transition-colors mb-6 font-medium"
             >
               <ArrowLeft size={16} />
-              Back to Login
+              Back to login
             </Link>
 
-            <div className="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-brand-600/10 flex items-center justify-center mb-4">
               {success ? (
-                <CheckCircle size={28} className="text-green-500" />
+                <CheckCircle size={28} className="text-brand-700" />
               ) : (
-                <Lock size={28} className="text-brand-500" />
+                <Lock size={28} className="text-brand-700" />
               )}
             </div>
 
             {success ? (
               <>
-                <h1 className="text-2xl font-display font-bold mb-2">Password Reset!</h1>
-                <p className="text-muted-foreground text-sm">
+                <h1 className="text-3xl font-display font-black text-ink mb-2">Password Reset!</h1>
+                <p className="text-ink-2 text-sm">
                   Your password has been reset successfully. Redirecting to login…
                 </p>
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-display font-bold mb-2">Set New Password</h1>
-                <p className="text-muted-foreground text-sm">
+                <h1 className="text-3xl font-display font-black text-ink mb-2">Set New Password</h1>
+                <p className="text-ink-2 text-sm">
                   Enter your new password below. It must be at least 6 characters.
                 </p>
               </>
@@ -106,7 +105,7 @@ function ResetPasswordForm() {
           {!success && (
             <form onSubmit={handleSubmit} className="space-y-4">
               {!token && (
-                <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+                <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-sm text-rose-600">
                   Invalid or expired reset link. Please{" "}
                   <Link href="/auth/forgot-password" className="underline font-medium">
                     request a new one
@@ -115,21 +114,23 @@ function ResetPasswordForm() {
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-2">New Password</label>
+                <label htmlFor="reset-password" className="block text-sm font-semibold text-ink-2 mb-2">New Password</label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
                   <input
+                    id="reset-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Minimum 6 characters"
                     required
-                    className="w-full pl-10 pr-10 py-4 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm transition-ui"
+                    className="w-full pl-10 pr-10 h-12 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((p) => !p)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink"
+                    aria-label="Toggle password"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -137,21 +138,23 @@ function ResetPasswordForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Confirm Password</label>
+                <label htmlFor="reset-confirm" className="block text-sm font-semibold text-ink-2 mb-2">Confirm Password</label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
                   <input
+                    id="reset-confirm"
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat your new password"
                     required
-                    className="w-full pl-10 pr-10 py-4 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm transition-ui"
+                    className="w-full pl-10 pr-10 h-12 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm((p) => !p)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink"
+                    aria-label="Toggle confirm password"
                   >
                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -161,7 +164,7 @@ function ResetPasswordForm() {
               <button
                 type="submit"
                 disabled={isSubmitting || !token}
-                className="w-full flex items-center justify-center gap-2 py-4 px-4 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-ui hover:shadow-lg hover:shadow-brand-500/25 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-4 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition-ui hover:shadow-lg hover:shadow-brand-700/25 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -170,9 +173,9 @@ function ResetPasswordForm() {
                 )}
               </button>
 
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-ink-2">
                 Remember your password?{" "}
-                <Link href="/auth/login" className="text-brand-600 hover:underline font-medium">
+                <Link href="/auth/login" className="text-brand-600 hover:text-brand-700 font-semibold">
                   Sign in
                 </Link>
               </p>
@@ -187,8 +190,8 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-brand-500" />
+      <div className="min-h-dvh flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-brand-600" />
       </div>
     }>
       <ResetPasswordForm />

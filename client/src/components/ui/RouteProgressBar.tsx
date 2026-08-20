@@ -49,9 +49,9 @@ export default function RouteProgressBar() {
   if (!isNavigating && progress === 0) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[10000] pointer-events-none h-2 bg-stone-900/10">
+    <div className="fixed top-0 left-0 right-0 z-[10000] pointer-events-none h-2 bg-brand-600/10">
       <motion.div
-        className="h-full bg-gradient-to-r from-emerald-600 via-amber-400 to-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]"
+        className="h-full bg-gradient-to-r from-brand-600 via-gold-500 to-gold-400 shadow-[0_0_12px_rgba(212,165,69,0.5)]"
         initial={{ width: "0%" }}
         animate={{ width: `${progress}%` }}
         transition={{ ease: "easeOut", duration: 0.2 }}

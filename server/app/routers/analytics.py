@@ -5,7 +5,7 @@ from bson import ObjectId
 
 from app.db import get_db, to_object_id
 from app.utils.auth import require_roles
-from app.utils.helpers import serialize_doc
+from app.utils.helpers import serialize_doc, parse_datetime
 
 router = APIRouter(prefix="/api/admin", tags=["analytics"])
 
@@ -37,7 +37,14 @@ async def get_dashboard_stats(current_user: dict = Depends(require_roles(["admin
     total_customers = await db.users.count_documents({"role": "customer"})
     today_customers = await db.users.count_documents({"role": "customer", "createdAt": {"$gte": start_of_today}})
     pending_orders = await db.orders.count_documents({"status": {"$in": ["pending", "confirmed"]}})
-    low_stock_products = await db.products.count_documents({"variants.stock": {"$lte": 10, "$gt": 0}, "isActive": True})
+    # $elemMatch, not a dotted `variants.stock` path: on an array field Mongo
+    # satisfies each operator independently, so a product with a sold-out pack
+    # and a well-stocked one matched ($gt: 0 from the 50, $lte: 10 from the 0)
+    # and was counted as low stock when nothing was low. Same trap as the price
+    # filter in products.get_products.
+    low_stock_products = await db.products.count_documents(
+        {"variants": {"$elemMatch": {"stock": {"$gt": 0, "$lte": 10}}}, "isActive": True}
+    )
     unread_contacts = await db.contacts.count_documents({"isRead": False})
     
     conversion_rate = f"{((total_orders / total_customers) * 100):.1f}" if total_customers > 0 else "0"
@@ -77,14 +84,14 @@ async def get_revenue_report(
     current_year = year or datetime.now(timezone.utc).year
     
     if period == "daily":
-        start = datetime.fromisoformat(fromDate) if fromDate else (datetime.now(timezone.utc) - timedelta(days=30))
-        end = datetime.fromisoformat(toDate) if toDate else datetime.now(timezone.utc)
+        start = parse_datetime(fromDate) if fromDate else (datetime.now(timezone.utc) - timedelta(days=30))
+        end = parse_datetime(toDate, end_of_day=True) if toDate else datetime.now(timezone.utc)
         match_stage["createdAt"] = {"$gte": start, "$lte": end}
         group_stage = {"year": {"$year": "$createdAt"}, "month": {"$month": "$createdAt"}, "day": {"$dayOfMonth": "$createdAt"}}
         date_format = "daily"
     elif period == "weekly":
-        start = datetime.fromisoformat(fromDate) if fromDate else (datetime.now(timezone.utc) - timedelta(days=90))
-        end = datetime.fromisoformat(toDate) if toDate else datetime.now(timezone.utc)
+        start = parse_datetime(fromDate) if fromDate else (datetime.now(timezone.utc) - timedelta(days=90))
+        end = parse_datetime(toDate, end_of_day=True) if toDate else datetime.now(timezone.utc)
         match_stage["createdAt"] = {"$gte": start, "$lte": end}
         group_stage = {"year": {"$year": "$createdAt"}, "week": {"$isoWeek": "$createdAt"}}
         date_format = "weekly"
@@ -219,11 +226,17 @@ async def get_order_status_analytics(current_user: dict = Depends(require_roles(
     db = get_db()
     statuses = ['pending', 'confirmed', 'packed', 'dispatched', 'out-for-delivery', 'delivered', 'cancelled', 'returned']
     
-    status_analytics = []
-    for s in statuses:
-        cnt = await db.orders.count_documents({"status": s})
-        status_analytics.append({"status": s, "count": cnt})
-        
+    # One grouped aggregation instead of eight sequential count_documents calls —
+    # same numbers, a single round trip. Statuses with no orders still have to
+    # appear (the dashboard renders a row per status), so the counts are merged
+    # back onto the full list rather than taken straight from the aggregation.
+    grouped = await db.orders.aggregate([
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]).to_list(length=None)
+    counts = {g["_id"]: g["count"] for g in grouped}
+    status_analytics = [{"status": s, "count": counts.get(s, 0)} for s in statuses]
+
+
     return {"success": True, "data": {"statusAnalytics": status_analytics}}
 
 @router.get("/reports/inventory-alerts")
@@ -237,8 +250,10 @@ async def get_inventory_alerts(current_user: dict = Depends(require_roles(["admi
     )
     out_of_stock = await out_of_stock_cursor.to_list(length=500)
     
+    # $elemMatch so one variant must itself be in the 1..10 band — see the
+    # matching note in get_dashboard_stats.
     low_stock_cursor = db.products.find(
-        {"variants.stock": {"$gt": 0, "$lte": 10}, "isActive": True},
+        {"variants": {"$elemMatch": {"stock": {"$gt": 0, "$lte": 10}}}, "isActive": True},
         {"name": 1, "slug": 1, "images": 1, "variants": 1, "category": 1}
     )
     low_stock = await low_stock_cursor.to_list(length=500)
@@ -290,7 +305,7 @@ async def get_search_analytics(current_user: dict = Depends(require_roles(["admi
             "totalSold": 1
         }}
     ]
-    popular_categories = await db.orders.aggregate(pipeline).to_list(length=10)
+    popular_categories = await db.products.aggregate(pipeline).to_list(length=10)
     
     return {
         "success": True,

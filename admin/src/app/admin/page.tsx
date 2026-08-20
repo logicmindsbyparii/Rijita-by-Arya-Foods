@@ -281,8 +281,6 @@ export default function AdminDashboard() {
       accentHue: "#2563EB",
       delay: 0, 
       subtitle: `${stats?.todayOrders ?? 0} today`,
-      trend: { value: 12.4, positive: true },
-      sparklinePoints: [30, 45, 35, 55, 40, 60, 50, 75]
     },
     { 
       label: "Total Revenue", 
@@ -291,8 +289,6 @@ export default function AdminDashboard() {
       accentHue: "#059669",
       delay: 0.05, 
       subtitle: `₹${(stats?.monthRevenue ?? 0).toLocaleString('en-IN')} this month`,
-      trend: { value: 8.2, positive: true },
-      sparklinePoints: [110, 140, 120, 170, 150, 200, 180, 230]
     },
     { 
       label: "Total Products", 
@@ -301,8 +297,6 @@ export default function AdminDashboard() {
       accentHue: "#7C3AED",
       delay: 0.1, 
       subtitle: `${stats?.lowStockProducts ?? 0} low stock`,
-      trend: { value: 1.5, positive: true },
-      sparklinePoints: [45, 48, 48, 50, 50, 52, 51, 53]
     },
     { 
       label: "Total Customers", 
@@ -311,8 +305,6 @@ export default function AdminDashboard() {
       accentHue: "#DB2777",
       delay: 0.15, 
       subtitle: `${stats?.todayCustomers ?? 0} new today`,
-      trend: { value: 14.8, positive: true },
-      sparklinePoints: [90, 105, 120, 115, 140, 155, 150, 170]
     },
     { 
       label: "Pending Orders", 
@@ -321,8 +313,6 @@ export default function AdminDashboard() {
       accentHue: "#D97706",
       delay: 0.2, 
       subtitle: "Requires attention",
-      trend: { value: 6.2, positive: false },
-      sparklinePoints: [12, 16, 9, 14, 13, 8, 6, 4]
     },
     { 
       label: "Month Orders", 
@@ -331,8 +321,6 @@ export default function AdminDashboard() {
       accentHue: "#0D9488",
       delay: 0.25, 
       subtitle: "This month",
-      trend: { value: 9.3, positive: true },
-      sparklinePoints: [60, 75, 70, 85, 80, 95, 90, 110]
     },
     { 
       label: "Month Revenue", 
@@ -341,8 +329,6 @@ export default function AdminDashboard() {
       accentHue: "#059669",
       delay: 0.3, 
       subtitle: "Monthly earnings",
-      trend: { value: 11.2, positive: true },
-      sparklinePoints: [80, 95, 85, 105, 100, 125, 115, 140]
     },
     { 
       label: "Today Orders", 
@@ -351,8 +337,6 @@ export default function AdminDashboard() {
       accentHue: "#0891B2",
       delay: 0.35, 
       subtitle: "New today",
-      trend: { value: 25.0, positive: true },
-      sparklinePoints: [2, 5, 3, 8, 4, 10, 6, 12]
     },
     { 
       label: "Low Stock", 
@@ -361,8 +345,6 @@ export default function AdminDashboard() {
       accentHue: "#EA580C",
       delay: 0.4, 
       subtitle: "Needs restock",
-      trend: { value: 10.5, positive: false },
-      sparklinePoints: [18, 14, 15, 12, 10, 8, 6, 5]
     },
     { 
       label: "Unread Messages", 
@@ -371,8 +353,6 @@ export default function AdminDashboard() {
       accentHue: "#E11D48",
       delay: 0.45, 
       subtitle: "From contact form",
-      trend: { value: 15.0, positive: false },
-      sparklinePoints: [8, 10, 6, 9, 7, 5, 3, 2]
     },
   ];
 
@@ -624,7 +604,7 @@ export default function AdminDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate text-[var(--color-ink)]">{item.name || item.product?.name}</p>
                     <p className="text-xs text-[var(--color-muted)]">
-                      Stock: <span className="text-rose-600 font-semibold tabular-nums">{item.stock ?? 0}</span>
+                      Stock: <span className="text-rose-600 font-semibold tabular-nums">{item.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) ?? 0}</span>
                     </p>
                   </div>
                 </motion.div>

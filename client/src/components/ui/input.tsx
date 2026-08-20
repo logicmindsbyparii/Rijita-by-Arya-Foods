@@ -24,7 +24,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-xs font-bold text-stone-700 tracking-wide"
+            className="text-xs font-bold text-ink-2 tracking-wide"
           >
             {label}
           </label>
@@ -32,7 +32,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
         <div className="relative">
           {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none">
               {icon}
             </div>
           )}
@@ -41,19 +41,19 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             className={cn(
               // Base styles — crisp contrast
-              "flex h-12 w-full rounded-xl border-2 bg-white text-sm text-stone-900 font-medium",
+              "flex h-12 w-full rounded-xl border-2 bg-paper text-sm text-ink font-medium",
               "px-4 py-2",
-              "placeholder:text-stone-400 placeholder:opacity-80",
+              "placeholder:text-ink-3 placeholder:opacity-80",
               // Border-color transitions
-              "border-stone-200",
+              "border-rule",
               "transition-[background-color,border-color,box-shadow] duration-short ease-out-custom",
               // States: outline for focus
-              "focus-visible:outline-none focus-visible:border-brand-600 focus-visible:bg-white",
-              "focus-visible:shadow-[0_0_0_3px_rgba(27,94,32,0.15)]",
+              "focus-visible:outline-none focus-visible:border-brand-600 focus-visible:bg-paper",
+              "focus-visible:shadow-[0_0_0_3px_rgba(27,110,42,0.15)]",
               // Hover
-              "hover:border-stone-400",
+              "hover:border-brand-300",
               // Disabled
-              "disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:border-stone-200",
+              "disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-paper-2 disabled:border-rule",
               // Error
               error && "border-[var(--color-error)] hover:border-[var(--color-error)] focus-visible:border-[var(--color-error)] focus-visible:shadow-[0_0_0_3px_oklch(55%_0.18_30/0.3)]",
               // Success

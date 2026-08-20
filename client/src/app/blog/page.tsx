@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   Calendar,
   User,
@@ -49,13 +49,20 @@ function generatePageNumbers(current: number, total: number): (number | "...")[]
   return pages;
 }
 
-const blogEmojis = ["📖", "🍳", "🥜", "🌶️", "🎉", "🧆", "📝", "🏆"];
-
 export default function BlogPage() {
   const [page, setPage] = useState(1);
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Scroll window parallax for images
+  const yImage = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
 
   const queryParams = useMemo(
     () => ({
@@ -92,7 +99,7 @@ export default function BlogPage() {
     setSubscribing(true);
     try {
       await contentApi.subscribe(email);
-      toast.success("Subscribed successfully! Stay tuned for updates.");
+      toast.success("Subscribed successfully. Stay tuned for updates.");
       setEmail("");
     } catch {
       toast.error("Failed to subscribe. Please try again.");
@@ -107,106 +114,129 @@ export default function BlogPage() {
   };
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 rounded-full text-brand-700 text-sm font-medium mb-4">
-            <BookOpen size={16} />
-            Our Blog
-          </div>
-          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-            Stories & <span className="text-brand-600">Recipes</span>
-          </h1>
-          <p className="text-muted-foreground max-w-2xl text-lg">
-            Discover stories, insights, and recipes from the world of traditional Indian food.
-          </p>
-        </motion.div>
+    <div ref={containerRef} className="min-h-screen pt-36 sm:pt-40 lg:pt-48 pb-32 relative overflow-hidden bg-paper text-ink">
+      {/* Background Textures and Blurs */}
+      <div className="absolute inset-0 bg-[radial-gradient(#1b5e2008_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gold-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-brand-500/5 blur-[150px] rounded-full pointer-events-none" />
 
+      {/* Editorial Noise Background */}
+      <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay pointer-events-none" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <div className="max-w-4xl mb-16 md:mb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="inline-flex items-center gap-3 px-4 py-2 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-8">
+              <BookOpen size={14} className="text-brand-600 animate-pulse" />
+              <span className="text-brand-700 text-xs font-bold uppercase tracking-widest">
+                The Heritage Journal
+              </span>
+            </div>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black text-brand-950 tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] mb-6">
+              Stories &amp; <span className="text-gold-600 font-serif italic font-medium block mt-2">Halwai Chronicles.</span>
+            </h1>
+            <p className="text-ink-2 max-w-2xl text-lg sm:text-xl font-medium leading-relaxed [text-wrap:pretty]">
+              Dive deep into the traditions, recipes, and secret spices that define the authentic tastes of Surat.
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Category Filters - Segmented Glass Control */}
         {categories.length > 0 && (
           <motion.div
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap gap-2 mb-8"
+            transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-12 sm:mb-16 flex"
           >
-            <button
-              onClick={() => handleCategoryChange("")}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-ui",
-                !activeCategory
-                  ? "bg-brand-500 text-white shadow-md"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
-            >
-              All
-            </button>
-            {categories.map((cat) => (
+            <div className="bg-white/80 border border-white/50 backdrop-blur-xl p-1.5 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center gap-1 flex-wrap">
               <button
-                key={cat}
-                onClick={() => handleCategoryChange(cat)}
+                onClick={() => handleCategoryChange("")}
                 className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium transition-ui",
-                  activeCategory === cat
-                    ? "bg-brand-500 text-white shadow-md"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  "px-6 py-2.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest transition-all duration-300 focus-ring",
+                  !activeCategory
+                    ? "bg-brand-700 text-white shadow-[0_8px_20px_rgba(20,82,24,0.15)]"
+                    : "text-ink-2 hover:bg-brand-50/50 hover:text-brand-700"
                 )}
               >
-                {cat}
+                All Stories
               </button>
-            ))}
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={cn(
+                    "px-6 py-2.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest transition-all duration-300 focus-ring",
+                    activeCategory === cat
+                      ? "bg-brand-700 text-white shadow-[0_8px_20px_rgba(20,82,24,0.15)]"
+                      : "text-ink-2 hover:bg-brand-50/50 hover:text-brand-700"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </motion.div>
         )}
 
+        {/* Loading Skeleton */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="aspect-[16/9] rounded-2xl" />
-                <div className="space-y-2 p-2">
-                  <Skeleton className="h-4 w-1/4" />
-                  <Skeleton className="h-4 w-3/4" />
+              <div key={i} className="space-y-4 bg-white/40 border border-white/20 p-6 rounded-[2rem] shadow-sm">
+                <Skeleton className="aspect-[16/10] rounded-[1.5rem]" />
+                <div className="space-y-3 pt-2">
+                  <Skeleton className="h-6 w-1/4" />
+                  <Skeleton className="h-6 w-3/4" />
                   <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-1/3" />
                 </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Error State */}
         {isError && (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+          <div className="text-center py-24 bg-white/40 border border-white/20 rounded-[2rem] max-w-2xl mx-auto shadow-sm p-8">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
               <BookOpen size={28} className="text-red-500" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Failed to load blog posts</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-2xl font-display font-black mb-2 text-ink">Failed to load articles</h3>
+            <p className="text-ink-2 mb-8 max-w-sm mx-auto">
               {(error as any)?.message || "Something went wrong"}
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
+              className="px-8 py-4 bg-brand-700 text-white rounded-full font-black text-sm uppercase tracking-widest hover:bg-brand-800 transition-all shadow-[0_8px_20px_rgba(20,82,24,0.15)] active:scale-[0.98]"
             >
               Try Again
             </button>
           </div>
         )}
 
+        {/* Empty State */}
         {!isLoading && !isError && blogs.length === 0 && (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              <BookOpen size={36} className="text-muted-foreground" />
+          <div className="text-center py-24 bg-white/40 border border-white/20 rounded-[2rem] max-w-2xl mx-auto shadow-sm p-8">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white flex items-center justify-center border border-brand-100 shadow-sm">
+              <BookOpen size={32} className="text-brand-700" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No blog posts found</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            <h3 className="text-2xl font-display font-black mb-2 text-ink">No articles found</h3>
+            <p className="text-ink-2 mb-8 max-w-md mx-auto">
               {activeCategory
-                ? `No posts in "${activeCategory}" category. Check back later or browse all posts.`
-                : "No blog posts available yet. Check back soon!"}
+                ? `No posts available in "${activeCategory}" yet. Try another filter category.`
+                : "No journal posts available yet. Check back soon!"}
             </p>
             {activeCategory && (
               <button
                 onClick={() => handleCategoryChange("")}
-                className="px-6 py-2 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
+                className="px-8 py-4 bg-brand-700 text-white rounded-full font-black text-sm uppercase tracking-widest hover:bg-brand-800 transition-all shadow-[0_8px_20px_rgba(20,82,24,0.15)] active:scale-[0.98]"
               >
                 View All Posts
               </button>
@@ -214,49 +244,56 @@ export default function BlogPage() {
           </div>
         )}
 
+        {/* Blog Grid */}
         {!isLoading && !isError && blogs.length > 0 && (
           <>
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {blogs.map((blog, idx) => {
+              {blogs.map((blog) => {
                 const hasImage = !!blog.featuredImage;
-                const emoji = blogEmojis[idx % blogEmojis.length];
 
                 return (
-                  <motion.div key={blog._id} variants={cardVariants}>
+                  <motion.div key={blog._id} variants={cardVariants} className="h-full">
                     <Link
                       href={`/blog/${blog.slug}`}
-                      className="group block rounded-2xl border border-border bg-white hover:shadow-xl transition-ui duration-300 overflow-hidden"
+                      className="group block h-full rounded-[2rem] border border-white/60 bg-white/70 backdrop-blur-xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-brand-200 transition-all duration-500 overflow-hidden flex flex-col relative"
                     >
+                      {/* Ambient Glow Backplate on Hover */}
+                      <div className="absolute inset-0 bg-brand-500/5 rounded-full blur-3xl pointer-events-none transition-opacity opacity-0 group-hover:opacity-100 duration-700" />
+
                       {/* Featured Image Area */}
-                      <div className="aspect-[16/9] bg-gradient-to-br from-brand-50 to-amber-50 overflow-hidden relative">
+                      <div className="aspect-[16/10] bg-brand-50 overflow-hidden relative border-b border-white/50">
                         {hasImage ? (
-                          <Image
-                            src={getImageUrl(blog.featuredImage!)}
-                            alt={blog.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            onError={handleImageError}
-                          />
+                          <div className="absolute inset-0 overflow-hidden">
+                            <motion.div style={{ y: yImage }} className="absolute inset-0 scale-[1.3] pointer-events-none">
+                              <Image
+                                src={getImageUrl(blog.featuredImage!)}
+                                alt={blog.title}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000 ease-out"
+                                onError={handleImageError}
+                              />
+                            </motion.div>
+                          </div>
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-5xl select-none transition-transform duration-500 group-hover:scale-110">
-                              {emoji}
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-50 to-gold-50">
+                            <span className="font-serif italic text-3xl text-gold-600/70 select-none transition-transform duration-500 group-hover:scale-110">
+                              Journal
                             </span>
                           </div>
                         )}
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {/* Dark overlay on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-brand-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                         
                         {/* Category badge */}
                         {blog.category && (
-                          <div className="absolute top-4 left-4">
-                            <span className="px-2 py-2 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-bold text-brand-700 uppercase tracking-wider shadow-sm">
+                          <div className="absolute top-4 left-4 z-10">
+                            <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm bg-white/90 backdrop-blur-md inline-block text-brand-700">
                               {blog.category}
                             </span>
                           </div>
@@ -264,42 +301,42 @@ export default function BlogPage() {
                       </div>
 
                       {/* Content */}
-                      <div className="p-4">
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                          <span className="flex items-center gap-2">
-                            <Calendar size={12} />
+                      <div className="p-6 sm:p-8 flex flex-col flex-grow relative z-10">
+                        <div className="flex items-center gap-4 text-[10px] font-bold text-ink-3 uppercase tracking-wider mb-4">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar size={13} className="text-gold-500" />
                             {blog.publishedAt ? formatDate(blog.publishedAt) : formatDate(blog.createdAt)}
                           </span>
-                          <span className="flex items-center gap-2">
-                            <User size={12} />
+                          <span className="flex items-center gap-1.5">
+                            <User size={13} />
                             {blog.author}
                           </span>
                         </div>
 
-                        <h3 className="text-lg font-display font-semibold mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
+                        <h3 className="text-xl sm:text-2xl font-display font-black text-brand-950 mb-2 group-hover:text-brand-700 transition-colors duration-300 line-clamp-2 leading-snug">
                           {blog.title}
                         </h3>
 
                         {blog.excerpt && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+                          <p className="text-sm text-ink-2 font-medium leading-relaxed line-clamp-2 mb-6">
                             {blog.excerpt}
                           </p>
                         )}
 
-                        <div className="flex items-center gap-2 mb-4 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 mb-5 mt-auto">
                           {blog.tags?.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-2 bg-muted text-muted-foreground rounded-full text-xs font-medium"
+                              className="px-2 py-1 bg-white/60 border border-white/80 text-ink-3 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm"
                             >
                               #{tag}
                             </span>
                           ))}
                         </div>
 
-                        <span className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 group-hover:gap-4 transition-[gap]">
-                          Read More
-                          <ArrowRight size={14} />
+                        <span className="inline-flex items-center gap-2 text-brand-700 font-extrabold text-[11px] uppercase tracking-[0.2em]">
+                          Read story
+                          <ArrowRight size={13} className="group-hover:translate-x-1.5 transition-transform duration-300" />
                         </span>
                       </div>
                     </Link>
@@ -309,18 +346,18 @@ export default function BlogPage() {
             </motion.div>
 
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-12">
+              <div className="flex items-center justify-center gap-2 mt-16">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="p-2 rounded-xl border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-10 h-10 rounded-full border border-white/60 bg-white/50 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:text-brand-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
                   aria-label="Previous page"
                 >
                   <ChevronLeft size={18} />
                 </button>
                 {generatePageNumbers(page, pagination.totalPages).map((p, i) =>
                   p === "..." ? (
-                    <span key={`e${i}`} className="px-2 text-muted-foreground">
+                    <span key={`e${i}`} className="px-2 text-ink-3">
                       ...
                     </span>
                   ) : (
@@ -328,10 +365,10 @@ export default function BlogPage() {
                       key={p}
                       onClick={() => setPage(p)}
                       className={cn(
-                        "min-w-[40px] h-10 rounded-xl text-sm font-medium transition-ui",
+                        "min-w-[40px] h-10 px-3 rounded-full text-sm font-semibold transition-all duration-300 focus-ring shadow-sm",
                         page === p
-                          ? "bg-brand-500 text-white shadow-md"
-                          : "border hover:bg-muted"
+                          ? "bg-brand-700 text-white shadow-[0_8px_20px_rgba(20,82,24,0.15)]"
+                          : "border border-white/60 bg-white/50 backdrop-blur-sm hover:bg-white hover:text-brand-700"
                       )}
                       aria-label={`Page ${p}`}
                     >
@@ -342,7 +379,7 @@ export default function BlogPage() {
                 <button
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page >= pagination.totalPages}
-                  className="p-2 rounded-xl border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-10 h-10 rounded-full border border-white/60 bg-white/50 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:text-brand-700 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
                   aria-label="Next page"
                 >
                   <ChevronRight size={18} />
@@ -352,44 +389,48 @@ export default function BlogPage() {
           </>
         )}
 
+        {/* Newsletter Bento Subscription Box */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
-          className="mt-16 rounded-2xl bg-gradient-to-r from-brand-500 via-brand-600 to-spice-gold p-8 md:p-12 text-white text-center relative overflow-hidden"
+          className="mt-24 rounded-[2rem] border border-white/60 bg-white/70 backdrop-blur-xl p-10 md:p-16 text-center relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-0 right-0 w-72 h-72 bg-gold-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-brand-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
           <div className="relative z-10">
-            <Mail size={36} className="mx-auto mb-4 opacity-80" />
-            <h2 className="text-2xl md:text-3xl font-display font-bold mb-2">Stay Inspired</h2>
-            <p className="text-white/80 mb-6 max-w-lg mx-auto">
-              Subscribe to our newsletter for the latest recipes, blog posts, and exclusive offers.
+            <div className="w-14 h-14 bg-brand-50 text-brand-700 rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-100 shadow-sm">
+              <Mail size={24} />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-display font-black text-brand-950 mb-3 tracking-tight leading-none">
+              Recipes from our <span className="font-serif italic font-medium text-gold-600">halwai</span> kitchen
+            </h2>
+            <p className="text-ink-2 mb-8 max-w-lg mx-auto text-base font-medium leading-relaxed">
+              Subscribe to stay updated with fresh journal articles, traditional recipes, and batch notifications.
             </p>
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <Input
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                aria-label="Email for newsletter"
-                className="flex-1 h-12 bg-white/15 border-white/25 text-white placeholder:text-white/60 focus-visible:ring-white/50"
+                placeholder="Your email address"
+                aria-label="Email address for newsletter"
+                className="flex-1 h-14 bg-white/50 border border-white/80 rounded-full px-6 text-base placeholder:text-ink-3 focus:outline-none focus:border-brand-700 focus:bg-white transition-all shadow-sm"
               />
-              <Button
+              <button
                 type="submit"
                 disabled={subscribing}
-                size="lg"
-                className="bg-white text-brand-600 hover:bg-white/90 h-12"
+                className="h-14 px-8 rounded-full bg-brand-700 hover:bg-brand-800 text-white font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-brand-900/10 flex items-center justify-center gap-2 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {subscribing ? (
-                  "Subscribing..."
+                  "Joining..."
                 ) : (
                   <>
-                    Subscribe
-                    <Send size={16} className="ml-2" />
+                    Join List
+                    <Send size={14} />
                   </>
                 )}
-              </Button>
+              </button>
             </form>
           </div>
         </motion.div>

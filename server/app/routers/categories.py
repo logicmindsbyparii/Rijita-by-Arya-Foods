@@ -5,7 +5,7 @@ import json
 
 from app.db import get_db, to_object_id, is_valid_object_id
 from app.utils.auth import require_roles
-from app.utils.helpers import serialize_doc, generate_slug
+from app.utils.helpers import serialize_doc, generate_slug, ensure_unique_slug
 from app.utils.image_processor import save_uploaded_file
 
 router = APIRouter(prefix="/api", tags=["categories"])
@@ -99,6 +99,7 @@ async def create_category(
 ):
     db = get_db()
     cat_slug = generate_slug(slug) if slug else generate_slug(name)
+    cat_slug = await ensure_unique_slug(db.categories, cat_slug, fallback=name)
     
     parent_id = None
     if parent and parent not in ["", "null", "undefined"] and is_valid_object_id(parent):
@@ -151,7 +152,11 @@ async def update_category(
     if name is not None:
         update_data["name"] = name.strip()
     if slug is not None:
-        update_data["slug"] = generate_slug(slug)
+        update_data["slug"] = await ensure_unique_slug(
+            db.categories, generate_slug(slug),
+            fallback=str(name or category.get("name") or "category"),
+            exclude_id=category["_id"],
+        )
     if description is not None:
         update_data["description"] = description
     if parent is not None:

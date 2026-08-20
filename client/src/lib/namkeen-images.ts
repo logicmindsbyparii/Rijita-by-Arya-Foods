@@ -40,8 +40,9 @@ export const NAMKEEN_IMAGES = {
   /** Besan ladoo */
   laddu:
     "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Laddu_Sweet.JPG/1280px-Laddu_Sweet.JPG",
+  /** Sattvik Jain Namkeen */
+  sattvik: "/images/sattvik-jain-namkeen.jpg",
 } as const;
-
 /** Maps a category name to an authentic photo that matches that collection. */
 export function getCategoryFallbackImage(categoryName: string): string {
   const name = (categoryName || "").toLowerCase();

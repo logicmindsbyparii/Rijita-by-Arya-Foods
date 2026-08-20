@@ -19,15 +19,12 @@ import {
   Package,
   Star,
   ShoppingBag,
-  Heart,
-  TrendingUp,
   Sparkles,
-  Percent,
   RotateCcw,
 } from "lucide-react";
 import { productApi, categoryApi } from "@/lib/api";
 import ProductCard from "@/components/products/ProductCard";
-import { cn, formatPrice, getImageUrl, calculateDiscount } from "@/lib/utils";
+import { cn, formatPrice, getImageUrl, calculateDiscount, getPrimaryVariant } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /* ── 08 Photographic · Catalog View ──
@@ -81,6 +78,9 @@ function ProductsContent() {
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
   const rating = searchParams.get("rating") || "";
+  const newArrival = searchParams.get("newArrival") === "true";
+  const bestSeller = searchParams.get("bestSeller") === "true";
+  const featured = searchParams.get("featured") === "true";
   const view = (searchParams.get("view") || "grid") as "grid" | "list";
 
   // UI state
@@ -110,9 +110,16 @@ function ProductsContent() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Sync searchInput from URL
+  // Sync searchInput from URL, but prevent it from overwriting ongoing typing.
+  // We track the last value we pushed to the URL to distinguish between
+  // external URL changes (like browser back button or header search)
+  // and our own debounced updates.
+  const lastDebouncedSearch = useRef(search);
   useEffect(() => {
-    setSearchInput(search);
+    if (search !== lastDebouncedSearch.current) {
+      setSearchInput(search);
+      lastDebouncedSearch.current = search;
+    }
   }, [search]);
 
   // Fetch categories
@@ -130,6 +137,7 @@ function ProductsContent() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       if (searchInput !== search) {
+        lastDebouncedSearch.current = searchInput;
         const params = new URLSearchParams(searchParams.toString());
         if (searchInput) params.set("search", searchInput);
         else params.delete("search");
@@ -154,8 +162,11 @@ function ProductsContent() {
       ...(minPrice && { minPrice: Number(minPrice) }),
       ...(maxPrice && { maxPrice: Number(maxPrice) }),
       ...(rating && { minRating: Number(rating) }),
+      ...(newArrival && { newArrival: true }),
+      ...(bestSeller && { bestSeller: true }),
+      ...(featured && { featured: true }),
     }),
-    [page, search, categorySlug, sort, minPrice, maxPrice, rating]
+    [page, search, categorySlug, sort, minPrice, maxPrice, rating, newArrival, bestSeller, featured]
   );
 
   const { data, isLoading, isError, error } = useQuery({
@@ -208,25 +219,28 @@ function ProductsContent() {
     setSearchInput("");
   };
 
-  const hasActiveFilters = !!(search || categorySlug || sort !== "newest" || minPrice || maxPrice || rating);
+  const hasActiveFilters = !!(search || categorySlug || sort !== "newest" || minPrice || maxPrice || rating || newArrival || bestSeller || featured);
 
   // Selected category names for chips
   const selectedCategorySlugs = categorySlug ? categorySlug.split(",") : [];
 
   // ─── Render ───
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 bg-white selection:bg-[var(--color-brand)]/10 selection:text-[var(--color-brand)]">
+    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 bg-paper text-ink relative overflow-hidden selection:bg-brand-500/20 selection:text-brand-900">
+      {/* Editorial Background Texture */}
+      <div className="absolute inset-0 bg-[radial-gradient(#05140806_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-500/5 blur-[120px] rounded-full pointer-events-none" />
       {/* ── Top annotation band ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold tracking-[0.2em] uppercase text-[var(--color-brand)] block mb-4">
-              Shop
+          <div className="relative z-10">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-600/10 border border-brand-600/20 text-brand-700 text-[10px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md">
+              <Sparkles size={12} className="text-brand-600" /> Catalog
             </span>
-            <h1 className="text-[clamp(1.5rem,4vw,2.5rem)] font-display font-bold text-stone-800 leading-tight">
-              Our Products
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-display font-black text-ink tracking-tighter leading-[0.9] [text-wrap:balance]">
+              Our <span className="font-serif italic font-medium text-gold-600">Products</span>
             </h1>
-            <p className="text-xs sm:text-sm text-stone-500 mt-2 max-w-xl">
+            <p className="text-base sm:text-lg text-ink-2 mt-4 max-w-xl font-medium">
               Discover our premium collection of authentic Jain snacks and namkeen.
             </p>
           </div>
@@ -236,23 +250,23 @@ function ProductsContent() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-xs text-stone-600 font-semibold shrink-0"
+              className="text-xs text-ink-2 font-semibold shrink-0"
             >
-              <span className="font-bold text-stone-900">{pagination?.total || products.length}</span> products
+              <span className="font-bold text-ink">{pagination?.total || products.length}</span> products
             </motion.p>
           )}
         </div>
 
         {/* ── Category Quick-Filter Bar ── */}
         {categories.length > 0 && (
-          <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none scroll-smooth">
+          <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none scroll-smooth relative z-10">
             <button
               onClick={() => updateParams({ category: undefined })}
               className={cn(
-                "px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap transition-ui border shrink-0 flex items-center gap-2",
+                "px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all duration-300 border shrink-0 flex items-center gap-2 focus-ring",
                 selectedCategorySlugs.length === 0
-                  ? "bg-brand-600 text-white border-brand-700 shadow-md shadow-emerald-900/20"
-                  : "bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200 hover:text-stone-900"
+                  ? "bg-brand-600 text-white border-brand-600"
+                  : "bg-paper-2 text-ink-2 border-ink-soft hover:border-ink hover:text-ink"
               )}
             >
               All Items
@@ -264,18 +278,18 @@ function ProductsContent() {
                   key={cat._id}
                   onClick={() => toggleCategory(cat.slug)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap transition-ui border shrink-0 flex items-center gap-2",
+                    "px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 border shrink-0 flex items-center gap-2 focus-ring",
                     isSelected
-                      ? "bg-brand-600 text-white border-brand-700 shadow-md shadow-emerald-900/20"
-                      : "bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200 hover:text-stone-900"
+                      ? "bg-brand-600 text-white border-brand-600 shadow-md"
+                      : "bg-paper-2 text-ink-2 border-ink-soft hover:border-ink hover:text-ink"
                   )}
                 >
                   {cat.name}
                   {cat.productCount > 0 && (
                     <span
                       className={cn(
-                        "text-xs px-2 py-0.2 rounded-full font-extrabold",
-                        isSelected ? "bg-white/20 text-white" : "bg-stone-200 text-stone-700"
+                        "text-[10px] px-2 py-0.5 rounded-full font-black",
+                        isSelected ? "bg-white/20 text-white" : "bg-brand-50 text-brand-700"
                       )}
                     >
                       {cat.productCount}
@@ -293,7 +307,7 @@ function ProductsContent() {
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
@@ -302,7 +316,7 @@ function ProductsContent() {
               placeholder='Search products…  ⌘K'
               aria-label="Search products"
               suppressHydrationWarning
-              className="w-full pl-10 pr-10 py-2 rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-[var(--color-brand)] focus:ring-0 focus:shadow-[0_0_0_2px_var(--color-brand)]/10 transition-ui text-sm text-stone-800 placeholder:text-stone-400"
+              className="w-full pl-10 pr-10 py-2 rounded-xl border border-rule bg-paper-2 focus:outline-none focus:border-transparent focus:ring-2 focus:ring-[var(--color-focus)] transition-ui text-sm text-ink placeholder:text-ink-3"
             />
             {searchInput && (
               <button
@@ -312,7 +326,7 @@ function ProductsContent() {
                   params.delete("search");
                   router.replace(`/products?${params.toString()}`, { scroll: false });
                 }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-stone-100 rounded-full transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-paper-3 rounded-full transition-colors"
                 aria-label="Clear search"
               >
                 <X size={13} />
@@ -326,10 +340,10 @@ function ProductsContent() {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
-                "hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-ui whitespace-nowrap",
+                "hidden lg:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-bold transition-all duration-300 whitespace-nowrap focus-ring",
                 showFilters
-                  ? "bg-[var(--color-brand)] border-[var(--color-brand)] text-white"
-                  : "bg-white border-stone-200 text-stone-600 hover:border-stone-300 hover:text-stone-800"
+                  ? "bg-brand-600 border-brand-600 text-white shadow-md shadow-brand-900/20"
+                  : "bg-paper-2 border-ink-soft text-ink-2 hover:border-ink hover:text-ink"
               )}
               aria-label="Toggle filters"
             >
@@ -343,7 +357,7 @@ function ProductsContent() {
             {/* Mobile filter trigger */}
             <button
               onClick={() => setShowMobileFilters(true)}
-              className="lg:hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-white border-stone-200 text-stone-600 hover:border-stone-300 text-sm font-medium transition-ui"
+              className="lg:hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-paper-2 border-rule text-ink-2 hover:border-brand-500 text-sm font-medium transition-ui"
               aria-label="Open filters"
             >
               <SlidersHorizontal size={15} />
@@ -358,10 +372,10 @@ function ProductsContent() {
               <button
                 onClick={() => setShowSortDropdown((p) => !p)}
                 className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-white text-sm font-medium transition-ui whitespace-nowrap",
+                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-full border bg-paper-2 text-sm font-bold transition-all duration-300 whitespace-nowrap focus-ring",
                   sort !== "newest"
-                    ? "border-[var(--color-brand)]/30 text-[var(--color-brand)]"
-                    : "border-stone-200 text-stone-600 hover:border-stone-300"
+                    ? "border-brand-600/30 text-brand-700 bg-brand-50"
+                    : "border-ink-soft text-ink-2 hover:border-ink hover:text-ink"
                 )}
                 aria-label="Sort products"
               >
@@ -384,7 +398,7 @@ function ProductsContent() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12 }}
-                      className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-stone-200 z-30 py-2 overflow-hidden"
+                      className="absolute right-0 mt-2 w-52 bg-paper-2 rounded-xl shadow-xl border border-rule z-30 py-2 overflow-hidden"
                     >
                       {SORT_OPTIONS.map((option) => (
                         <button
@@ -397,7 +411,7 @@ function ProductsContent() {
                             "w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between",
                             sort === option.value
                               ? "text-[var(--color-brand)] font-semibold bg-[var(--color-brand)]/[0.06]"
-                              : "text-stone-600 hover:bg-stone-50 hover:text-stone-800"
+                              : "text-ink-2 hover:bg-paper-3 hover:text-ink"
                           )}
                         >
                           {option.label}
@@ -415,12 +429,12 @@ function ProductsContent() {
             </div>
 
             {/* View toggle */}
-            <div className="hidden sm:flex rounded-xl border border-stone-200 overflow-hidden bg-white">
+            <div className="hidden sm:flex rounded-full border border-ink-soft overflow-hidden bg-paper-2 p-0.5">
               <button
                 onClick={() => updateParams({ view: "grid" })}
                 className={cn(
-                  "p-2 transition-colors",
-                  view === "grid" ? "bg-[var(--color-brand)] text-white" : "text-stone-500 hover:bg-stone-100"
+                  "p-2 rounded-full transition-all duration-300",
+                  view === "grid" ? "bg-ink text-paper shadow-md" : "text-ink-3 hover:text-ink hover:bg-ink-faint"
                 )}
                 aria-label="Grid view"
               >
@@ -429,8 +443,8 @@ function ProductsContent() {
               <button
                 onClick={() => updateParams({ view: "list" })}
                 className={cn(
-                  "p-2 transition-colors border-l border-stone-200",
-                  view === "list" ? "bg-[var(--color-brand)] text-white" : "text-stone-500 hover:bg-stone-100"
+                  "p-2 rounded-full transition-all duration-300",
+                  view === "list" ? "bg-ink text-paper shadow-md" : "text-ink-3 hover:text-ink hover:bg-ink-faint"
                 )}
                 aria-label="List view"
               >
@@ -450,7 +464,7 @@ function ProductsContent() {
       >
         <div className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-2 mb-6 pt-2">
-              <span className="text-xs font-bold text-stone-400 uppercase tracking-wider mr-2">Active:</span>
+              <span className="text-xs font-bold text-ink-3 uppercase tracking-wider mr-2">Active:</span>
 
               {selectedCategorySlugs.map((slug) => {
                 const cat = categories.find((c: any) => c.slug === slug);
@@ -472,11 +486,11 @@ function ProductsContent() {
               })}
 
               {search && (
-                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-semibold">
+                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-gold-500/10 text-gold-700 border border-gold-500/25 rounded-full text-xs font-semibold">
                   &ldquo;{search}&rdquo;
                   <button
                     onClick={() => { setSearchInput(""); updateParams({ search: undefined }); }}
-                    className="hover:bg-amber-100 rounded-full p-0 transition-colors"
+                    className="hover:bg-gold-500/20 rounded-full p-0 transition-colors"
                     aria-label="Remove search"
                   >
                     <X size={10} />
@@ -485,11 +499,11 @@ function ProductsContent() {
               )}
 
               {minPrice && (
-                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
+                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-gold-500/10 text-gold-700 border border-gold-500/25 rounded-full text-xs font-semibold">
                   ₹ {minPrice}{maxPrice ? ` – ₹${maxPrice}` : "+"}
                   <button
                     onClick={() => updateParams({ minPrice: undefined, maxPrice: undefined })}
-                    className="hover:bg-emerald-100 rounded-full p-0 transition-colors"
+                    className="hover:bg-gold-500/20 rounded-full p-0 transition-colors"
                     aria-label="Remove price filter"
                   >
                     <X size={10} />
@@ -498,11 +512,11 @@ function ProductsContent() {
               )}
 
               {rating && (
-                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-semibold">
+                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-gold-500/10 text-gold-700 border border-gold-500/25 rounded-full text-xs font-semibold">
                   ★ {rating}+
                   <button
                     onClick={() => updateParams({ rating: undefined })}
-                    className="hover:bg-amber-100 rounded-full p-0 transition-colors"
+                    className="hover:bg-gold-500/20 rounded-full p-0 transition-colors"
                     aria-label="Remove rating filter"
                   >
                     <X size={10} />
@@ -511,11 +525,11 @@ function ProductsContent() {
               )}
 
               {sort !== "newest" && (
-                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-stone-100 text-stone-600 border border-stone-200 rounded-full text-xs font-semibold">
+                <span className="inline-flex items-center gap-2 pl-2 pr-2 py-2 bg-paper-3 text-ink-2 border border-rule rounded-full text-xs font-semibold">
                   {SORT_OPTIONS.find((o) => o.value === sort)?.label}
                   <button
                     onClick={() => updateParams({ sort: "newest" })}
-                    className="hover:bg-stone-200 rounded-full p-0 transition-colors"
+                    className="hover:bg-paper-3 rounded-full p-0 transition-colors"
                     aria-label="Reset sort"
                   >
                     <X size={10} />
@@ -525,7 +539,7 @@ function ProductsContent() {
 
               <button
                 onClick={clearFilters}
-                className="text-xs text-rose-500 hover:text-rose-600 font-semibold transition-colors ml-2 flex items-center gap-2"
+                className="text-xs text-ink-3 hover:text-ink font-semibold transition-colors ml-2 flex items-center gap-2"
               >
                 <RotateCcw size={11} />
                 Clear
@@ -538,7 +552,7 @@ function ProductsContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-8">
           {/* ─── Desktop Filter Sidebar ─── */}
-          <div className="hidden lg:block w-[240px] flex-shrink-0 overflow-hidden">
+          <div className="hidden lg:block overflow-hidden">
             <motion.div
               initial={false}
               animate={{
@@ -547,14 +561,14 @@ function ProductsContent() {
                 width: showFilters ? 240 : 0,
               }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="w-[240px] overflow-hidden"
+              className="w-[240px] overflow-hidden shrink-0"
             >
               <div className="pr-6 space-y-4">
                 {/* ── Categories ── */}
                 <div>
                   <button
                     onClick={() => setExpandedSections((p) => ({ ...p, categories: !p.categories }))}
-                    className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-stone-400 mb-2"
+                    className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-ink-3 mb-2"
                   >
                     Categories
                     <ChevronDown
@@ -571,16 +585,16 @@ function ProductsContent() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="space-y-0 pt-2">                              <label className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-stone-50 text-sm">
+                        <div className="space-y-0 pt-2">                              <label className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-paper-3 text-sm">
                                 <input
                                   type="checkbox"
                                   checked={selectedCategorySlugs.length === 0}
                                   onChange={() => updateParams({ category: undefined })}
                                   suppressHydrationWarning
-                                  className="w-4 h-4 rounded border-stone-300 focus:ring-[var(--color-brand)]/30 focus:ring-offset-0"
+                                  className="w-4 h-4 rounded border-rule focus:ring-[var(--color-brand)]/30 focus:ring-offset-0"
                                   style={{ accentColor: "var(--color-brand)" }}
                                 />
-                                <span className={cn(selectedCategorySlugs.length === 0 ? "font-semibold text-stone-800" : "text-stone-500")}>
+                                <span className={cn(selectedCategorySlugs.length === 0 ? "font-semibold text-ink" : "text-ink-3")}>
                                   All Categories
                                 </span>
                               </label>
@@ -590,21 +604,21 @@ function ProductsContent() {
                             return (
                               <label
                                 key={cat._id}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-stone-50 text-sm"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-paper-3 text-sm"
                               >
                                 <input
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => toggleCategory(cat.slug)}
                                   suppressHydrationWarning
-                                  className="w-4 h-4 rounded border-stone-300 focus:ring-[var(--color-brand)]/30 focus:ring-offset-0"
+                                  className="w-4 h-4 rounded border-rule focus:ring-[var(--color-brand)]/30 focus:ring-offset-0"
                                 style={{ accentColor: "var(--color-brand)" }}
                                 />
                                 <span className="flex items-center justify-between w-full">
-                                  <span className={cn(isChecked ? "font-semibold text-stone-800" : "text-stone-600")}>
+                                  <span className={cn(isChecked ? "font-semibold text-ink" : "text-ink-2")}>
                                     {cat.name}
                                   </span>
-                                  <span className="text-xs text-stone-400 font-medium">
+                                  <span className="text-xs text-ink-3 font-medium">
                                     {cat.productCount || 0}
                                   </span>
                                 </span>
@@ -617,13 +631,13 @@ function ProductsContent() {
                   </AnimatePresence>
                 </div>
 
-                <div className="h-px bg-stone-100" />
+                <div className="h-px bg-paper-3" />
 
                 {/* ── Price Range ── */}
                 <div>
                   <button
                     onClick={() => setExpandedSections((p) => ({ ...p, price: !p.price }))}
-                    className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-stone-400 mb-2"
+                    className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-ink-3 mb-2"
                   >
                     Price Range
                     <ChevronDown
@@ -652,16 +666,16 @@ function ProductsContent() {
                                 className={cn(
                                   "w-full text-left px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
                                   isActive
-                                    ? "bg-emerald-50 text-emerald-700 font-semibold"
-                                    : "text-stone-600 hover:bg-stone-50"
+                                    ? "bg-gold-500/10 text-gold-700 font-semibold"
+                                    : "text-ink-2 hover:bg-paper-3"
                                 )}
                               >
                                 <span
                                   className={cn(
                                     "w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0",
                                     isActive
-                                      ? "bg-emerald-600 border-emerald-600"
-                                      : "border-stone-300 bg-white"
+                                      ? "bg-brand-600 border-brand-600"
+                                      : "border-rule bg-paper-2"
                                   )}
                                 >
                                   {isActive && (
@@ -680,13 +694,13 @@ function ProductsContent() {
                   </AnimatePresence>
                 </div>
 
-                <div className="h-px bg-stone-100" />
+                <div className="h-px bg-paper-3" />
 
                 {/* ── Rating ── */}
                 <div>
                   <button
                     onClick={() => setExpandedSections((p) => ({ ...p, rating: !p.rating }))}
-                    className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-stone-400 mb-2"
+                    className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-ink-3 mb-2"
                   >
                     Minimum Rating
                     <ChevronDown
@@ -713,8 +727,8 @@ function ProductsContent() {
                                 className={cn(
                                   "w-full text-left px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
                                   isActive
-                                    ? "bg-amber-50 text-amber-700 font-semibold"
-                                    : "text-stone-600 hover:bg-stone-50"
+                                    ? "bg-gold-500/10 text-gold-700 font-semibold"
+                                    : "text-ink-2 hover:bg-paper-3"
                                 )}
                               >
                                 <span className="flex items-center gap-0">
@@ -723,12 +737,12 @@ function ProductsContent() {
                                       key={i}
                                       size={13}
                                       className={cn(
-                                        i < r ? "fill-amber-400 text-amber-400" : "text-stone-200"
+                                        i < r ? "fill-gold-500 text-gold-500" : "text-rule"
                                       )}
                                     />
                                   ))}
                                 </span>
-                                <span className="text-xs text-stone-400">& up</span>
+                                <span className="text-xs text-ink-3">& up</span>
                               </button>
                             );
                           })}
@@ -742,7 +756,7 @@ function ProductsContent() {
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="w-full py-2 rounded-lg border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors mt-2"
+                    className="w-full py-2 rounded-lg border border-rule text-sm font-medium text-ink-2 hover:bg-paper-3 transition-colors mt-2"
                   >
                     Clear All Filters
                   </button>
@@ -765,7 +779,7 @@ function ProductsContent() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                  className="absolute inset-0 bg-ink-2/40 backdrop-blur-sm"
                   onClick={() => setShowMobileFilters(false)}
                 />
 
@@ -775,17 +789,17 @@ function ProductsContent() {
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                  className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl z-10 flex flex-col"
+                  className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-paper-2 shadow-2xl z-10 flex flex-col"
                 >
                   {/* Sticky header */}
-                  <div className="flex items-center justify-between px-4 py-4 border-b border-stone-100 shrink-0">
+                  <div className="flex items-center justify-between px-4 py-4 border-b border-rule shrink-0">
                     <div>
-                      <h3 className="text-sm font-bold text-stone-800">Filters</h3>
-                      <p className="text-xs text-stone-400">Refine your search</p>
+                      <h3 className="text-sm font-bold text-ink">Filters</h3>
+                      <p className="text-xs text-ink-3">Refine your search</p>
                     </div>
                     <button
                       onClick={() => setShowMobileFilters(false)}
-                      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors"
+                      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-paper-3 transition-colors"
                       aria-label="Close filters"
                     >
                       <X size={16} />
@@ -796,48 +810,48 @@ function ProductsContent() {
                   <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
                     {/* Categories */}
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">Categories</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-ink-3 mb-4">Categories</h4>
                       <div className="space-y-2">
-                        <label className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-stone-50 text-sm">
+                        <label className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-paper-3 text-sm">
                           <input
                             type="checkbox"
                             checked={selectedCategorySlugs.length === 0}
                             onChange={() => updateParams({ category: undefined })}
                             suppressHydrationWarning
-                            className="w-4 h-4 rounded border-stone-300 focus:ring-[var(--color-brand)]/30 focus:ring-offset-0"
+                            className="w-4 h-4 rounded border-rule focus:ring-[var(--color-brand)]/30 focus:ring-offset-0"
                             style={{ accentColor: "var(--color-brand)" }}
                           />
-                          <span className={cn(selectedCategorySlugs.length === 0 ? "font-semibold" : "text-stone-500")}>All</span>
+                          <span className={cn(selectedCategorySlugs.length === 0 ? "font-semibold" : "text-ink-3")}>All</span>
                         </label>
                         {categories.map((cat: any) => (
                           <label
                             key={cat._id}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-stone-50 text-sm"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-paper-3 text-sm"
                           >
                             <input
                               type="checkbox"
                               checked={selectedCategorySlugs.includes(cat.slug)}
                               onChange={() => toggleCategory(cat.slug)}
                               suppressHydrationWarning
-                              className="w-4 h-4 rounded border-stone-300 focus:ring-[var(--color-brand)]/30"
+                              className="w-4 h-4 rounded border-rule focus:ring-[var(--color-brand)]/30"
                               style={{ accentColor: "var(--color-brand)" }}
                             />
                             <span className="flex items-center justify-between w-full">
-                              <span className={cn(selectedCategorySlugs.includes(cat.slug) ? "font-semibold text-stone-800" : "text-stone-600")}>
+                              <span className={cn(selectedCategorySlugs.includes(cat.slug) ? "font-semibold text-ink" : "text-ink-2")}>
                                 {cat.name}
                               </span>
-                              <span className="text-xs text-stone-400">{cat.productCount || 0}</span>
+                              <span className="text-xs text-ink-3">{cat.productCount || 0}</span>
                             </span>
                           </label>
                         ))}
                       </div>
                     </div>
 
-                    <div className="h-px bg-stone-100" />
+                    <div className="h-px bg-paper-3" />
 
                     {/* Price Range */}
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">Price Range</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-ink-3 mb-4">Price Range</h4>
                       <div className="space-y-2">
                         {PRICE_RANGES.map((range) => (
                           <button
@@ -846,16 +860,16 @@ function ProductsContent() {
                             className={cn(
                               "w-full text-left px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
                               Number(minPrice) === range.min && (range.max ? Number(maxPrice) === range.max : !maxPrice)
-                                ? "bg-emerald-50 text-emerald-700 font-semibold"
-                                : "text-stone-600 hover:bg-stone-50"
+                                ? "bg-gold-500/10 text-gold-700 font-semibold"
+                                : "text-ink-2 hover:bg-paper-3"
                             )}
                           >
                             <span
                               className={cn(
                                 "w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0",
                                 Number(minPrice) === range.min && (range.max ? Number(maxPrice) === range.max : !maxPrice)
-                                  ? "bg-emerald-600 border-emerald-600"
-                                  : "border-stone-300 bg-white"
+                                  ? "bg-brand-600 border-brand-600"
+                                  : "border-rule bg-paper-2"
                               )}
                             >
                               {(Number(minPrice) === range.min && (range.max ? Number(maxPrice) === range.max : !maxPrice)) && (
@@ -870,11 +884,11 @@ function ProductsContent() {
                       </div>
                     </div>
 
-                    <div className="h-px bg-stone-100" />
+                    <div className="h-px bg-paper-3" />
 
                     {/* Rating */}
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">Minimum Rating</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-ink-3 mb-4">Minimum Rating</h4>
                       <div className="space-y-2">
                         {RATING_OPTIONS.map((r) => (
                           <button
@@ -883,16 +897,16 @@ function ProductsContent() {
                             className={cn(
                               "w-full text-left px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
                               Number(rating) === r
-                                ? "bg-amber-50 text-amber-700 font-semibold"
-                                : "text-stone-600 hover:bg-stone-50"
+                                ? "bg-gold-500/10 text-gold-700 font-semibold"
+                                : "text-ink-2 hover:bg-paper-3"
                             )}
                           >
                             <span className="flex items-center gap-0">
                               {Array.from({ length: 5 }).map((_, i) => (
-                                <Star key={i} size={13} className={cn(i < r ? "fill-amber-400 text-amber-400" : "text-stone-200")} />
+                                <Star key={i} size={13} className={cn(i < r ? "fill-gold-500 text-gold-500" : "text-rule")} />
                               ))}
                             </span>
-                            <span className="text-xs text-stone-400">& up</span>
+                            <span className="text-xs text-ink-3">& up</span>
                           </button>
                         ))}
                       </div>
@@ -900,10 +914,10 @@ function ProductsContent() {
                   </div>
 
                   {/* Sticky footer with apply */}
-                  <div className="px-4 py-4 border-t border-stone-100 shrink-0 flex gap-2">
+                  <div className="px-4 py-4 border-t border-rule shrink-0 flex gap-2">
                     <button
                       onClick={clearFilters}
-                      className="flex-1 py-2 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+                      className="flex-1 py-2 rounded-xl border border-rule text-sm font-medium text-ink-2 hover:bg-paper-3 transition-colors"
                     >
                       Clear
                     </button>
@@ -925,8 +939,8 @@ function ProductsContent() {
             {isLoading && (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
-                    <Skeleton className="aspect-[4/3] sm:aspect-square rounded-none" />
+                  <div key={i} className="bg-paper-2 rounded-2xl border border-ink-soft overflow-hidden">
+                    <Skeleton className="aspect-[4/3] sm:aspect-square rounded-none bg-ink-faint" />
                     <div className="p-4 space-y-2">
                       <Skeleton className="h-2 w-1/3 rounded" />
                       <Skeleton className="h-4 w-2/3 rounded" />
@@ -948,13 +962,13 @@ function ProductsContent() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center ring-1 ring-red-100">
                   <Package size={28} className="text-red-400" />
                 </div>
-                <h3 className="text-lg font-bold text-stone-800 mb-2">Failed to load products</h3>
-                <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto">
+                <h3 className="text-lg font-bold text-ink mb-2">Failed to load products</h3>
+                <p className="text-sm text-ink-3 mb-6 max-w-sm mx-auto">
                   Something went wrong on our end. Try reloading the page.
                 </p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-bold hover:bg-stone-800 transition-colors inline-flex items-center gap-2"
+                  className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors inline-flex items-center gap-2"
                 >
                   <RotateCcw size={14} />
                   Reload
@@ -969,30 +983,30 @@ function ProductsContent() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-24"
               >
-                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-stone-50 flex items-center justify-center ring-1 ring-stone-100">
-                  <Package size={36} className="text-stone-300" />
+                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-paper-2 flex items-center justify-center ring-1 ring-ink-soft">
+                  <Package size={36} className="text-ink-3" />
                 </div>
-                <h3 className="text-xl font-bold text-stone-800 mb-2">No products found</h3>
-                <p className="text-sm text-stone-500 mb-8 max-w-sm mx-auto leading-relaxed">
+                <h3 className="text-xl font-display font-bold text-ink mb-2">No products found</h3>
+                <p className="text-sm text-ink-2 mb-8 max-w-sm mx-auto leading-relaxed">
                   We couldn&apos;t find anything matching your filters.
                   Try a different category or price range.
                 </p>
                 <div className="flex flex-col items-center gap-4">
                   <button
                     onClick={clearFilters}
-                    className="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-bold hover:bg-stone-800 transition-colors inline-flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors inline-flex items-center gap-2"
                   >
                     <RotateCcw size={14} />
                     Clear Filters
                   </button>
                   {categories.length > 0 && (
                     <div className="flex flex-wrap justify-center gap-2 mt-2">
-                      <span className="text-xs text-stone-400 font-medium">Try:</span>
+                      <span className="text-xs text-ink-3 font-medium">Try:</span>
                       {categories.slice(0, 4).map((cat: any) => (
                         <Link
                           key={cat._id}
                           href={`/products?category=${cat.slug}`}
-                          className="text-xs px-4 py-2 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors font-medium"
+                          className="text-xs px-4 py-2 rounded-full bg-paper-3 text-ink-2 hover:bg-paper-3 transition-colors font-medium"
                         >
                           {cat.name}
                         </Link>
@@ -1015,13 +1029,13 @@ function ProductsContent() {
                 >
                   {/* Results bar */}
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-stone-500">
-                      Page <span className="font-bold text-stone-800">{page}</span>
+                    <p className="text-sm text-ink-3">
+                      Page <span className="font-bold text-ink">{page}</span>
                       {" · "}
-                      <span className="font-bold text-stone-800">{pagination?.total || products.length}</span> products
+                      <span className="font-bold text-ink">{pagination?.total || products.length}</span> products
                     </p>
                     {pagination && pagination.totalPages > 1 && (
-                      <p className="text-xs text-stone-400">
+                      <p className="text-xs text-ink-3">
                         {pagination.totalPages} page{pagination.totalPages > 1 ? "s" : ""}
                       </p>
                     )}
@@ -1059,7 +1073,7 @@ function ProductsContent() {
                           router.push(`/products?${p.toString()}`);
                         }}
                         disabled={page <= 1}
-                        className="w-10 h-10 rounded-xl border border-stone-200 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-stone-50 enabled:hover:border-stone-300"
+                        className="w-10 h-10 rounded-xl border border-ink-soft bg-paper-2 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-ink-faint enabled:hover:border-ink"
                         aria-label="Previous page"
                       >
                         <ChevronLeft size={16} />
@@ -1067,7 +1081,7 @@ function ProductsContent() {
 
                       {generatePageNumbers(page, pagination.totalPages).map((p, i) =>
                         p === "..." ? (
-                          <span key={`e${i}`} className="px-2 text-stone-400 text-sm">…</span>
+                          <span key={`e${i}`} className="px-2 text-ink-3 font-bold text-sm">…</span>
                         ) : (
                           <button
                             key={p}
@@ -1077,10 +1091,10 @@ function ProductsContent() {
                               router.push(`/products?${ps.toString()}`);
                             }}
                             className={cn(
-                              "min-w-[36px] h-10 rounded-xl text-sm font-medium transition-ui border",
+                              "min-w-[36px] h-10 rounded-xl text-sm font-black transition-all border",
                               page === p
-                                ? "bg-[var(--color-brand)] text-white border-[var(--color-brand)] shadow-sm"
-                                : "border-stone-200 text-stone-600 hover:bg-stone-50 hover:border-stone-300"
+                                ? "bg-brand-600 text-white border-brand-600 shadow-md"
+                                : "border-ink-soft bg-paper-2 text-ink hover:bg-ink-faint hover:border-ink"
                             )}
                             aria-label={`Page ${p}`}
                             aria-current={page === p ? "page" : undefined}
@@ -1097,7 +1111,7 @@ function ProductsContent() {
                           router.push(`/products?${p.toString()}`);
                         }}
                         disabled={page >= (pagination?.totalPages || 1)}
-                        className="w-10 h-10 rounded-xl border border-stone-200 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-stone-50 enabled:hover:border-stone-300"
+                        className="w-10 h-10 rounded-xl border border-ink-soft bg-paper-2 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-ink-faint enabled:hover:border-ink"
                         aria-label="Next page"
                       >
                         <ChevronRight size={16} />
@@ -1118,7 +1132,7 @@ function ProductsContent() {
 export default function ProductsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen pt-28 pb-16 bg-white">
+      <div className="min-h-dvh pt-28 pb-16 bg-paper-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
             <Skeleton className="h-4 w-12 rounded mb-4" />
@@ -1128,7 +1142,7 @@ export default function ProductsPage() {
           <Skeleton className="h-12 w-full rounded-xl mb-6" />
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
+              <div key={i} className="bg-paper-2 rounded-2xl border border-rule overflow-hidden">
                 <Skeleton className="aspect-[4/3] sm:aspect-square rounded-none" />
                 <div className="p-4 space-y-2">
                   <Skeleton className="h-2 w-1/3 rounded" />
@@ -1152,7 +1166,7 @@ export default function ProductsPage() {
 function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">{title}</h4>
+      <h4 className="text-xs font-bold uppercase tracking-wider text-ink-3 mb-4">{title}</h4>
       {children}
     </div>
   );
@@ -1160,7 +1174,7 @@ function FilterSection({ title, children }: { title: string; children: React.Rea
 
 /* ─── Enhanced Product List Item ─── */
 function ProductListItem({ product, index = 0 }: { product: any; index?: number }) {
-  const primaryVariant = product.variants?.[0];
+  const primaryVariant = getPrimaryVariant(product.variants);
   const categoryName = typeof product.category === "object" ? product.category?.name : "";
   const discount = primaryVariant
     ? calculateDiscount(primaryVariant.mrp, primaryVariant.sellingPrice)
@@ -1173,10 +1187,10 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="flex gap-4 p-4 rounded-2xl border border-stone-100 hover:shadow-md hover:-translate-y-0.5 transition-ui duration-200 bg-white group"
+      className="flex flex-col sm:flex-row gap-6 p-4 sm:p-6 rounded-[2rem] border border-ink-soft hover:border-ink/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 bg-paper-2 group"
     >
       {/* Image */}
-      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-gradient-to-br from-stone-50 to-amber-50/30 overflow-hidden flex-shrink-0 relative">
+      <div className="w-full sm:w-48 h-48 sm:h-48 rounded-[1.5rem] bg-paper-3 overflow-hidden flex-shrink-0 relative">
         {product.images?.[0] ? (
           <Image
             src={getImageUrl(product.images[0])}
@@ -1187,20 +1201,20 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package size={32} className="text-stone-300" />
+            <Package size={32} className="text-ink-3" />
           </div>
         )}
 
-        {/* Badges on image */}
-        <div className="absolute top-2 left-2 flex flex-col gap-2">
+        {/* Badges on image — editorial: gold OFF, quiet tracked caps */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
           {product.isNewArrival && (
-            <span className="text-xs font-bold px-2 py-0 rounded-full bg-emerald-500/80 text-white backdrop-blur-sm flex items-center gap-2">
-              <Sparkles size={8} /> New
+            <span className="w-fit text-[10px] font-extrabold uppercase tracking-[0.16em] px-2.5 py-1 rounded-lg bg-paper-2/90 text-ink-3 border border-rule backdrop-blur-md">
+              New
             </span>
           )}
           {discount > 0 && (
-            <span className="text-xs font-bold px-2 py-0 rounded-full bg-rose-500/80 text-white backdrop-blur-sm flex items-center gap-2">
-              <Percent size={8} /> {discount}%
+            <span className="w-fit text-[10px] font-extrabold uppercase tracking-[0.16em] px-2.5 py-1 rounded-lg bg-gold-500 text-brand-950 border border-gold-400 backdrop-blur-md">
+              {discount}% Off
             </span>
           )}
         </div>
@@ -1209,16 +1223,17 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
       {/* Content */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         {categoryName && (
-          <p className="text-xs uppercase tracking-[0.15em] text-amber-600 font-bold mb-0">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-brand-600 font-black mb-2">
             {categoryName}
           </p>
         )}
-        <h3 className="text-sm sm:text-base font-bold text-stone-800 group-hover:text-[var(--color-brand)] transition-colors line-clamp-2">
+        <h3 className="text-lg sm:text-xl font-display font-bold text-ink group-hover:text-brand-600 transition-colors line-clamp-2 leading-tight">
           {product.name}
         </h3>
 
-        {product.shortDescription && (
-          <p className="text-xs sm:text-sm text-stone-500 line-clamp-2 mt-0">
+        {product.shortDescription &&
+          product.shortDescription.trim().toLowerCase() !== product.name.trim().toLowerCase() && (
+          <p className="text-xs sm:text-sm text-ink-3 line-clamp-2 mt-0">
             {product.shortDescription}
           </p>
         )}
@@ -1231,29 +1246,29 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
                 <Star
                   key={i}
                   size={11}
-                  className={filled ? "fill-amber-400 text-amber-400" : "text-stone-200"}
+                  className={filled ? "fill-gold-500 text-gold-500" : "text-rule"}
                 />
               ))}
             </div>
-            <span className="text-xs text-stone-400 font-medium tabular-nums">
+            <span className="text-xs text-ink-3 font-medium tabular-nums">
               {product.averageRating?.toFixed(1)} ({product.reviewCount})
             </span>
           </div>
         )}
 
         {/* Pricing row */}
-        <div className="flex items-center gap-4 mt-2">
+        <div className="flex items-center gap-4 mt-auto pt-4">
           {primaryVariant && (
             <>
-              <span className="text-base sm:text-lg font-black text-stone-800 tabular-nums">
+              <span className="text-xl sm:text-2xl font-black text-ink tabular-nums">
                 {formatPrice(primaryVariant.sellingPrice)}
               </span>
               {primaryVariant.mrp > primaryVariant.sellingPrice && (
-                <span className="text-xs sm:text-sm text-stone-400 line-through font-medium tabular-nums">
+                <span className="text-sm sm:text-base text-ink-3 line-through font-semibold tabular-nums">
                   {formatPrice(primaryVariant.mrp)}
                 </span>
               )}
-              <span className="text-xs text-stone-400 font-medium bg-stone-100 px-2 py-0 rounded-full tabular-nums">
+              <span className="text-xs text-ink-2 font-black uppercase tracking-widest bg-ink/5 border border-ink/10 px-2.5 py-1 rounded-md tabular-nums ml-auto">
                 {primaryVariant.weightValue}{primaryVariant.weightUnit}
               </span>
             </>
@@ -1264,7 +1279,7 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
       {/* Actions */}
       {primaryVariant && primaryVariant.stock > 0 && (
         <div className="flex items-center">
-          <span className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-100 text-stone-500 text-xs font-medium group-hover:bg-[var(--color-brand)] group-hover:text-white transition-colors">
+          <span className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-paper-3 text-ink-3 text-xs font-medium group-hover:bg-[var(--color-brand)] group-hover:text-white transition-colors">
             <ShoppingBag size={13} />
             View
           </span>

@@ -72,10 +72,19 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account deactivated")
         
         user_serialized = serialize_doc(user)
-        user_serialized.pop("password", None)
-        return user_serialized
+        if isinstance(user_serialized, dict):
+            user_serialized.pop("password", None)
+            return user_serialized
+        return {}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+    except HTTPException:
+        # HTTPException is an Exception, so without this the generic handler
+        # below rewrote every specific reason raised inside this try ("User not
+        # found", "Account deactivated") into a misleading "token invalid" —
+        # leaving a deactivated user staring at an error that suggests logging
+        # in again will help, when only an admin can restore their account.
+        raise
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized, token invalid")
 
@@ -92,8 +101,10 @@ async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] 
         if not user or not user.get("isActive", True):
             return None
         user_serialized = serialize_doc(user)
-        user_serialized.pop("password", None)
-        return user_serialized
+        if isinstance(user_serialized, dict):
+            user_serialized.pop("password", None)
+            return user_serialized
+        return None
     except Exception:
         return None
 

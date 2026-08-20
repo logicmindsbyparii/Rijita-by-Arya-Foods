@@ -44,55 +44,53 @@ export default function EditorialStory({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
-          {/* Left Column: Heritage Showcase Card & Image */}
-          <div className="lg:col-span-6 flex justify-center">
-            <div className="w-full max-w-lg bg-white border border-ink-soft rounded-2xl sm:rounded-3xl shadow-[0_32px_80px_-32px_rgba(26,20,10,0.25)] overflow-hidden">
-              <div className="p-4 sm:p-6">
-                <div className="relative aspect-[4/3] w-full rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-6 bg-paper-2 border border-ink-faint">
-                  {imageUrl ? (
-                    <Image
-                      src={getImageUrl(imageUrl)}
-                      alt="Heritage Namkeen Crafting"
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  ) : (
-                    <Image
-                      src={NAMKEEN_IMAGES.bhujiaShop}
-                      alt="Traditional halwai shop selling Bikaneri bhujia"
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      className="object-cover"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-transparent to-transparent" />
+          {/* Left Column: Heritage Showcase — editorial split layout instead of card-within-card */}
+          <div className="lg:col-span-6 space-y-5">
+            {/* Main heritage image — full bleed, no card wrapper */}
+            <div className="relative aspect-[16/10] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-paper-2 border border-ink-faint shadow-[0_32px_80px_-20px_rgba(26,20,10,0.2)]">
+              {imageUrl ? (
+                <Image
+                  src={getImageUrl(imageUrl)}
+                  alt="Heritage Namkeen Crafting"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              ) : (
+                <Image
+                  src={NAMKEEN_IMAGES.bhujiaShop}
+                  alt="Traditional halwai shop selling Bikaneri bhujia"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 via-transparent to-transparent" />
 
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white z-10 gap-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-700/90 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider">
-                      <ShieldCheck size={13} />
-                      <span>Purity First</span>
-                    </div>
-                    <span className="text-xs text-ink font-bold bg-white/90 px-3 py-1.5 rounded-full backdrop-blur-md">
-                      Arya Foods Heritage
-                    </span>
-                  </div>
+              {/* Floating label on the image */}
+              <div className="absolute bottom-4 left-4 z-10">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-700/90 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider">
+                  <ShieldCheck size={13} />
+                  <span>Purity First</span>
                 </div>
-
-                {/* Purity Facts */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-paper-2 border border-ink-faint">
-                  {PURITY_FACTS.map((fact) => (
-                    <div key={fact.label}>
-                      <span className="text-xl sm:text-3xl font-display font-extrabold text-brand-800 block">{fact.value}</span>
-                      <span className="text-xs text-ink-3 font-semibold uppercase tracking-wider">{fact.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="flex items-center gap-2 text-xs text-ink-3 font-semibold mt-3 sm:mt-4">
-                  <BadgeCheck size={13} className="text-brand-600 shrink-0" />
-                  <span>Every batch verified before it leaves our kitchen.</span>
-                </p>
               </div>
+            </div>
+
+            {/* Purity facts — separate strip below the image, not nested in a card */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {PURITY_FACTS.map((fact) => (
+                <div key={fact.label} className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-ink-faint hover:border-brand-300 transition-colors">
+                  <span className="text-2xl sm:text-4xl font-display font-extrabold text-brand-800 block leading-none mb-1">{fact.value}</span>
+                  <span className="text-[10px] sm:text-xs text-ink-3 font-bold uppercase tracking-[0.1em]">{fact.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2.5 text-xs text-ink-3 font-semibold">
+              <div className="w-6 h-6 rounded-lg bg-brand-50 border border-brand-200/50 flex items-center justify-center">
+                <BadgeCheck size={13} className="text-brand-600" />
+              </div>
+              <span>Every batch verified before it leaves our kitchen.</span>
             </div>
           </div>
 

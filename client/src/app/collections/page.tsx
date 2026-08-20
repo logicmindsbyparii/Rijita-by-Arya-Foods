@@ -36,7 +36,7 @@ export default function CollectionsPage() {
   const collections: Collection[] = data?.data?.collections || data?.data || [];
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -82,7 +82,7 @@ export default function CollectionsPage() {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
+              className="px-6 py-2 bg-brand-600 text-white rounded-xl font-medium hover:bg-brand-700 transition-colors"
             >
               Try Again
             </button>

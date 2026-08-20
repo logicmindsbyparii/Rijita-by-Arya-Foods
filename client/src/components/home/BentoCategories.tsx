@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Leaf, ShieldCheck, Flame } from "lucide-react";
+import { useRef, useState, useCallback } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+  useMotionTemplate,
+} from "framer-motion";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { getImageUrl, handleImageError } from "@/lib/utils";
 import { getCategoryFallbackImage } from "@/lib/namkeen-images";
 
@@ -14,31 +21,134 @@ interface Category {
   slug: string;
   image?: string;
   productCount?: number;
-  description?: string;
 }
 
-export default function BentoCategories({ categories = [] }: { categories: Category[] }) {
-  if (!categories || categories.length === 0) return null;
-  return <BentoCategoriesContent categories={categories} />;
+/* ── Magnetic Cursor Glow ──────────────────────────────────────── */
+function useMagneticGlow() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const glowX = useSpring(mouseX, { stiffness: 150, damping: 15, mass: 0.1 });
+  const glowY = useSpring(mouseY, { stiffness: 150, damping: 15, mass: 0.1 });
+  const background = useMotionTemplate`radial-gradient(600px circle at ${glowX}px ${glowY}px, rgba(212,165,69,0.12), transparent 40%)`;
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      mouseX.set(e.clientX - rect.left);
+      mouseY.set(e.clientY - rect.top);
+    },
+    [mouseX, mouseY]
+  );
+
+  return { background, handleMouseMove };
+}
+
+/* ── Floating Particles ────────────────────────────────────────── */
+function FloatingParticles() {
+  const particles = [
+    { x: "10%", y: "20%", size: 3, delay: 0, duration: 18 },
+    { x: "25%", y: "70%", size: 2, delay: 2, duration: 22 },
+    { x: "45%", y: "15%", size: 4, delay: 4, duration: 16 },
+    { x: "65%", y: "60%", size: 2.5, delay: 1, duration: 20 },
+    { x: "80%", y: "35%", size: 3, delay: 3, duration: 19 },
+    { x: "15%", y: "85%", size: 2, delay: 5, duration: 21 },
+    { x: "55%", y: "45%", size: 3.5, delay: 2.5, duration: 17 },
+    { x: "90%", y: "75%", size: 2, delay: 1.5, duration: 23 },
+  ];
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full bg-gold-400/20"
+          style={{
+            left: p.x,
+            top: p.y,
+            width: p.size,
+            height: p.size,
+          }}
+          animate={{
+            y: [0, -30, 0, 20, 0],
+            x: [0, 15, -10, 5, 0],
+            opacity: [0, 0.6, 0.3, 0.7, 0],
+            scale: [0.8, 1.2, 0.9, 1.1, 0.8],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Spotlight Border Effect ───────────────────────────────────── */
+function SpotlightBorder() {
+  const mouseX = useMotionValue(-400);
+  const mouseY = useMotionValue(-400);
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      mouseX.set(e.clientX - rect.left);
+      mouseY.set(e.clientY - rect.top);
+    },
+    [mouseX, mouseY]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    mouseX.set(-400);
+    mouseY.set(-400);
+  }, [mouseX, mouseY]);
+
+  const background = useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(212,165,69,0.3), transparent 40%)`;
+
+  return {
+    spotlightBackground: background,
+    spotlightHandlers: { onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave },
+  };
+}
+
+export default function BentoCategories({
+  categories = [],
+}: {
+  categories: Category[];
+}) {
+  const active = (categories || []).filter(
+    (c) => (c.productCount ?? 0) > 0
+  );
+  if (active.length === 0) return null;
+  return <BentoCategoriesContent categories={active} />;
 }
 
 function BentoCategoriesContent({ categories }: { categories: Category[] }) {
   const containerRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
   });
 
-  const yBg = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+  // Parallax transforms for each card
+  const yFeatured = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
+  const ySecondary0 = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+  const ySecondary1 = useTransform(scrollYProgress, [0, 1], ["-14%", "14%"]);
+  const ySecondary2 = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+
+  // Heading parallax
+  const headingY = useTransform(scrollYProgress, [0, 0.5], [60, 0]);
+  const headingOpacity = useTransform(scrollYProgress, [0, 0.25], [0, 1]);
 
   const featured = categories[0];
   const secondary = categories.slice(1, 4);
 
   const categoryImage = (cat: Category) => {
-    const url = cat?.image ? getImageUrl(cat.image) : getCategoryFallbackImage(cat?.name || "");
     const fallback = getCategoryFallbackImage(cat?.name || "");
     return {
-      url,
+      url: cat?.image ? getImageUrl(cat.image) : fallback,
       onError: (e: React.SyntheticEvent<HTMLImageElement>) => {
         const target = e.currentTarget;
         if (target.src !== fallback) target.src = fallback;
@@ -47,184 +157,459 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
     };
   };
 
-  const featuredImg = categoryImage(featured);
+  const totalCount = categories.length;
+
+  const getFeaturedSpan = () => {
+    if (totalCount === 1)
+      return "lg:col-span-12 lg:row-span-2 min-h-[500px]";
+    if (totalCount === 2)
+      return "lg:col-span-8 lg:row-span-2 min-h-[580px]";
+    return "lg:col-span-8 lg:row-span-2 min-h-[580px] lg:h-auto";
+  };
+
+  const getSecondary0Span = () => {
+    if (totalCount === 2)
+      return "lg:col-span-4 lg:row-span-2 min-h-[580px]";
+    return "lg:col-span-4 lg:row-span-1 h-[276px]";
+  };
+
+  // ── Container stagger ────────────────────────────────────────────
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2, delayChildren: 0.3 },
+    },
+  };
+
+  // ── Clip-path wipe entrance ──────────────────────────────────────
+  const cardVariants = {
+    hidden: {
+      opacity: 0,
+      y: 60,
+      clipPath: "inset(100% 0% 0% 0%)",
+    },
+    show: {
+      opacity: 1,
+      y: 0,
+      clipPath: "inset(0% 0% 0% 0%)",
+      transition: {
+        duration: 0.9,
+        ease: [0.16, 1, 0.3, 1],
+        clipPath: { duration: 1.1, ease: [0.16, 1, 0.3, 1] },
+      },
+    },
+  };
+
+  // ── Text reveal variant ──────────────────────────────────────────
+  const textReveal = {
+    hidden: { opacity: 0, y: 30, filter: "blur(6px)" },
+    show: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
 
   return (
-    <section ref={containerRef} className="py-16 sm:py-24 md:py-36 bg-[#FAF9F5] text-stone-900 border-t border-stone-200/80 relative overflow-hidden">
-      
-      {/* Background Noise */}
-      <motion.div 
-        style={{ y: yBg }}
-        className="absolute -inset-[20%] bg-[radial-gradient(#0000000a_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" 
-      />
-
+    <section
+      ref={containerRef}
+      className="py-32 md:py-48 bg-paper text-ink border-t border-ink-faint relative overflow-hidden"
+    >
+      {/* ── Background layers ────────────────────────────────────── */}
+      <div className="absolute inset-0 bg-[radial-gradient(#05140808_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-brand-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-gold-500/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+      <FloatingParticles />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full relative z-10">
-
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-16 gap-6 sm:gap-8">
-          <div className="max-w-3xl">
-            <motion.h2
-              initial={{ opacity: 0, y: 32 }}
-              whileInView={{ opacity: 1, y: 0 }}
+        {/* ── Section Header ─────────────────────────────────────── */}
+        <motion.div
+          style={{ y: headingY, opacity: headingOpacity }}
+          className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-12"
+        >
+          <div className="max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-3xl sm:text-5xl lg:text-7xl font-display font-black text-stone-900 tracking-tighter leading-[1.05] sm:leading-[0.95]"
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
-              Explore Our <span className="text-gold-500 font-serif italic font-normal tracking-normal">Handcrafted</span>
-              <br />
-              Sattvik Range.
-            </motion.h2>
+              <div className="inline-flex items-center gap-3 px-4 py-2 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-8 relative overflow-hidden">
+                {/* Shimmer sweep on badge */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    repeatDelay: 4,
+                    ease: "easeInOut",
+                  }}
+                />
+                <Sparkles
+                  size={14}
+                  className="text-brand-600 relative z-10"
+                />
+                <span className="text-brand-700 text-xs font-bold uppercase tracking-widest relative z-10">
+                  Collections
+                </span>
+              </div>
+
+              {/* Heading with word-by-word stagger */}
+              <div className="overflow-hidden">
+                <motion.h2
+                  className="text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.02] [text-wrap:balance]"
+                  initial={{ y: "110%" }}
+                  whileInView={{ y: "0%" }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{
+                    duration: 1,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  Discover our{" "}
+                  <span className="text-gold-600 font-serif italic font-medium block mt-2">
+                    Sattvik Range.
+                  </span>
+                </motion.h2>
+              </div>
+            </motion.div>
           </div>
 
           <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <Link
               href="/products"
-              className="inline-flex items-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm tracking-wide transition-transform shadow-xl shadow-emerald-900/20 active:scale-95 group overflow-hidden relative"
+              className="inline-flex items-center gap-4 group focus-ring rounded-full"
             >
-              <span className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
-              <span className="relative">Browse All Categories</span>
-              <ArrowRight size={16} className="relative group-hover:translate-x-2 transition-transform duration-300 text-amber-300" />
+              <span className="text-xl font-bold uppercase tracking-widest text-ink-2 group-hover:text-brand-700 transition-colors duration-300">
+                View Catalog
+              </span>
+              <div className="w-14 h-14 rounded-full bg-brand-700 text-white flex items-center justify-center group-hover:scale-110 group-hover:bg-gold-500 group-hover:text-brand-950 transition-all duration-500 shadow-xl shadow-brand-900/10">
+                <ArrowRight
+                  size={24}
+                  className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500"
+                />
+              </div>
             </Link>
+          </motion.div>
+        </motion.div>
+
+        {/* ── Bento Grid ─────────────────────────────────────────── */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 grid-flow-dense auto-rows-auto"
+        >
+          {/* ─── Card 1: Hero Featured ────────────────────────────── */}
+          {featured && (
+            <BentoCard
+              variants={cardVariants}
+              span={getFeaturedSpan()}
+              parallaxY={yFeatured}
+              image={categoryImage(featured)}
+              alt={featured.name}
+              sizes="(max-width: 1024px) 100vw, 65vw"
+              badge={`${featured.productCount || 0} Items`}
+              title={featured.name}
+              subtitle="Explore Collection"
+              slug={featured.slug}
+              accentColor="gold"
+              priority
+            />
+          )}
+
+          {/* ─── Card 2: Secondary 0 ──────────────────────────────── */}
+          {secondary[0] && (
+            <BentoCard
+              variants={cardVariants}
+              span={getSecondary0Span()}
+              parallaxY={ySecondary0}
+              image={categoryImage(secondary[0])}
+              alt={secondary[0].name}
+              sizes="(max-width: 1024px) 100vw, 35vw"
+              badge={`${secondary[0].productCount || 0} Items`}
+              title={secondary[0].name}
+              subtitle="View Details"
+              slug={secondary[0].slug}
+              accentColor="brand"
+            />
+          )}
+
+          {/* ─── Card 3: Secondary 1 ──────────────────────────────── */}
+          {secondary[1] && (
+            <BentoCard
+              variants={cardVariants}
+              span="lg:col-span-4 lg:row-span-1 h-[276px]"
+              parallaxY={ySecondary1}
+              image={categoryImage(secondary[1])}
+              alt={secondary[1].name}
+              sizes="(max-width: 1024px) 100vw, 35vw"
+              badge={`${secondary[1].productCount || 0} Items`}
+              title={secondary[1].name}
+              subtitle=""
+              slug={secondary[1].slug}
+              accentColor="brand"
+            />
+          )}
+
+          {/* ─── Card 4: Full-width Accent ────────────────────────── */}
+          {secondary[2] && (
+            <BentoCard
+              variants={cardVariants}
+              span="lg:col-span-12 lg:row-span-1 h-[240px]"
+              parallaxY={ySecondary2}
+              image={categoryImage(secondary[2])}
+              alt={secondary[2].name}
+              sizes="100vw"
+              badge={`${secondary[2].productCount || 0} Items`}
+              title={secondary[2].name}
+              subtitle=""
+              slug={secondary[2].slug}
+              accentColor="brand"
+              isFullWidth
+            />
+          )}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ── Reusable Bento Card ──────────────────────────────────────── */
+interface BentoCardProps {
+  variants: any;
+  span: string;
+  parallaxY: any;
+  image: { url: string; onError: (e: any) => void };
+  alt: string;
+  sizes: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+  slug: string;
+  accentColor: "gold" | "brand";
+  priority?: boolean;
+  isFullWidth?: boolean;
+}
+
+function BentoCard({
+  variants,
+  span,
+  parallaxY,
+  image,
+  alt,
+  sizes,
+  badge,
+  title,
+  subtitle,
+  slug,
+  accentColor,
+  priority,
+  isFullWidth,
+}: BentoCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Magnetic glow
+  const { background: glowBg, handleMouseMove: glowMove } = useMagneticGlow();
+
+  // Spotlight border
+  const mouseX = useMotionValue(-400);
+  const mouseY = useMotionValue(-400);
+  const spotlightBg = useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(212,165,69,0.35), transparent 40%)`;
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      glowMove(e);
+      const rect = e.currentTarget.getBoundingClientRect();
+      mouseX.set(e.clientX - rect.left);
+      mouseY.set(e.clientY - rect.top);
+    },
+    [glowMove, mouseX, mouseY]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    mouseX.set(-400);
+    mouseY.set(-400);
+    setIsHovered(false);
+  }, [mouseX, mouseY]);
+
+  const hoverBorder =
+    accentColor === "gold"
+      ? "hover:border-gold-500/30"
+      : "hover:border-brand-500/30";
+
+  const titleSize = isFullWidth
+    ? "text-4xl sm:text-5xl"
+    : span.includes("row-span-2") || span.includes("h-[580px]")
+      ? "text-5xl sm:text-6xl md:text-8xl"
+      : "text-3xl sm:text-4xl";
+
+  return (
+    <motion.div
+      ref={cardRef}
+      variants={variants}
+      className={`${span} group relative rounded-[2rem] overflow-hidden border border-ink-faint ${hoverBorder} transition-colors duration-700 bg-brand-950`}
+      style={{
+        boxShadow: isHovered
+          ? "0 30px 60px -15px rgba(5,20,8,0.2)"
+          : "0 20px 50px -15px rgba(5,20,8,0.12)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Spotlight border overlay */}
+      <motion.div
+        className="absolute inset-0 z-30 rounded-[2rem] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background: spotlightBg,
+          maskImage:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          maskComposite: "exclude",
+          WebkitMaskComposite: "xor",
+          padding: "1px",
+        }}
+      />
+
+      <Link
+        href={`/products?category=${slug}`}
+        className="relative block w-full h-full min-h-[400px] focus-ring"
+      >
+        {/* ── Image with parallax ─────────────────────────────────── */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            style={{ y: parallaxY }}
+            className="absolute inset-0 scale-[1.3] pointer-events-none"
+          >
+            <Image
+              src={image.url}
+              alt={alt}
+              fill
+              sizes={sizes}
+              className={`object-cover transition-all duration-[1200ms] ease-[0.16,1,0.3,1] ${
+                isHovered
+                  ? "opacity-100 scale-[1.04]"
+                  : "opacity-80 scale-100"
+              }`}
+              onError={image.onError}
+              priority={priority}
+            />
           </motion.div>
         </div>
 
-        {/* RESPONSIVE GAPLESS BENTO GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 auto-rows-[240px] sm:auto-rows-[280px] lg:auto-rows-[340px] gap-3 lg:gap-4 grid-flow-dense">
+        {/* ── Gradient overlays ──────────────────────────────────── */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${
+            isFullWidth
+              ? "bg-gradient-to-r from-brand-950/90 via-brand-950/40 to-transparent"
+              : "bg-gradient-to-t from-brand-950/90 via-brand-950/20 to-transparent"
+          }`}
+        />
+        <div
+          className={`absolute inset-0 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none ${
+            accentColor === "gold" ? "bg-gold-500/15" : "bg-brand-800/30"
+          }`}
+        />
 
-          {/* Card 1: 2x2 (Featured) */}
-          {featured && (
-            <motion.div
-              className="md:col-span-2 md:row-span-2 group"
+        {/* ── Cursor-reactive glow ────────────────────────────────── */}
+        <motion.div
+          className="absolute inset-0 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ background: glowBg }}
+        />
+
+        {/* ── Content ────────────────────────────────────────────── */}
+        <div
+          className={`absolute inset-0 z-20 flex flex-col justify-between ${
+            isFullWidth ? "p-8 md:p-12" : "p-8"
+          }`}
+        >
+          {/* Top row: badge + arrow */}
+          <div className="flex justify-between items-start">
+            <span
+              className={`font-bold uppercase tracking-[0.2em] ${
+                isFullWidth ? "text-xs" : "text-[10px] sm:text-xs"
+              } border backdrop-blur-md transition-all duration-500 ${
+                accentColor === "gold"
+                  ? "text-white border-white/20 bg-white/10 group-hover:bg-gold-500/20 group-hover:border-gold-400/50 group-hover:text-gold-300"
+                  : "text-brand-300 border-brand-500/30 bg-brand-950/60 group-hover:text-gold-300 group-hover:border-gold-500/40"
+              } px-4 py-2 rounded-full`}
             >
-              <Link
-                href={`/products?category=${featured.slug}`}
-                className="relative block w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-brand-600 border border-emerald-700/30 shadow-2xl shadow-emerald-950/20 focus-ring group"
-              >
-                <Image
-                  src={featuredImg.url}
-                  alt={featured.name}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-1000 ease-out opacity-90 group-hover:opacity-100"
-                  onError={featuredImg.onError}
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-brand-600/40 to-transparent pointer-events-none" />
+              {badge}
+            </span>
 
-                <div className="absolute bottom-0 left-0 w-full p-6 sm:p-10 lg:p-12 z-20 flex flex-col justify-end h-full">
-                  <div className="overflow-hidden mb-2">
-                    <p className="text-xs font-extrabold text-amber-300 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Flame size={12} className="text-amber-400" />
-                      Signature Collection
-                    </p>
-                  </div>
-                  <h3 className="text-3xl sm:text-5xl font-display font-black text-white leading-none mb-3 sm:mb-4 drop-shadow-md">
-                    {featured.name}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs sm:text-sm text-emerald-100 font-medium max-w-xs leading-relaxed">
-                      Handcrafted with 100% groundnut oil. Zero onion, zero garlic.
-                    </p>
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white text-brand-600 flex items-center justify-center font-bold shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-md ml-2">
-                      <ArrowRight size={18} />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          )}
-
-          {/* Card 2: 1x1 Square */}
-          {secondary[0] && (
+            {/* Animated arrow circle */}
             <motion.div
-              className="col-span-1 row-span-1 group"
+              className={`${
+                isFullWidth ? "w-14 h-14" : "w-12 h-12"
+              } rounded-full flex items-center justify-center shadow-md overflow-hidden transition-all duration-500 ${
+                accentColor === "gold"
+                  ? "bg-white text-brand-950 group-hover:bg-gold-400"
+                  : "bg-white/90 text-brand-950 group-hover:bg-white"
+              }`}
+              animate={
+                isHovered ? { rotate: 0, scale: 1.1 } : { rotate: -45, scale: 1 }
+              }
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
-              <Link
-                href={`/products?category=${secondary[0].slug}`}
-                className="relative block w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-stone-100 border border-stone-200 focus-ring shadow-sm"
-              >
-                <Image
-                  src={categoryImage(secondary[0]).url}
-                  alt={secondary[0].name}
-                  fill
-                  sizes="(max-width: 1024px) 50vw, 25vw"
-                  className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-                  onError={categoryImage(secondary[0]).onError}
-                />
-                <div className="absolute inset-0 bg-brand-900/20 group-hover:bg-transparent transition-colors duration-500" />
-                <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 bg-gradient-to-t from-brand-900/90 to-transparent">
-                  <h3 className="text-xl sm:text-2xl font-display font-bold text-white group-hover:text-amber-300 transition-colors">
-                    {secondary[0].name}
-                  </h3>
-                </div>
-              </Link>
+              <ArrowRight
+                size={isFullWidth ? 24 : 20}
+                className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-500"
+              />
             </motion.div>
-          )}
+          </div>
 
-          {/* Card 3: 1x1 Typographic Tile — solid brand green with gold serif accent */}
-          {secondary[1] && (
-            <motion.div
-              className="col-span-1 row-span-1 group"
+          {/* Bottom: text content */}
+          <div>
+            {/* Subtitle reveal on hover */}
+            {subtitle && (
+              <div className="overflow-hidden mb-3 h-5">
+                <motion.span
+                  className={`block font-bold uppercase tracking-[0.2em] text-xs ${
+                    accentColor === "gold"
+                      ? "text-gold-400"
+                      : "text-brand-400"
+                  }`}
+                  initial={{ y: "100%", opacity: 0 }}
+                  animate={
+                    isHovered
+                      ? { y: "0%", opacity: 1 }
+                      : { y: "100%", opacity: 0 }
+                  }
+                  transition={{
+                    duration: 0.5,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  {subtitle}
+                </motion.span>
+              </div>
+            )}
+
+            {/* Title with blur-in reveal */}
+            <motion.h3
+              className={`${titleSize} font-display font-black text-white leading-[0.9] drop-shadow-lg [text-wrap:balance]`}
+              animate={
+                isHovered
+                  ? { y: isFullWidth ? -6 : -12, filter: "blur(0px)" }
+                  : { y: 0, filter: "blur(0px)" }
+              }
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
-              <Link
-                href={`/products?category=${secondary[1].slug}`}
-                className="relative block w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-brand-800 border border-gold-500/25 focus-ring flex flex-col justify-end p-5 sm:p-7 group"
-              >
-                {/* Gold dot texture + ambient glow */}
-                <div className="absolute inset-0 bg-[radial-gradient(#D4A54514_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-                <div className="relative z-10">
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-gold-500 mb-2">
-                    {secondary[1].productCount ? `${secondary[1].productCount} Variants` : "Explore Collection"}
-                  </p>
-                  <h3 className="text-2xl sm:text-3xl font-display font-black text-white leading-none mb-1 [text-wrap:balance]">
-                    {secondary[1].name}
-                  </h3>
-                </div>
-
-                <div className="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-gold-500 text-brand-800 flex items-center justify-center group-hover:scale-110 group-hover:rotate-45 transition-transform duration-300 shadow-md">
-                  <ArrowRight size={16} />
-                </div>
-              </Link>
-            </motion.div>
-          )}
-
-          {/* Card 4: 2x1 Wide */}
-          {secondary[2] && (
-            <motion.div
-              className="md:col-span-2 row-span-1 group"
-            >
-              <Link
-                href={`/products?category=${secondary[2].slug}`}
-                className="relative block w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-brand-600 border border-emerald-700/30 focus-ring"
-              >
-                <Image
-                  src={categoryImage(secondary[2]).url}
-                  alt={secondary[2].name}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-1000 ease-out opacity-85 group-hover:opacity-100"
-                  onError={categoryImage(secondary[2]).onError}
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-900 via-brand-600/60 to-transparent pointer-events-none" />
-                
-                <div className="absolute top-1/2 -translate-y-1/2 left-6 sm:left-12 z-20">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-600/90 border border-emerald-400/40 text-emerald-100 text-xs font-extrabold uppercase tracking-widest mb-2 backdrop-blur-md shadow-xs">
-                    <ShieldCheck size={12} className="text-amber-300" />
-                    <span>No Palm Oil</span>
-                  </div>
-                  <h3 className="text-2xl sm:text-4xl font-display font-bold text-white group-hover:text-amber-300 transition-colors duration-500 leading-none drop-shadow-md">
-                    {secondary[2].name}
-                  </h3>
-                </div>
-              </Link>
-            </motion.div>
-          )}
-
+              {title}
+            </motion.h3>
+          </div>
         </div>
-      </div>
-    </section>
+      </Link>
+    </motion.div>
   );
 }

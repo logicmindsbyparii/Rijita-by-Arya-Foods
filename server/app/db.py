@@ -59,42 +59,67 @@ def is_valid_object_id(id_str: Any) -> bool:
         return False
 
 async def ensure_indexes():
-    try:
-        db = get_db()
+    """Create every index the app relies on, isolating failures per index.
+
+    These used to run as ~20 sequential awaits inside a single try/except. Any
+    one failure — most plausibly a `unique` index that pre-existing duplicate
+    data rejects — aborted the whole function, so every index declared *after*
+    it was silently never created. A single duplicate email could therefore
+    leave orders without their unique `orderNumber` index and coupons without
+    their unique `code` index, with nothing in the logs but one warning.
+    """
+    db = get_db()
+
+    specs: list[tuple[str, Any, dict]] = [
         # Users
-        await db.users.create_index("email", unique=True)
-        
-        # Products
-        await db.products.create_index("slug", unique=True)
-        await db.products.create_index([("name", "text"), ("description", "text"), ("tags", "text")])
-        await db.products.create_index("category")
-        await db.products.create_index([("isActive", 1), ("isFeatured", 1)])
-        await db.products.create_index("minPrice")
+        ("users", "email", {"unique": True}),
+
+        # Products. `variants.sku` is unique: order placement resolves a line
+        # item to a variant by sku alone (variants carry no _id), so a sku shared
+        # across two products would bill the customer for the wrong one.
+        ("products", "slug", {"unique": True}),
+        ("products", "variants.sku", {"unique": True}),
+        ("products", [("name", "text"), ("description", "text"), ("tags", "text")], {}),
+        ("products", "category", {}),
+        ("products", [("isActive", 1), ("isFeatured", 1)], {}),
+        ("products", "minPrice", {}),
 
         # Categories
-        await db.categories.create_index("slug", unique=True)
-        await db.categories.create_index("parent")
-        await db.categories.create_index([("isActive", 1), ("order", 1)])
+        ("categories", "slug", {"unique": True}),
+        ("categories", "parent", {}),
+        ("categories", [("isActive", 1), ("order", 1)], {}),
 
         # Orders
-        await db.orders.create_index("orderNumber", unique=True)
-        await db.orders.create_index("user")
-        await db.orders.create_index("status")
-        await db.orders.create_index([("createdAt", -1)])
-        await db.orders.create_index("shippingAddress.phone")
+        ("orders", "orderNumber", {"unique": True}),
+        ("orders", "user", {}),
+        ("orders", "status", {}),
+        ("orders", [("createdAt", -1)], {}),
+        ("orders", "shippingAddress.phone", {}),
 
         # Coupons
-        await db.coupons.create_index("code", unique=True)
+        ("coupons", "code", {"unique": True}),
 
-        # Blogs
-        await db.blogs.create_index("slug", unique=True)
-
-        # Recipes
-        await db.recipes.create_index("slug", unique=True)
+        # Blogs / Recipes
+        ("blogs", "slug", {"unique": True}),
+        ("recipes", "slug", {"unique": True}),
 
         # Subscribers
-        await db.subscribers.create_index("email", unique=True)
+        ("subscribers", "email", {"unique": True}),
+    ]
 
-        logger.info("MongoDB indexes verified/created successfully.")
-    except Exception as e:
-        logger.warning(f"Error setting up MongoDB indexes: {e}")
+    created = 0
+    failed = []
+    for collection, keys, opts in specs:
+        try:
+            await db[collection].create_index(keys, **opts)
+            created += 1
+        except Exception as e:
+            failed.append(f"{collection}.{keys}: {e}")
+
+    if failed:
+        logger.warning(
+            f"MongoDB indexes: {created}/{len(specs)} created; {len(failed)} failed -> "
+            + " | ".join(failed)
+        )
+    else:
+        logger.info(f"MongoDB indexes verified/created successfully ({created}).")

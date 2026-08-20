@@ -53,6 +53,9 @@ export default function AdminCategories() {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const loadCategories = async () => {
     try {
@@ -146,12 +149,58 @@ export default function AdminCategories() {
       await categoryApi.deleteCategory(id);
       toast.success("Category deleted successfully");
       setDeleteConfirm(null);
+      setSelectedCategories((prev) => prev.filter((cId) => cId !== id));
       loadCategories();
     } catch (err: any) {
       toast.error(err.message || "Failed to delete category");
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      setIsBulkDeleting(true);
+      const results = await Promise.allSettled(
+        selectedCategories.map((id) => categoryApi.deleteCategory(id))
+      );
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.length - succeeded;
+      setSelectedCategories([]);
+      setShowBulkDeleteConfirm(false);
+      loadCategories();
+      if (failed === 0) {
+        toast.success(
+          `${succeeded} categor${succeeded !== 1 ? "ies" : "y"} deleted successfully`
+        );
+      } else if (succeeded > 0) {
+        toast.error(
+          `${succeeded} deleted, ${failed} skipped — categories with products or subcategories cannot be deleted`
+        );
+      } else {
+        toast.error(
+          "None of the selected categories could be deleted — they may contain products or subcategories"
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete categories");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCategories.length === categories.length && categories.length > 0) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(categories.map((c) => c._id));
+    }
+  };
+
+  const toggleSelectCategory = (id: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id]
+    );
   };
 
   const rootCategories = categories.filter((c) => !c.parent);
@@ -171,9 +220,17 @@ export default function AdminCategories() {
           <div
             className={cn(
               "flex items-center gap-4 p-4 rounded-xl transition-all hover:bg-muted/30",
-              depth > 0 && "ml-8"
+              depth > 0 && "ml-8",
+              selectedCategories.includes(cat._id) && "bg-brand-50/60"
             )}
           >
+            <input
+              type="checkbox"
+              checked={selectedCategories.includes(cat._id)}
+              onChange={() => toggleSelectCategory(cat._id)}
+              aria-label={`Select ${cat.name}`}
+              className="w-4 h-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+            />
             <div className="h-10 w-10 rounded-lg bg-muted overflow-hidden shrink-0">
               {cat.image ? (
                 <Image src={getImageUrl(cat.image)} alt={cat.name} width={40} height={40} className="h-full w-full object-cover" unoptimized />
@@ -230,10 +287,22 @@ export default function AdminCategories() {
             {categories.length > 0 ? `${categories.length} categor${categories.length !== 1 ? "ies" : "y"} total` : "Manage product categories"}
           </p>
         </div>
-        <Button onClick={openAddForm} className="shrink-0 gap-2">
-          <Plus className="h-4 w-4" />
-          Add Category
-        </Button>
+        <div className="flex items-center gap-3">
+          {selectedCategories.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowBulkDeleteConfirm(true)}
+              className="gap-2 shrink-0 animate-fade-in shadow-sm"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Selected ({selectedCategories.length})
+            </Button>
+          )}
+          <Button onClick={openAddForm} className="shrink-0 gap-2">
+            <Plus className="h-4 w-4" />
+            Add Category
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -278,6 +347,21 @@ export default function AdminCategories() {
       ) : (
         <Card>
           <CardContent className="p-2">
+            <div className="flex items-center gap-3 px-4 py-2 bg-stone-50 rounded-xl mb-1 border border-stone-200/60">
+              <input
+                type="checkbox"
+                checked={selectedCategories.length === categories.length && categories.length > 0}
+                onChange={toggleSelectAll}
+                aria-label="Select all categories"
+                className="w-4 h-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+              />
+              <span className="text-sm font-medium text-stone-600">Select all categories</span>
+              {selectedCategories.length > 0 && (
+                <span className="ml-auto text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-100">
+                  {selectedCategories.length} selected
+                </span>
+              )}
+            </div>
             {rootCategories.map((cat) => renderCategory(cat))}
           </CardContent>
         </Card>
@@ -502,6 +586,52 @@ export default function AdminCategories() {
                     >
                       {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
                       Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showBulkDeleteConfirm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowBulkDeleteConfirm(false)}
+              className="fixed inset-0 z-50 bg-black/50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
+            >
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="p-4 rounded-2xl bg-red-50 w-fit mx-auto mb-4">
+                    <Trash2 className="h-8 w-8 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">
+                    Delete {selectedCategories.length} categor{selectedCategories.length !== 1 ? "ies" : "y"}?
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    This will permanently delete the {selectedCategories.length} selected categor{selectedCategories.length !== 1 ? "ies" : "y"}. Categories with products or subcategories will be skipped.
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <Button variant="outline" onClick={() => setShowBulkDeleteConfirm(false)} disabled={isBulkDeleting}>Cancel</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleBulkDelete}
+                      disabled={isBulkDeleting}
+                      className="gap-2"
+                    >
+                      {isBulkDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {isBulkDeleting ? "Deleting..." : `Delete ${selectedCategories.length}`}
                     </Button>
                   </div>
                 </CardContent>

@@ -5,6 +5,8 @@ import {
   formatDate,
   calculateDiscount,
   generateWhatsAppUrl,
+  applyWhatsAppTemplate,
+  telHref,
   WHATSAPP_NUMBER,
   PLACEHOLDER_IMAGE,
 } from "@/lib/utils";
@@ -27,6 +29,11 @@ describe("formatPrice", () => {
   it("formats zero", () => {
     expect(formatPrice(0)).toBe("₹0");
   });
+
+  it("falls back to zero for non-finite input instead of rendering ₹NaN", () => {
+    expect(formatPrice(NaN)).toBe("₹0");
+    expect(formatPrice(undefined as unknown as number)).toBe("₹0");
+  });
 });
 
 describe("formatDate", () => {
@@ -40,6 +47,11 @@ describe("formatDate", () => {
     const result = formatDate(new Date("2024-06-01"));
     expect(result).toContain("1");
     expect(result).toContain("2024");
+  });
+
+  it("returns an empty string rather than 'Invalid Date' for unparseable input", () => {
+    expect(formatDate("not-a-date")).toBe("");
+    expect(formatDate("")).toBe("");
   });
 });
 
@@ -55,6 +67,11 @@ describe("calculateDiscount", () => {
   it("returns 0 for negative mrp", () => {
     expect(calculateDiscount(-100, 50)).toBe(0);
   });
+
+  it("never reports a negative discount when sellingPrice exceeds mrp", () => {
+    expect(calculateDiscount(800, 1000)).toBe(0);
+    expect(calculateDiscount(800, 800)).toBe(0);
+  });
 });
 
 describe("generateWhatsAppUrl", () => {
@@ -62,6 +79,38 @@ describe("generateWhatsAppUrl", () => {
     const url = generateWhatsAppUrl("Hello");
     expect(url).toContain(WHATSAPP_NUMBER);
     expect(url).toContain("Hello");
+  });
+});
+
+describe("applyWhatsAppTemplate", () => {
+  it("prepends the template greeting to the message", () => {
+    expect(applyWhatsAppTemplate("*Order #RIJ-1*", "Hi, I would like to order from RIJITA.")).toBe(
+      "Hi, I would like to order from RIJITA.\n\n*Order #RIJ-1*"
+    );
+  });
+
+  it("returns the message unchanged when no template is set", () => {
+    const message = "*Order #RIJ-1*";
+    expect(applyWhatsAppTemplate(message, "")).toBe(message);
+    expect(applyWhatsAppTemplate(message, "   ")).toBe(message);
+    expect(applyWhatsAppTemplate(message, undefined)).toBe(message);
+  });
+});
+
+describe("telHref", () => {
+  it("strips spaces and punctuation from a display number", () => {
+    expect(telHref("+91 99044 59998")).toBe("tel:+919904459998");
+    expect(telHref("(079) 2345-6789")).toBe("tel:07923456789");
+  });
+
+  it("keeps a leading plus for country codes", () => {
+    expect(telHref("+919904459998")).toBe("tel:+919904459998");
+    expect(telHref("9904459998")).toBe("tel:9904459998");
+  });
+
+  it("returns an empty href when there are no digits", () => {
+    expect(telHref("")).toBe("");
+    expect(telHref("   ")).toBe("");
   });
 });
 

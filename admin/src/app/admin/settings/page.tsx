@@ -10,7 +10,6 @@ import {
   Globe,
   Mail,
   Phone,
-  MapPin,
   Facebook,
   Instagram,
   Twitter,
@@ -39,7 +38,7 @@ import {
   Info,
   User,
 } from "lucide-react";
-import { adminApi } from "@/lib/api";
+import { adminApi, shippingApi } from "@/lib/api";
 import { cn, getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +78,15 @@ interface SettingsForm {
     freeShippingThreshold: number;
     standardDeliveryCharge: number;
     estimatedDays: string;
+    shiprocket: {
+      pickupLocation: string;
+      pickupPincode: string;
+      length: number;
+      breadth: number;
+      height: number;
+      packagingWeight: number;
+      autoCreate: boolean;
+    };
   };
   gst: {
     gstin: string;
@@ -128,8 +136,17 @@ const defaultForm: SettingsForm = {
   siteName: "", tagline: "", email: "", phone: "", address: "",
   socialMedia: { facebook: "", instagram: "", twitter: "", youtube: "", whatsapp: "" },
   footer: { aboutText: "", copyright: "" },
-  shipping: { freeShippingThreshold: 0, standardDeliveryCharge: 0, estimatedDays: "" },
-  gst: { gstin: "", rate: 0 },
+  // Shipping/GST defaults must be the real business defaults, NOT 0 — a 0
+  // threshold means "free delivery on everything" and a 0 charge means "free
+  // below the threshold too", so a settings save with empty fields used to
+  // silently make every order free. 0 is sanitized back to these defaults.
+  shipping: {
+    freeShippingThreshold: 499,
+    standardDeliveryCharge: 49,
+    estimatedDays: "",
+    shiprocket: { pickupLocation: "", pickupPincode: "", length: 0, breadth: 0, height: 0, packagingWeight: 0, autoCreate: false },
+  },
+  gst: { gstin: "", rate: 5 },
   whatsapp: { number: "", messageTemplate: "" },
   payment: { upiId: "", upiName: "" },
   seo: { googleAnalyticsId: "", googleTagManagerId: "", metaPixelId: "" },
@@ -300,7 +317,7 @@ export default function AdminSettings() {
     return () => window.removeEventListener("keydown", handler);
   }, [dirty]);
 
-  const syncState = (data: SiteSettings) => {
+  const syncState = (data: SiteSettings, mergedAutoCreate?: boolean | null) => {
     const loaded: SettingsForm = {
       siteName: data.siteName || "",
       tagline: data.tagline || "",
@@ -319,11 +336,28 @@ export default function AdminSettings() {
         copyright: data.footer?.copyright || "",
       },
       shipping: {
-        freeShippingThreshold: data.shipping?.freeShippingThreshold || 0,
-        standardDeliveryCharge: data.shipping?.standardDeliveryCharge || 0,
+        // 0 (or a negative) value means "unset" — show the effective default so
+        // saving any tab can't persist the accidental all-orders-free state.
+        freeShippingThreshold: data.shipping?.freeShippingThreshold > 0 ? data.shipping.freeShippingThreshold : 499,
+        standardDeliveryCharge: data.shipping?.standardDeliveryCharge > 0 ? data.shipping.standardDeliveryCharge : 49,
         estimatedDays: data.shipping?.estimatedDays || "",
+        shiprocket: {
+          pickupLocation: data.shipping?.shiprocket?.pickupLocation || "",
+          pickupPincode: data.shipping?.shiprocket?.pickupPincode || "",
+          length: data.shipping?.shiprocket?.length || 0,
+          breadth: data.shipping?.shiprocket?.breadth || 0,
+          height: data.shipping?.shiprocket?.height || 0,
+          packagingWeight: data.shipping?.shiprocket?.packagingWeight || 0,
+          // The toggle has no "blank = keep server default" state — the DB value
+          // (or the effective env default) must win, or an unset key would show
+          // OFF and persist `false` on the next save, silently disabling
+          // auto-ship even though the server was shipping orders automatically.
+          autoCreate: typeof data.shipping?.shiprocket?.autoCreate === "boolean"
+            ? data.shipping.shiprocket.autoCreate
+            : (mergedAutoCreate ?? false),
+        },
       },
-      gst: { gstin: data.gst?.gstin || "", rate: data.gst?.rate || 0 },
+      gst: { gstin: data.gst?.gstin || "", rate: data.gst?.rate > 0 ? data.gst.rate : 5 },
       whatsapp: { number: data.whatsapp?.number || "", messageTemplate: data.whatsapp?.messageTemplate || "" },
       payment: { upiId: data.payment?.upiId || "", upiName: data.payment?.upiName || "" },
       seo: {
@@ -383,8 +417,18 @@ export default function AdminSettings() {
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
+      // The effective Shiprocket config (env defaults merged with DB overrides)
+      // is server-side — fetch it so an unset autoCreate key in the DB can't
+      // masquerade as "off" (see syncState). Best-effort: if the status call
+      // fails, fall back to the plain DB value.
+      let mergedAutoCreate: boolean | null = null;
+      try {
+        const statusRes = await shippingApi.getStatus();
+        const merged = statusRes?.data?.config?.autoCreate;
+        if (typeof merged === "boolean") mergedAutoCreate = merged;
+      } catch { /* best-effort */ }
       const res = await adminApi.getSettings();
-      if (res.data?.settings) syncState(res.data.settings);
+      if (res.data?.settings) syncState(res.data.settings, mergedAutoCreate);
     } catch { toast.error("Failed to load settings"); }
     finally { setLoading(false); }
   }, []);
@@ -398,9 +442,42 @@ export default function AdminSettings() {
     if (!formData.siteName.trim()) { errs.siteName = "Site name is required"; errorTab = errorTab || "general"; }
     if (!formData.email.trim()) { errs.email = "Email is required"; errorTab = errorTab || "general"; }
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { errs.email = "Invalid email format"; errorTab = errorTab || "general"; }
-    if (!formData.phone.trim()) { errs.phone = "Phone is required"; errorTab = errorTab || "general"; }
+    const phoneDigits = (formData.phone || "").replace(/\D/g, "");
+    if (phoneDigits.length < 10 || phoneDigits.length > 15) { errs.phone = "Enter a valid phone number (10-15 digits)"; errorTab = errorTab || "general"; }
+    // WhatsApp number powers every wa.me link on the storefront (track order,
+    // order-by-WhatsApp, order confirmations) — a malformed value would override
+    // the client-side fallback and message a wrong number.
+    const waDigits = (formData.whatsapp.number || "").replace(/\D/g, "");
+    if (formData.whatsapp.number.trim() && (waDigits.length < 10 || waDigits.length > 15)) {
+      errs.whatsappNumber = "Enter a valid WhatsApp number with country code (e.g. 919876543210)";
+      errorTab = errorTab || "notifications";
+    }
+    // UPI ID feeds the QR code + payment link on the order page.
+    const upi = formData.payment.upiId.trim();
+    if (upi && !/^[^\s@]+@[^\s@]+$/.test(upi)) {
+      errs.upiId = "Enter a valid UPI ID (e.g. yourstore@upi)";
+      errorTab = errorTab || "shipping";
+    }
+    // Social links — a malformed URL breaks the footer/contact icons.
+    const socialUrlRules: [string, RegExp][] = [
+      ["facebook", /^https?:\/\//], ["instagram", /^https?:\/\//], ["twitter", /^https?:\/\//],
+      ["youtube", /^https?:\/\//], ["whatsapp", /^(https?:\/\/|wa\.me)/],
+    ];
+    for (const [key, re] of socialUrlRules) {
+      const v = ((formData.socialMedia as any)[key] || "").trim();
+      if (v && !re.test(v)) {
+        errs[key] = "Enter a full URL starting with https://";
+        errorTab = errorTab || "social";
+      }
+    }
+    if (formData.announcement.isActive && !formData.announcement.text.trim()) {
+      errs.announcementText = "Announcement text is required when the bar is active";
+      errorTab = errorTab || "notifications";
+    }
     if (formData.gst.gstin && !/^[0-9A-Z]{15}$/.test(formData.gst.gstin.toUpperCase())) { errs.gstin = "GSTIN must be 15 characters"; errorTab = errorTab || "shipping"; }
     if (formData.gst.rate < 0 || formData.gst.rate > 100) { errs.gstRate = "Rate must be between 0 and 100"; errorTab = errorTab || "shipping"; }
+    const pickupPin = formData.shipping.shiprocket.pickupPincode;
+    if (pickupPin && !/^\d{6}$/.test(pickupPin)) { errs.pickupPincode = "Pickup pincode must be 6 digits"; errorTab = errorTab || "shipping"; }
     if (formData.seo.googleAnalyticsId && !/^(G|UA|AW)-/.test(formData.seo.googleAnalyticsId)) { errs.gaId = "Invalid Google Analytics ID format"; errorTab = errorTab || "seo"; }
     if (formData.seo.googleTagManagerId && !/^GTM-/.test(formData.seo.googleTagManagerId)) { errs.gtmId = "Invalid GTM ID format (GTM-XXXXXX)"; errorTab = errorTab || "seo"; }
     if (formData.seo.metaPixelId && !/^\d{7,16}$/.test(formData.seo.metaPixelId)) { errs.pixelId = "Meta Pixel ID should be a numeric ID"; errorTab = errorTab || "seo"; }
@@ -465,6 +542,8 @@ export default function AdminSettings() {
         setLogoRemoved(false);
         setFaviconRemoved(false);
         setStoryImageRemoved(false);
+        setHeroImageRemoved(false);
+        setFounderImageRemoved(false);
         setBannerFiles(initialBanners.map(() => null));
       }
       setErrors({});
@@ -510,6 +589,14 @@ export default function AdminSettings() {
     markDirty();
   };
 
+  const updateShiprocket = (key: string, value: string | number | boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      shipping: { ...prev.shipping, shiprocket: { ...prev.shipping.shiprocket, [key]: value } },
+    }));
+    markDirty();
+  };
+
   const updateNested = (section: string, key: string, value: any, nestedPath?: string) => {
     setFormData((prev) => ({ ...prev, [section]: { ...(prev as any)[section], [key]: value } }));
     markDirty();
@@ -541,7 +628,7 @@ export default function AdminSettings() {
   const getError = (key: string): string | undefined => errors[key];
 
   const inputClass = (key: string) => cn(
-    "flex w-full rounded-xl border bg-background px-4 py-2 text-sm ring-offset-background transition-all resize-none",
+    "flex w-full rounded-xl border bg-background px-4 py-2 text-sm ring-offset-background transition-all resize-y",
     getError(key)
       ? "border-red-300 focus-visible:ring-red-400/50"
       : "border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
@@ -553,7 +640,7 @@ export default function AdminSettings() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-64" />
         <div className="flex gap-2 mb-6">
-          {Array.from({ length: 7 }).map((_, i) => (
+          {Array.from({ length: tabs.length }).map((_, i) => (
             <Skeleton key={i} className="h-10 w-28 rounded-xl" />
           ))}
         </div>
@@ -945,6 +1032,85 @@ export default function AdminSettings() {
               </div>
             </div>
             <div className="border-t border-border pt-6">
+              {sectionHeader(
+                Truck,
+                "Shiprocket",
+                "Overrides the server environment defaults. Leave a field blank to keep the .env value."
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Pickup Location Nickname</label>
+                  <Input value={formData.shipping.shiprocket.pickupLocation}
+                    onChange={(e) => updateShiprocket("pickupLocation", e.target.value)}
+                    placeholder="Primary" />
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Must match a pickup address registered in Shiprocket → Settings → Pickup Addresses
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Pickup Pincode</label>
+                  <Input value={formData.shipping.shiprocket.pickupPincode}
+                    onChange={(e) => updateShiprocket("pickupPincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="380001" maxLength={6} className="tabular-nums" />
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Used for checkout serviceability and rate quotes
+                  </p>
+                  {getError("pickupPincode") && (
+                    <p className="text-xs text-red-500 mt-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />{getError("pickupPincode")}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Length (cm)</label>
+                  <Input type="number" min={0} value={formData.shipping.shiprocket.length || ""}
+                    onChange={(e) => updateShiprocket("length", Number(e.target.value))}
+                    placeholder="20" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Breadth (cm)</label>
+                  <Input type="number" min={0} value={formData.shipping.shiprocket.breadth || ""}
+                    onChange={(e) => updateShiprocket("breadth", Number(e.target.value))}
+                    placeholder="15" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Height (cm)</label>
+                  <Input type="number" min={0} value={formData.shipping.shiprocket.height || ""}
+                    onChange={(e) => updateShiprocket("height", Number(e.target.value))}
+                    placeholder="10" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Packaging (kg)</label>
+                  <Input type="number" step="0.05" min={0} value={formData.shipping.shiprocket.packagingWeight || ""}
+                    onChange={(e) => updateShiprocket("packagingWeight", Number(e.target.value))}
+                    placeholder="0.1" />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-4">
+                Parcel weight is calculated from the ordered variants plus the packaging weight above.
+              </p>
+
+              <div className="flex items-center justify-between gap-4 mt-4 p-4 rounded-xl border border-border bg-gradient-to-br from-indigo-50/30 to-transparent">
+                <div>
+                  <p className="text-sm font-medium">Auto-create shipments</p>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Push each order to Shiprocket and assign an AWB automatically — COD orders as soon
+                    as they are placed, prepaid orders once payment is marked received. Leave off to
+                    push each order by hand from the Orders page.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" checked={formData.shipping.shiprocket.autoCreate}
+                    onChange={(e) => updateShiprocket("autoCreate", e.target.checked)}
+                    className="sr-only peer" />
+                  <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600" />
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-6">
               {sectionHeader(Hash, "GST Information")}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -973,8 +1139,10 @@ export default function AdminSettings() {
                 <div>
                   <label className="block text-sm font-medium mb-2">UPI ID</label>
                   <Input value={formData.payment.upiId}
-                    onChange={(e) => updateNested("payment", "upiId", e.target.value)}
-                    placeholder="yourstore@upi" className="font-mono" />
+                    onChange={(e) => updateNested("payment", "upiId", e.target.value, "upiId")}
+                    placeholder="yourstore@upi"
+                    className={cn("font-mono", getError("upiId") && "border-red-300 focus-visible:ring-red-400/50")} />
+                  {getError("upiId") && <p className="text-xs text-red-500 mt-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{getError("upiId")}</p>}
                   <p className="text-[10px] text-muted-foreground mt-2">Used to generate the QR code and payment link customers see on their order page</p>
                 </div>
                 <div>
@@ -1027,7 +1195,9 @@ export default function AdminSettings() {
                       </label>
                       <Input value={(formData.socialMedia as any)[social.key]}
                         onChange={(e) => updateNested("socialMedia", social.key, e.target.value)}
-                        placeholder={social.placeholder} />
+                        placeholder={social.placeholder}
+                        className={cn(getError(social.key) && "border-red-300 focus-visible:ring-red-400/50")} />
+                      {getError(social.key) && <p className="text-xs text-red-500 mt-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{getError(social.key)}</p>}
                     </div>
                   );
                 })}
@@ -1138,8 +1308,10 @@ export default function AdminSettings() {
                 <label className="block text-sm font-medium mb-2">Announcement Text</label>
                 <div className="relative">
                   <Input value={formData.announcement.text}
-                    onChange={(e) => updateNested("announcement", "text", e.target.value)}
-                    placeholder="Free shipping on orders above ₹499!" />
+                    onChange={(e) => updateNested("announcement", "text", e.target.value, "announcementText")}
+                    placeholder="Free shipping on orders above ₹499!"
+                    className={cn(getError("announcementText") && "border-red-300 focus-visible:ring-red-400/50")} />
+                  {getError("announcementText") && <p className="text-xs text-red-500 mt-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{getError("announcementText")}</p>}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-2">
                   {formData.announcement.isActive ? (
@@ -1158,8 +1330,10 @@ export default function AdminSettings() {
                   <label className="block text-sm font-medium mb-2 flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" /> WhatsApp Number
                   </label>
-                  <Input value={formData.whatsapp.number} onChange={(e) => updateNested("whatsapp", "number", e.target.value)}
-                    placeholder="919876543210" />
+                  <Input value={formData.whatsapp.number} onChange={(e) => updateNested("whatsapp", "number", e.target.value, "whatsappNumber")}
+                    placeholder="919876543210"
+                    className={cn("tabular-nums", getError("whatsappNumber") && "border-red-300 focus-visible:ring-red-400/50")} />
+                  {getError("whatsappNumber") && <p className="text-xs text-red-500 mt-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{getError("whatsappNumber")}</p>}
                   <p className="text-[10px] text-muted-foreground mt-2">With country code, no + sign</p>
                 </div>
                 <div>
@@ -1239,6 +1413,7 @@ export default function AdminSettings() {
                           {banner.isActive ? <><Eye className="h-4 w-4" /> Live</> : <><EyeOff className="h-4 w-4" /> Hidden</>}
                         </span>
                         <button onClick={() => {
+                          if (banners[i]?.image?.startsWith('blob:')) URL.revokeObjectURL(banners[i].image);
                           setBanners((b) => b.filter((_, j) => j !== i));
                           setBannerFiles((f) => f.filter((_, j) => j !== i));
                           markDirty();

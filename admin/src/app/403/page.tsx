@@ -19,7 +19,7 @@ export default function ForbiddenPage() {
             Go Home
           </Link>
           <Link
-            href="/auth/login"
+            href="/admin/login"
             className="px-6 py-4 border rounded-xl font-medium hover:bg-muted transition-colors"
           >
             Switch Account

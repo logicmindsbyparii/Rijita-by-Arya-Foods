@@ -1,5 +1,15 @@
 # Feature Audit Tracker
 
+> ⚠️ **Scope correction (read first).** Every "Server files" reference in the table below points at
+> `server/src/**` — the TypeScript/Express/Mongoose tree. **That is not the API this project runs.**
+> `server/package.json` runs `venv/bin/python main.py` for both `dev` and `start`, which serves
+> **FastAPI from `server/app/**`**. `server/src/**` is reachable from exactly one live entry point,
+> `npm run seed` (`tsx src/seeds/seed.ts`), so it still defines the shape of all seeded data — and
+> notably it is the source of the live DB's unique `variants.sku` index, which the Python app did
+> not know about. Groups 1–14 below therefore verify the *dead* implementation. The equivalent
+> Python audit, and the separate defects it found, are logged at the bottom of ISSUES.md under
+> "SESSION: FastAPI-backend audit".
+
 Status legend: `[ ]` pending · `[x]` verified working · `[!]` issue found (see ISSUES.md) · `[~]` partially checked
 
 Each row = one loop iteration. Iteration reads ONLY the files listed, cross-checks client <-> server <-> admin, and where feasible drives it live in the browser (dev servers already run via `npm run dev` at repo root: client :3000-ish, admin similar, server per .env PORT). Do not re-read unrelated areas per iteration.

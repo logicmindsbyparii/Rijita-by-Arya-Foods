@@ -9,7 +9,9 @@ async def send_password_reset_email(to_email: str, token: str):
         logger.warning(f"SMTP not configured. Reset token for {to_email}: {token}")
         return
 
-    reset_url = f"{settings.CLIENT_URL}/reset-password?token={token}"
+    # The client's reset form lives under /auth — a bare /reset-password
+    # route does not exist and the emailed link would 404.
+    reset_url = f"{settings.CLIENT_URL}/auth/reset-password?token={token}"
     
     msg = MIMEMultipart()
     msg['From'] = f"RIJITA by Arya Foods <{settings.ADMIN_EMAIL}>"

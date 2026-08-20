@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Star, ShieldCheck, ArrowRight } from "lucide-react";
+import { Star, ArrowRight, BadgeCheck, MessageSquareQuote } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface HomeReview {
   id: string;
@@ -11,7 +12,6 @@ export interface HomeReview {
   comment: string;
   title?: string;
   productName?: string;
-  /** ISO date string from the API */
   createdAt: string;
 }
 
@@ -29,15 +29,33 @@ function formatDate(iso: string): string {
 
 function Stars({ rating, size }: { rating: number; size: number }) {
   return (
-    <div className="flex items-center gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>
+    <div className="flex items-center gap-1" role="img" aria-label={`${rating} out of 5 stars`}>
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
           size={size}
           aria-hidden="true"
-          className={i < rating ? "fill-gold-500 text-gold-500" : "text-ink-faint"}
+          className={i < rating ? "fill-gold-500 text-gold-500" : "fill-ink-faint text-ink-faint"}
         />
       ))}
+    </div>
+  );
+}
+
+function Avatar({ name }: { name: string }) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+  return (
+    <div
+      aria-hidden="true"
+      className="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs tracking-wide shrink-0 bg-brand-50 text-brand-700 border border-brand-100 shadow-sm"
+    >
+      {initials || "·"}
     </div>
   );
 }
@@ -49,137 +67,128 @@ export default function TestimonialsSection({
   reviews?: HomeReview[];
   summary?: ReviewSummary;
 }) {
-  // No approved reviews yet — the section has nothing honest to say, so it
-  // doesn't render. It reappears the moment a review clears moderation.
   if (reviews.length === 0) return null;
 
-  const [featured, ...rest] = reviews;
-
   return (
-    <section className="py-16 sm:py-24 lg:py-32 bg-paper-2 text-ink relative overflow-hidden">
+    <section className="py-24 sm:py-36 bg-paper-2 text-ink relative overflow-hidden border-t border-ink-faint">
+
+      {/* Editorial Noise Background */}
+      <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-        {/* Section Header — one orchestrated entrance for the whole block */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 space-y-3 sm:space-y-4"
-        >
-          <div className="inline-flex items-center gap-2 sm:gap-4 text-xs font-bold uppercase tracking-[0.18em] sm:tracking-[0.22em] text-brand-700">
-            <span className="h-px w-6 sm:w-10 bg-brand-600/40" />
-            <ShieldCheck size={14} className="text-brand-600 shrink-0" aria-hidden="true" />
-            <span>Customer Reviews</span>
-            <span className="h-px w-6 sm:w-10 bg-brand-600/40" />
-          </div>
+        {/* Header Area */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 mb-16 sm:mb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-3xl space-y-6"
+          >
+            <div className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
+              <MessageSquareQuote size={16} />
+              <span>Community Voices</span>
+            </div>
 
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-ink tracking-tighter leading-[1.05] [text-wrap:balance]">
-            What our customers say.
-          </h2>
+            <h2 className="text-5xl sm:text-6xl lg:text-7xl font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]">
+              Trusted by <br className="hidden sm:inline" /> purists.
+            </h2>
 
-          <p className="text-ink-2 text-sm sm:text-lg font-medium [text-wrap:pretty]">
-            Every review below was left by a verified purchaser and approved before publishing.
-          </p>
+            <p className="text-ink-2 text-lg sm:text-xl font-medium max-w-xl [text-wrap:pretty]">
+              Authentic feedback from our community. Every review is verified and strictly moderated to ensure genuine experiences.
+            </p>
+          </motion.div>
 
-          {/* Real aggregate — only rendered when there is one */}
           {summary && summary.count > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pt-2">
-              <Stars rating={Math.round(summary.average)} size={16} />
-              <span className="text-sm font-bold text-ink tabular-nums">
-                {summary.average.toFixed(1)} / 5.0
-              </span>
-              <span className="text-xs text-ink-3 tabular-nums">
-                from {summary.count} {summary.count === 1 ? "review" : "reviews"}
-              </span>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Review wall — asymmetric: featured quote + cards + CTA tile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-
-          {/* Featured review — dark brand tile spanning two rows */}
-          <div className="md:row-span-2 bg-brand-800 border border-gold-500/25 rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden text-white">
-            <div className="absolute inset-0 bg-[radial-gradient(#D4A54514_1px,transparent_1px)] [background-size:18px_18px] pointer-events-none" />
-
-            <div className="relative z-10">
-              <div className="mb-4">
-                <Stars rating={featured.rating} size={15} />
-              </div>
-              {featured.title && (
-                <h3 className="text-base font-bold text-gold-500 mb-2">{featured.title}</h3>
-              )}
-              <blockquote className="text-xl sm:text-2xl font-display text-white/95 leading-relaxed [text-wrap:pretty]">
-                &ldquo;{featured.comment}&rdquo;
-              </blockquote>
-            </div>
-
-            <figcaption className="relative z-10 pt-5 border-t border-white/10 mt-6 not-italic">
-              <p className="text-sm font-bold text-white">{featured.name}</p>
-              {featured.productName && (
-                <p className="text-xs text-emerald-200/80 font-semibold mt-1">
-                  on {featured.productName}
-                </p>
-              )}
-              <p className="text-xs text-white/60 font-medium mt-1">{formatDate(featured.createdAt)}</p>
-            </figcaption>
-          </div>
-
-          {/* Remaining reviews */}
-          {rest.map((r) => (
-            <div
-              key={r.id}
-              className="bg-white border border-ink-soft rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-[0_16px_40px_-24px_rgba(26,20,10,0.2)]"
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex items-center gap-6 bg-white p-6 rounded-3xl border border-ink-soft shadow-sm shrink-0"
             >
-              <div>
-                <div className="mb-3">
-                  <Stars rating={r.rating} size={13} />
-                </div>
-                {r.title && (
-                  <h3 className="text-sm font-bold text-ink mb-1.5">{r.title}</h3>
-                )}
-                <p className="text-sm text-ink-2 leading-relaxed">
-                  &ldquo;{r.comment}&rdquo;
-                </p>
+              <div className="flex flex-col items-center">
+                <span className="text-4xl font-black tabular-nums leading-none text-brand-700">{summary.average.toFixed(1)}</span>
+              </div>
+              <div className="h-12 w-px bg-ink-faint" />
+              <div className="flex flex-col items-start gap-1">
+                <Stars rating={Math.round(summary.average)} size={18} />
+                <span className="text-xs font-bold text-ink-3 uppercase tracking-widest">
+                  Based on {summary.count} reviews
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Masonry Wall */}
+        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 sm:gap-8 space-y-6 sm:space-y-8">
+          {reviews.map((r, i) => (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="break-inside-avoid bg-white rounded-[2rem] p-8 border border-ink-soft shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand-200 transition-all duration-500 group flex flex-col"
+            >
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <Stars rating={r.rating} size={16} />
+                <span className="text-[10px] font-black text-ink-3 uppercase tracking-widest bg-paper-2 px-2.5 py-1 rounded-md">
+                  {formatDate(r.createdAt)}
+                </span>
               </div>
 
-              <div className="pt-3 border-t border-ink-faint space-y-1">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-ink tracking-wide">{r.name}</p>
-                  <span className="text-xs text-ink-3 shrink-0">{formatDate(r.createdAt)}</span>
-                </div>
-                {r.productName && (
-                  <p className="text-xs text-ink-3 font-semibold">
-                    on <span className="text-ink-2">{r.productName}</span>
+              {r.title && (
+                <h4 className="font-bold text-ink text-lg mb-2">{r.title}</h4>
+              )}
+
+              <blockquote className="text-ink-2 text-base sm:text-lg font-medium leading-relaxed mb-8 flex-grow [text-wrap:pretty]">
+                &ldquo;{r.comment}&rdquo;
+              </blockquote>
+
+              <div className="flex items-center gap-4 pt-6 border-t border-ink-faint mt-auto">
+                <Avatar name={r.name} />
+                <div>
+                  <p className="font-bold text-ink text-sm flex items-center gap-1.5">
+                    {r.name}
+                    <BadgeCheck size={14} className="text-brand-500" aria-label="Verified review" />
                   </p>
-                )}
+                  {r.productName ? (
+                    <p className="text-xs font-bold text-brand-600 mt-0.5 line-clamp-1">{r.productName}</p>
+                  ) : (
+                    <p className="text-xs font-semibold text-ink-3 mt-0.5">Verified Buyer</p>
+                  )}
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
 
-          {/* CTA tile — closes the wall */}
-          <div className="rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col justify-between bg-gold-500 text-brand-800 shadow-[0_16px_40px_-24px_rgba(26,20,10,0.35)] relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[radial-gradient(#0F42180d_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-            <div className="relative z-10">
-              <div className="w-9 h-9 rounded-xl bg-brand-800/10 flex items-center justify-center mb-3">
-                <Star size={18} className="fill-brand-800 text-brand-800" aria-hidden="true" />
-              </div>
-              <h3 className="text-lg font-black leading-snug [text-wrap:balance]">
-                Tried us already? Leave a review.
-              </h3>
-              <p className="text-sm font-semibold mt-2 opacity-80">
-                Order fresh and add your voice to this wall.
-              </p>
+          {/* Inline CTA Block inserted into the masonry wall */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="break-inside-avoid bg-brand-900 rounded-[2rem] p-8 sm:p-10 flex flex-col items-start relative overflow-hidden group shadow-lg"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+              <MessageSquareQuote size={120} className="rotate-12 translate-x-8 -translate-y-8 group-hover:rotate-0 transition-transform duration-700" />
             </div>
-            <Link
-              href="/products"
-              className="relative z-10 inline-flex items-center gap-2 mt-4 px-4 py-2.5 rounded-xl bg-brand-800 text-white text-sm font-bold whitespace-nowrap transition-[background-color,gap] duration-short ease-out-custom hover:bg-brand-900 group-hover:gap-3 focus-ring"
-            >
-              Shop 100% Jain
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          </div>
+            <div className="relative z-10 w-full">
+              <h3 className="text-3xl font-display font-black text-white mb-4 leading-tight">Your voice matters.</h3>
+              <p className="text-brand-200 font-medium mb-8 text-lg">Experience our 100% Jain purity and let us know your thoughts.</p>
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-2 bg-gold-500 text-brand-900 px-8 py-4 rounded-xl font-bold hover:bg-gold-400 transition-colors focus-ring active:scale-95"
+              >
+                Shop the Collection
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </motion.div>
 
         </div>
       </div>

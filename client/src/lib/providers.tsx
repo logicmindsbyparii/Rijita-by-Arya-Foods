@@ -17,9 +17,13 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000,
+            // The storefront must always reflect the live catalog. Keep every
+            // query stale (0ms) and refetch on window focus so products,
+            // categories, collections etc. update immediately after admin
+            // changes instead of lingering for 5 minutes.
+            staleTime: 0,
             retry: 1,
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
           },
         },
       })

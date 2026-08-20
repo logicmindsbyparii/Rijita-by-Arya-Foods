@@ -12,7 +12,10 @@ from app.db import connect_db, close_db
 from app.utils.cron import init_cron_jobs, shutdown_cron_jobs
 from app.utils.logger import logger
 
-from app.routers import auth, categories, products, orders, content, analytics
+from app.routers import (
+    auth, categories, products, orders, analytics, shipping,
+    blogs, collections, contacts, coupons, recipes, reviews, settings as settings_router, subscribers, users
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,10 +60,26 @@ if settings.CORS_ORIGINS:
     extra_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
     origins.extend(extra_origins)
 
+# Only localhost dev servers and ngrok tunnel hosts — never a blanket "any
+# https origin" regex. With allow_credentials=True a wildcard would let any
+# website make credentialed requests to this API and read the responses
+# (stored XSS/CSRF surface); every legitimate caller is either same-origin
+# (through the Next.js /api rewrite) or on the explicit list.
+#
+# The regex is dev-only: `[a-z0-9-]+.ngrok...` matches *anybody's* tunnel, not
+# just ours, so in production it would hand a credentialed cross-origin channel
+# to any attacker who can run `ngrok`. Production gets the explicit CLIENT_URL /
+# CORS_ORIGINS list and nothing else.
+dev_origin_regex = (
+    None
+    if settings.NODE_ENV == "production"
+    else r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://[a-z0-9-]+\.ngrok(-free)?\.(io|app|dev)"
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(set(origins)),
-    allow_origin_regex=r"https?://.*",
+    allow_origin_regex=dev_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -106,8 +125,17 @@ app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(products.router)
 app.include_router(orders.router)
-app.include_router(content.router)
+app.include_router(shipping.router)
 app.include_router(analytics.router)
+app.include_router(blogs.router)
+app.include_router(collections.router)
+app.include_router(contacts.router)
+app.include_router(coupons.router)
+app.include_router(recipes.router)
+app.include_router(reviews.router)
+app.include_router(settings_router.router)
+app.include_router(subscribers.router)
+app.include_router(users.router)
 
 # Exception Handlers
 @app.exception_handler(HTTPException)

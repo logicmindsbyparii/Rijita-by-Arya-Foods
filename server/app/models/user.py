@@ -1,5 +1,11 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Literal, Optional, List
+
+# The only roles require_roles() and the admin guards understand. `role` used to
+# be a bare `str`, so the admin user form could store any value at all — a typo
+# like "Admin" or "superadmin " silently failed every role check afterwards and
+# locked the account out of the panel with no error anywhere.
+UserRole = Literal["customer", "admin", "superadmin"]
 
 class AddressSchema(BaseModel):
     label: str = "Home"
@@ -42,14 +48,16 @@ class AdminCreateUserSchema(BaseModel):
     name: str
     email: EmailStr
     phone: str
-    password: str
-    role: Optional[str] = "customer"
+    # Same 6-character floor register, reset-password and change-password all
+    # enforce — the admin form was the one way to create a weaker password.
+    password: str = Field(min_length=6)
+    role: Optional[UserRole] = "customer"
     isActive: Optional[bool] = True
 
 class AdminUpdateUserSchema(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    password: Optional[str] = None
-    role: Optional[str] = None
+    password: Optional[str] = Field(default=None, min_length=6)
+    role: Optional[UserRole] = None
     isActive: Optional[bool] = None

@@ -1,106 +1,46 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Variant } from "@/types";
+import { getImageUrl as _getImageUrl, DEFAULT_LOGO_IMAGE as _DEFAULT_LOGO_IMAGE } from "@shared/utils";
+export { formatPrice, formatDate, generateWhatsAppUrl, getImageUrl, handleImageError, PLACEHOLDER_IMAGE, WHATSAPP_NUMBER, DEFAULT_LOGO_IMAGE } from "@shared/utils";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(price);
+/**
+ * Pick the variant a product card should price and add to the cart.
+ *
+ * Every card used to take `variants[0]` unconditionally, so a product whose
+ * first pack was sold out or deactivated rendered "Sold Out" — and refused to
+ * add to the cart — while its other sizes were in stock and orderable. The
+ * price shown could also come from a variant the server rejects at checkout,
+ * since `place_order` refuses inactive variants outright.
+ *
+ * Preference order: sellable (active and in stock) → active → whatever exists,
+ * so an all-sold-out product still renders its real price under the overlay.
+ *
+ * `isActive` is treated as true when absent, matching the server's
+ * `variant.get("isActive", True)` for older records that predate the field.
+ */
+export function getPrimaryVariant(variants?: Variant[]): Variant | undefined {
+  if (!variants?.length) return undefined;
+  const active = variants.filter((v) => v?.isActive !== false);
+  return active.find((v) => (v.stock ?? 0) > 0) ?? active[0] ?? variants[0];
 }
-
-export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-export function calculateDiscount(mrp: number, sellingPrice: number): number {
-  if (mrp <= 0) return 0;
-  return Math.round(((mrp - sellingPrice) / mrp) * 100);
-}
-
-
-export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
-
-export function generateWhatsAppUrl(message: string, phone?: string): string {
-  const rawNumber = phone || WHATSAPP_NUMBER;
-  const number = rawNumber.replace(/\D/g, "");
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-}
-
-export const PLACEHOLDER_IMAGE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23fef3c7'/%3E%3Ctext x='200' y='200' text-anchor='middle' dominant-baseline='central' font-size='48' fill='%23d97706'%3EProduct%3C/text%3E%3Ctext x='200' y='260' text-anchor='middle' dominant-baseline='central' font-size='48' fill='%23d97706'%3EImage%3C/text%3E%3C/svg%3E";
-
-export function handleImageError(e: React.SyntheticEvent<HTMLImageElement>): void {
-  const target = e.currentTarget;
-  if (target.src !== PLACEHOLDER_IMAGE) {
-    target.src = PLACEHOLDER_IMAGE;
-  }
-}
-
-export function getImageUrl(path: string | undefined): string {
-  if (!path) return PLACEHOLDER_IMAGE;
-  if (path.startsWith("data:") || path.startsWith("blob:")) return path;
-
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    if (typeof window !== "undefined") {
-      const currentHost = window.location.hostname;
-      if (currentHost !== "localhost" && currentHost !== "127.0.0.1" && path.includes("localhost:5001")) {
-        const relativePath = path.replace(/https?:\/\/localhost:5001/, "");
-        return `${window.location.protocol}//${window.location.host}${relativePath}`;
-      }
-    }
-    return path;
-  }
-
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  if (
-    normalizedPath.startsWith("/uploads") ||
-    normalizedPath.startsWith("/banners") ||
-    normalizedPath.startsWith("/gallery") ||
-    normalizedPath.startsWith("/products") ||
-    normalizedPath.startsWith("/blogs") ||
-    normalizedPath.startsWith("/recipes")
-  ) {
-    const envApi = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-    const baseUrl = envApi.replace(/\/api$/, "");
-
-    if (typeof window !== "undefined") {
-      const currentHost = window.location.hostname;
-      if (currentHost !== "localhost" && currentHost !== "127.0.0.1" && baseUrl.includes("localhost")) {
-        return `${window.location.protocol}//${window.location.host}${normalizedPath}`;
-      }
-    }
-
-    return `${baseUrl}${normalizedPath}`;
-  }
-
-  return normalizedPath;
-}
-
-export const DEFAULT_LOGO_IMAGE = "/uploads/logo.png";
 
 export function getLogoUrl(path?: string, updatedAt?: string | Date): string {
   let url: string;
-  if (path && path.trim() !== "" && path !== PLACEHOLDER_IMAGE) {
-    const resolved = getImageUrl(path);
-    if (resolved && resolved !== PLACEHOLDER_IMAGE) {
+  if (path && path.trim() !== "" && path !== _DEFAULT_LOGO_IMAGE) {
+    const resolved = _getImageUrl(path);
+    if (resolved && resolved !== _DEFAULT_LOGO_IMAGE) {
       url = resolved;
     } else {
-      url = getImageUrl(DEFAULT_LOGO_IMAGE);
+      url = _getImageUrl(_DEFAULT_LOGO_IMAGE);
     }
   } else {
-    url = getImageUrl(DEFAULT_LOGO_IMAGE);
+    url = _getImageUrl(_DEFAULT_LOGO_IMAGE);
   }
-
   if (updatedAt) {
     const v = typeof updatedAt === "string" ? new Date(updatedAt).getTime() : updatedAt.getTime();
     if (!isNaN(v) && v > 0) {
@@ -109,3 +49,39 @@ export function getLogoUrl(path?: string, updatedAt?: string | Date): string {
   }
   return url;
 }
+
+export function calculateDiscount(mrp: number, sellingPrice: number): number {
+  if (!Number.isFinite(mrp) || !Number.isFinite(sellingPrice) || mrp <= 0) return 0;
+  // Clamp: when sellingPrice exceeds mrp (a data-entry slip in the admin) the raw
+  // formula goes negative and the badge advertises "-15% OFF".
+  if (sellingPrice >= mrp) return 0;
+  return Math.round(((mrp - sellingPrice) / mrp) * 100);
+}
+
+
+
+
+/**
+ * Prepend the store's configured WhatsApp message template (a greeting like
+ * "Hi, I would like to order from RIJITA.") to an auto-generated order message.
+ * No-op when the template is unset.
+ */
+export function applyWhatsAppTemplate(message: string, template?: string): string {
+  const greeting = template?.trim();
+  if (!greeting) return message;
+  return `${greeting}\n\n${message}`;
+}
+
+/**
+ * Build a `tel:` href. Display numbers carry spaces and punctuation
+ * ("+91 99044 59998"), which are not valid in a tel: URI — some dialers drop
+ * everything after the first space. Keeps a leading "+" for the country code.
+ */
+export function telHref(phone: string): string {
+  const trimmed = (phone || "").trim();
+  const digits = trimmed.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return `tel:${trimmed.startsWith("+") ? "+" : ""}${digits}`;
+}
+
+

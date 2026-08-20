@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,8 +24,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/auth-context";
-import { orderApi } from "@/lib/api";
-import { formatPrice, formatDate, generateWhatsAppUrl, getImageUrl } from "@/lib/utils";
+import { orderApi, contentApi } from "@/lib/api";
+import { formatPrice, formatDate, generateWhatsAppUrl, getImageUrl, applyWhatsAppTemplate } from "@/lib/utils";
 import { Order, OrderStatus, OrderItem } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,12 @@ function generateOrderWhatsAppMessage(order: Order): string {
 
 export default function OrdersPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => contentApi.getSiteSettings(),
+    staleTime: 10 * 60 * 1000,
+  });
+  const settings = settingsData?.data?.settings;
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,8 +119,12 @@ export default function OrdersPage() {
   const [pendingCancel, setPendingCancel] = useState<Order | null>(null);
 
   const handleTrackOnWhatsApp = (order: Order) => {
-    const message = generateOrderWhatsAppMessage(order);
-    const url = generateWhatsAppUrl(message);
+    const message = applyWhatsAppTemplate(
+      generateOrderWhatsAppMessage(order),
+      settings?.whatsapp?.messageTemplate
+    );
+    const whatsappNumber = settings?.whatsapp?.number || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
+    const url = generateWhatsAppUrl(message, whatsappNumber);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -156,7 +167,7 @@ export default function OrdersPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <Loader2 size={32} className="animate-spin text-brand-500" />
       </div>
     );
@@ -164,7 +175,7 @@ export default function OrdersPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -182,7 +193,7 @@ export default function OrdersPage() {
           </p>
           <Link
             href="/auth/login"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-ui hover:shadow-lg hover:shadow-brand-500/25"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-ui hover:shadow-lg hover:shadow-brand-500/25"
           >
             Login
           </Link>
@@ -192,7 +203,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
@@ -267,7 +278,7 @@ export default function OrdersPage() {
             </p>
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-ui hover:shadow-lg hover:shadow-brand-500/25"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-ui hover:shadow-lg hover:shadow-brand-500/25"
             >
               Browse Products
             </Link>
@@ -409,7 +420,7 @@ export default function OrdersPage() {
                                 <div className="flex items-center justify-between">
                                   <span className="flex items-center gap-2 text-muted-foreground">
                                     <IndianRupee size={12} />
-                                    GST (5%)
+                                    GST ({settings?.gst?.rate ?? 5}%)
                                   </span>
                                   <span>{formatPrice(order.gstAmount)}</span>
                                 </div>

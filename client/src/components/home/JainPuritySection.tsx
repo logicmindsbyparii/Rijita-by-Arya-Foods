@@ -19,7 +19,7 @@ const PURITY_PILLARS = [
       "Pure Natural Hing & Whole Spices",
       "Checked at Every Batch"
     ],
-    accent: "from-emerald-800 to-emerald-950"
+    accent: "from-brand-700 to-brand-950"
   },
   {
     id: "ingredients",
@@ -33,7 +33,7 @@ const PURITY_PILLARS = [
       "Sendha Namak Options",
       "Zero MSG or Chemical Flavors"
     ],
-    accent: "from-amber-700 to-amber-950"
+    accent: "from-gold-700 to-brand-900"
   },
   {
     id: "oil",
@@ -47,7 +47,7 @@ const PURITY_PILLARS = [
       "Monitored Frying Temperature",
       "Crisp, Non-Greasy Texture"
     ],
-    accent: "from-yellow-700 to-brand-900"
+    accent: "from-gold-600 to-brand-800"
   },
   {
     id: "trust",
@@ -61,7 +61,7 @@ const PURITY_PILLARS = [
       "Direct Fresh Dispatch",
       "Satisfaction Promise"
     ],
-    accent: "from-emerald-900 to-brand-950"
+    accent: "from-brand-800 to-brand-950"
   }
 ];
 
@@ -72,8 +72,10 @@ export default function JainPuritySection() {
     <section className="relative py-16 sm:py-24 lg:py-32 bg-paper text-ink overflow-hidden">
       {/* Ambient light washes */}
 
-      {/* Dotted texture */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1b5e2010_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+      {/* Subtle grain overlay — replaces the generic dot pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.025] mix-blend-multiply"
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
@@ -93,7 +95,7 @@ export default function JainPuritySection() {
           </motion.span>
 
           <motion.h2
-            className="text-3xl sm:text-5xl lg:text-6xl font-display font-black tracking-tighter text-ink leading-[1.05] [text-wrap:balance]"
+            className="text-3xl sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.02em] text-ink leading-[1.06] sm:leading-[1.02] [text-wrap:balance]"
           >
             Sacred Sattvik Taste. <br />
             <span className="text-brand-700">
@@ -118,16 +120,14 @@ export default function JainPuritySection() {
               <button
                 key={pillar.id}
                 onClick={() => setActivePillar(pillar)}
-                className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-ui duration-300 border flex flex-col items-center sm:items-start text-center sm:text-left focus-ring active:scale-[0.98] ${
-                  isActive
+                className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-ui duration-300 border flex flex-col items-center sm:items-start text-center sm:text-left focus-ring active:scale-[0.98] ${isActive
                     ? "bg-white border-brand-600 shadow-[0_12px_32px_-16px_rgba(20,82,24,0.35)]"
                     : "bg-white/60 border-ink-soft hover:bg-white hover:border-ink-mid"
-                }`}
+                  }`}
               >
                 <div
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 transition-ui duration-300 ${
-                    isActive ? "bg-brand-700 text-white shadow-md scale-105" : "bg-paper-2 text-ink-3"
-                  }`}
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 transition-ui duration-300 ${isActive ? "bg-brand-700 text-white shadow-md scale-105" : "bg-paper-2 text-ink-3"
+                    }`}
                 >
                   <Icon size={18} />
                 </div>
@@ -181,38 +181,53 @@ export default function JainPuritySection() {
                   </div>
                 </div>
 
-                {/* Right Visual Badge Box */}
+                {/* Right Visual — editorial ingredient showcase instead of gradient box */}
                 <div className="lg:col-span-5 flex justify-center">
-                  <div className={`w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-2xl sm:rounded-3xl bg-gradient-to-br ${activePillar.accent} p-6 sm:p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden border border-white/10 group`}>
-                    <div className="absolute inset-0 z-0 opacity-45 group-hover:opacity-70 transition-opacity duration-500">
+                  <div className="w-full max-w-[280px] sm:max-w-[320px] relative">
+                    {/* Main image with rounded corners — no gradient box behind it */}
+                    <div className="relative aspect-[4/5] rounded-2xl sm:rounded-3xl overflow-hidden border border-ink-faint shadow-[0_32px_80px_-20px_rgba(26,20,10,0.2)] bg-white group">
                       <Image
-                        src={NAMKEEN_IMAGES.chakli}
-                        alt=""
+                        src={NAMKEEN_IMAGES.sattvik}
+                        alt="Pure Sattvik Jain Namkeen"
                         fill
                         sizes="320px"
-                        className="object-cover"
+                        className="object-cover object-center scale-105 group-hover:scale-100 transition-transform duration-1000 ease-out"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 via-transparent to-transparent" />
+
+                      {/* Floating tag — positioned at bottom-left */}
+                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between z-10">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-700/90 backdrop-blur-md">
+                          {(() => {
+                            const PillarIcon = activePillar.icon;
+                            return <PillarIcon size={14} className="text-gold-300" />;
+                          })()}
+                          <span className="text-[11px] font-bold text-white">{activePillar.subtitle.split("•")[0].trim()}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="relative z-10">
-                      {(() => {
-                        const PillarIcon = activePillar.icon;
-                        return (
-                          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-brand-950 flex items-center justify-center font-bold shadow-lg mb-3 sm:mb-4">
-                            <PillarIcon size={22} />
-                          </div>
-                        );
-                      })()}
-                      <span className="text-xs font-extrabold uppercase tracking-widest text-amber-300 bg-amber-400/20 px-3 py-1.5 rounded-full border border-amber-400/30 backdrop-blur-md">
-                        RIJITA Namkeen Craft
-                      </span>
-                    </div>
-
-                    <div className="relative z-10 pt-4 border-t border-white/15">
-                      <span className="text-lg sm:text-2xl font-display font-extrabold text-white block">100% Pure Jain</span>
-                      <span className="text-xs text-white/75 font-medium">Small Batch • Freshly Fried</span>
-                    </div>
+                    {/* Small floating stat card — offset below-right for depth */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                      className="absolute -bottom-4 -right-3 sm:-right-6 bg-white rounded-2xl border border-ink-faint shadow-[0_16px_48px_-12px_rgba(26,20,10,0.25)] p-3.5 sm:p-4 z-20"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/50 flex items-center justify-center">
+                          {(() => {
+                            const PillarIcon = activePillar.icon;
+                            return <PillarIcon size={18} className="text-brand-700" />;
+                          })()}
+                        </div>
+                        <div>
+                          <p className="text-xs font-extrabold text-ink leading-none mb-0.5">100% Pure Jain</p>
+                          <p className="text-[10px] text-ink-3 font-semibold">Small Batch • Freshly Fried</p>
+                        </div>
+                      </div>
+                    </motion.div>
                   </div>
                 </div>
 

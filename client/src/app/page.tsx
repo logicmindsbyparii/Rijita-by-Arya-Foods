@@ -1,20 +1,29 @@
 import HeroSection from "@/components/home/HeroSection";
 import JainMarqueeTicker from "@/components/home/JainMarqueeTicker";
 import ProductShowcase from "@/components/home/ProductShowcase";
-import BentoCategories from "@/components/home/BentoCategories";
 import JainPuritySection from "@/components/home/JainPuritySection";
+import StoriesRecipesSection from "@/components/home/StoriesRecipesSection";
 import EditorialStory from "@/components/home/EditorialStory";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
+import FeaturedProductSpotlight from "@/components/home/FeaturedProductSpotlight";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+// Server components cannot fetch relative URLs — /api only works through the
+// Next.js rewrite in the browser. Resolve to an absolute backend URL here.
+const API_BASE = (() => {
+  const raw = process.env.NEXT_PUBLIC_API_URL;
+  if (raw && raw.startsWith("http")) return raw.replace(/\/$/, "");
+  return "http://localhost:5001/api";
+})();
 
 export const dynamic = 'force-dynamic';
 
-// force-dynamic (below) already renders per request, so per-fetch
-// revalidate options would be dead weight — keep fetches simple.
+// The homepage must always reflect the live catalog. cache: "no-store" is
+// required even with force-dynamic below — without it, Next.js serves these
+// fetches from its persistent Data Cache (.next/cache/fetch-cache), which can
+// keep deleted products/categories/collections visible indefinitely.
 async function fetchServer<T = any>(endpoint: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${endpoint}`);
+    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -23,16 +32,30 @@ async function fetchServer<T = any>(endpoint: string): Promise<T | null> {
 }
 
 export default async function HomePage() {
-  const [featuredData, newArrivalsData, categoriesData, settingsData] = await Promise.all([
+  const [featuredData, catalogData, categoriesData, settingsData, blogsData, recipesData] = await Promise.all([
     fetchServer("/products/featured"),
-    fetchServer("/products/new-arrivals"),
+    // Fetch the whole active catalog so the shelf shows every product and the
+    // filter tabs carry true per-category counts (not an 8-item subset).
+    fetchServer("/products?limit=100"),
     fetchServer("/categories"),
-    fetch(`${API_BASE}/settings`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${API_BASE}/settings`, { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetchServer("/blogs?limit=3"),
+    fetchServer("/recipes?limit=3"),
   ]);
 
-  const products = featuredData?.data?.products || [];
-  const newArrivals = newArrivalsData?.data?.products || [];
+  const flaggedFeatured = featuredData?.data?.products || [];
+  const catalog = catalogData?.data?.products || [];
+
+  // The featured shelf must always reflect real products. When no product has
+  // been flagged isFeatured in the admin yet, fall back to the full live
+  // catalog (newest first) so the homepage shows every stocked product and the
+  // category tabs stay accurate. The "coming soon" state only appears when the
+  // catalog is genuinely empty (0 products).
+  const products = flaggedFeatured.length > 0 ? flaggedFeatured : catalog;
+
   const categories = categoriesData?.data?.categories || [];
+  const blogs = blogsData?.data?.blogs || [];
+  const recipes = recipesData?.data?.recipes || [];
   const settings = settingsData?.data?.settings || {};
   const banners = settings?.banners || [];
   const storyImage = settings?.storyImage || "";
@@ -47,45 +70,23 @@ export default async function HomePage() {
         "Every single batch follows strict 100% Jain principles — zero onion, zero garlic, zero artificial preservatives. Just pure, unadulterated flavor, packed fresh while the crunch is at its best.",
       ];
 
-  // Real, moderator-approved reviews for the wall. The API is per-product, so
-  // pull from the products already on this page and take the newest few.
-  // No reviews approved yet → TestimonialsSection renders nothing.
-  const reviewSources = [...products, ...newArrivals]
-    .filter((p: any, i: number, all: any[]) => all.findIndex((q) => q._id === p._id) === i)
-    .filter((p: any) => (p.reviewCount ?? 0) > 0)
-    .slice(0, 8);
+  const latestReviewsData = await fetchServer("/reviews/latest?limit=6");
+  const homeReviews = latestReviewsData?.data?.reviews?.map((r: any) => ({
+    id: r._id,
+    name: r.userName || r.name,
+    rating: r.rating,
+    comment: r.comment,
+    title: r.title,
+    productName: r.productName,
+    createdAt: r.createdAt,
+  })) || [];
 
-  const reviewResponses = await Promise.all(
-    reviewSources.map((p: any) =>
-      fetchServer(`/reviews/product/${p._id}?limit=4`).then((r: any) => ({
-        productName: p.name as string,
-        reviews: r?.data?.reviews ?? [],
-      }))
-    )
-  );
-
-  const homeReviews = reviewResponses
-    .flatMap(({ productName, reviews }) =>
-      reviews.map((r: any) => ({
-        id: r._id,
-        name: r.userName,
-        rating: r.rating,
-        comment: r.comment,
-        title: r.title,
-        productName,
-        createdAt: r.createdAt,
-      }))
-    )
-    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-    .slice(0, 4);
-
-  // Weighted mean of the real per-product ratings — never a stated constant.
-  const rated = reviewSources.filter((p: any) => p.averageRating > 0);
-  const totalReviews = rated.reduce((n: number, p: any) => n + p.reviewCount, 0);
-  const reviewSummary = totalReviews > 0
+  // Summary comes from the admin-approved reviews actually shown, not from
+  // product rating fields (which may be zero until customers review each SKU).
+  const reviewSummary = homeReviews.length > 0
     ? {
-        average: rated.reduce((n: number, p: any) => n + p.averageRating * p.reviewCount, 0) / totalReviews,
-        count: totalReviews,
+        average: homeReviews.reduce((n: number, r: any) => n + r.rating, 0) / homeReviews.length,
+        count: homeReviews.length,
       }
     : undefined;
 
@@ -110,16 +111,21 @@ export default async function HomePage() {
         {/* 2. Infinite Marquee Brand Promises Ticker */}
         <JainMarqueeTicker />
 
-        {/* 3. Featured Products — front and center, right after the hero */}
+        {/* 3. Product Centric Spotlight — Focuses on a randomly selected featured product */}
         {products.length > 0 && (
-          <ProductShowcase title="Featured 100% Jain" subtitle="Flavors." products={products} />
+          <FeaturedProductSpotlight product={products[Math.floor(Math.random() * products.length)]} />
         )}
 
-        {/* 4. Category Bento Grid — shop by collection */}
-        <BentoCategories categories={categories} />
+        {/* 4. Featured Products Collection — always visible; empty state handled inside */}
+        <ProductShowcase title="Featured 100% Jain" subtitle="Flavors." products={products} />
 
         {/* 5. 100% Jain Purity Guarantee Feature (Zero Onion Zero Garlic) */}
         <JainPuritySection />
+
+        {/* 5.5 Stories & Recipes — journal preview, hidden when empty */}
+        {(blogs.length > 0 || recipes.length > 0) && (
+          <StoriesRecipesSection blogs={blogs} recipes={recipes} />
+        )}
 
         {/* 6. Editorial Brand Story & Heritage */}
         <EditorialStory
@@ -131,11 +137,6 @@ export default async function HomePage() {
 
         {/* 7. Customer review wall — real approved reviews, hidden when empty */}
         <TestimonialsSection reviews={homeReviews} summary={reviewSummary} />
-
-        {/* 8. Fresh Arrivals Showcase */}
-        {newArrivals.length > 0 && (
-          <ProductShowcase title="Freshly Made" subtitle="Arrivals." products={newArrivals} variant="arrivals" />
-        )}
       </div>
     </div>
   );

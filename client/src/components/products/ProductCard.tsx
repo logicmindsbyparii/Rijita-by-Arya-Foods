@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ShoppingBag, TrendingUp, Sparkles, Percent, Heart } from "lucide-react";
+import { Star, ShoppingBag, Heart } from "lucide-react";
 import toast from "react-hot-toast";
-import { calculateDiscount, formatPrice, cn, getImageUrl } from "@/lib/utils";
+import { calculateDiscount, formatPrice, cn, getImageUrl, getPrimaryVariant } from "@/lib/utils";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,14 @@ export default function ProductCard({
   const [justAdded, setJustAdded] = useState(false);
   const queryClient = useQueryClient();
 
+  // Clicking the card navigates away mid-animation, so the add-to-cart feedback
+  // timers below can outlive the component and set state on an unmounted card.
+  const feedbackTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    const timers = feedbackTimers.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   const isInWishlist = isAuthenticated && user?.wishlist?.includes(product._id);
 
   const toggleWishlistMutation = useMutation({
@@ -47,10 +55,19 @@ export default function ProductCard({
     onError: () => toast.error("Failed to update wishlist"),
   });
 
-  const primaryVariant = product.variants?.[0];
+  const primaryVariant = getPrimaryVariant(product.variants);
   const discount = primaryVariant
     ? calculateDiscount(primaryVariant.mrp, primaryVariant.sellingPrice)
     : 0;
+
+  // Prefer the display weight string ("500 g") when present — it's what the
+  // admin enters as the human-readable label. Fall back to weightValue+unit so
+  // cards never render a raw "10g" when the fields disagree.
+  const weightLabel = primaryVariant?.weight
+    ? String(primaryVariant.weight).trim()
+    : primaryVariant
+      ? `${primaryVariant.weightValue ?? ""}${primaryVariant.weightUnit ?? ""}`.trim()
+      : "";
 
   const categoryName =
     typeof product.category === "object" ? product.category?.name : "";
@@ -68,11 +85,13 @@ export default function ProductCard({
     }
     setIsAdding(true);
     addItem(product, primaryVariant, 1);
-    setTimeout(() => {
-      setIsAdding(false);
-      setJustAdded(true);
-      setTimeout(() => setJustAdded(false), 800);
-    }, 400);
+    feedbackTimers.current.push(
+      setTimeout(() => {
+        setIsAdding(false);
+        setJustAdded(true);
+        feedbackTimers.current.push(setTimeout(() => setJustAdded(false), 800));
+      }, 400)
+    );
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -88,19 +107,25 @@ export default function ProductCard({
 
   const isOutOfStock = primaryVariant && primaryVariant.stock <= 0;
 
-  const activeBadges: { label: string; icon: React.ElementType; color: string }[] = [];
-  if (product.isNewArrival) activeBadges.push({ label: "New", icon: Sparkles, color: "bg-emerald-500/80 text-white border border-white/20" });
-  if (product.isBestSeller) activeBadges.push({ label: "Best Seller", icon: TrendingUp, color: "bg-amber-500/80 text-white border border-white/20" });
-  if (discount > 0) activeBadges.push({ label: `${discount}% OFF`, icon: Percent, color: "bg-rose-500/80 text-white border border-white/20" });
+  const activeBadges: { label: string; tone: string }[] = [];
+  if (product.isNewArrival) activeBadges.push({ label: "New", tone: "quiet" });
+  if (product.isBestSeller) activeBadges.push({ label: "Best Seller", tone: "quiet" });
+  if (discount > 0) activeBadges.push({ label: `${discount}% Off`, tone: "gold" });
 
   return (
     <div className="h-full flex">
-      <Link
-        href={`/products/${product.slug}`}
-        className="group flex flex-col w-full h-full bg-white rounded-2xl border border-stone-100/80 overflow-hidden transition-[transform,box-shadow,border-color] duration-short ease-out-custom hover:shadow-lg hover:-translate-y-0.5 hover:border-stone-200 relative"
+      {/*
+        The card is a plain container, not an <a>. The wishlist and add-to-cart
+        controls are real <button>s, and nesting a button inside an anchor is
+        invalid HTML that breaks keyboard and screen-reader navigation. Instead
+        the anchor is a stretched overlay (below) that covers the card, with the
+        two buttons stacked above it.
+      */}
+      <div
+        className="group flex flex-col w-full h-full bg-paper-2 rounded-2xl border border-rule overflow-hidden transition-[transform,box-shadow,border-color] duration-short ease-out-custom hover:shadow-lg hover:-translate-y-1 hover:border-brand-200 relative focus-within:ring-2 focus-within:ring-[var(--color-focus)]"
       >
         {/* ── Image Container ── */}
-        <div className="relative aspect-[4/3] sm:aspect-[1/1] xl:aspect-[4/5] bg-stone-50 overflow-hidden shrink-0">
+        <div className="relative aspect-[4/5] bg-paper-3 overflow-hidden shrink-0">
 
           {/* Product image */}
           {product.images?.[0] && !imgError ? (
@@ -109,56 +134,51 @@ export default function ProductCard({
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition-transform duration-long ease-out-custom"
+              className="object-cover transition-transform duration-long ease-out-custom group-hover:scale-[1.04]"
               onError={() => setImgError(true)}
             />
           ) : (
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center bg-stone-100/50 text-stone-300"
+              className="absolute inset-0 flex flex-col items-center justify-center bg-paper-3 text-ink-faint"
               role="img"
               aria-label={product.name}
             >
-              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-2">
-                <ShoppingBag size={24} className="text-stone-300" />
+              <div className="w-16 h-16 rounded-full bg-paper-2 border border-rule flex items-center justify-center shadow-sm mb-2">
+                <ShoppingBag size={24} />
               </div>
             </div>
           )}
 
           {/* Top gradient on hover */}
-          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-short ease-out-custom" />
+          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ink/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-short ease-out-custom" />
 
-          {/* Badges — top left, improved stacking */}
+          {/* Badges — top left, editorial: gold serif for OFF, quiet tracked caps otherwise */}
           {activeBadges.length > 0 && (
-            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 max-w-[calc(100%-3.5rem)]">
-              {activeBadges.slice(0, 2).map((badge) => {
-                const Icon = badge.icon;
-                return (
-                  <span
-                    key={badge.label}
-                    className={cn(
-                      "text-xs font-bold px-2 py-2 rounded-full backdrop-blur-md flex items-center gap-2 tracking-wider uppercase shadow-lg",
-                      badge.color
-                    )}
-                  >
-                    <Icon size={10} />
-                    {badge.label}
-                  </span>
-                );
-              })}
-              {/* Show remaining count as a compact indicator */}
-              {activeBadges.length > 2 && (
-                <span className="text-xs font-bold text-white/80 bg-black/40 backdrop-blur-sm px-2 py-0 rounded-full text-center">
-                  +{activeBadges.length - 2}
+            <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 max-w-[calc(100%-3.5rem)]">
+              {activeBadges.slice(0, 2).map((badge) => (
+                <span
+                  key={badge.label}
+                  className={cn(
+                    "w-fit rounded-lg px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] backdrop-blur-md",
+                    badge.tone === "gold"
+                      ? "bg-gold-500 text-brand-950 border border-gold-400"
+                      : "bg-paper-2/90 text-ink-3 border border-rule"
+                  )}
+                >
+                  {badge.label}
                 </span>
-              )}
+              ))}
             </div>
           )}
 
           {/* Wishlist Button - Improved touch target */}
           <button
+            type="button"
             onClick={handleWishlist}
+            disabled={toggleWishlistMutation.isPending}
+            aria-pressed={!!isInWishlist}
             className={cn(
-              "absolute top-2 right-2 sm:top-4 sm:right-4 z-10 w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-sm border border-white/60 flex items-center justify-center transition-[background-color,border-color] duration-short ease-out-custom shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)]",
+              "absolute top-2 right-2 sm:top-4 sm:right-4 z-30 w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-sm border border-white/60 flex items-center justify-center transition-[background-color,border-color] duration-short ease-out-custom shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] disabled:opacity-60",
               isInWishlist ? "bg-rose-50 border-rose-200" : "hover:bg-rose-50 hover:border-rose-200"
             )}
             aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
@@ -167,26 +187,26 @@ export default function ProductCard({
               size={16}
               className={cn(
                 "transition-colors duration-short ease-out-custom",
-                isInWishlist ? "text-rose-500 fill-rose-500" : "text-stone-500 hover:text-rose-500"
+                isInWishlist ? "text-rose-500 fill-rose-500" : "text-ink-2 hover:text-rose-500"
               )}
             />
           </button>
 
           {/* Out of stock overlay - Diagonal stripe reveal */}
           {isOutOfStock && (
-            <div className="absolute inset-0 z-20">
+            <div className="absolute inset-0 z-20 pointer-events-none">
               {/* Diagonal pattern overlay */}
               <div
                 className="absolute inset-0 opacity-[0.06]"
                 style={{
-                  backgroundImage: 'repeating-linear-gradient(-45deg, #000, #000 4px, transparent 4px, transparent 12px)',
+                  backgroundImage: 'repeating-linear-gradient(-45deg, #1C1917, #1C1917 4px, transparent 4px, transparent 12px)',
                 }}
               />
-              <div className="absolute inset-0 bg-stone-900/20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-ink/20 flex items-center justify-center">
                 <div className="relative">
                   {/* Diagonal strike-through bar */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[3px] bg-stone-800/60 rotate-[-18deg]" />
-                  <span className="relative text-xs font-black text-white/90 tracking-[0.25em] uppercase drop-shadow-lg bg-stone-900/40 px-4 py-2 rounded-full backdrop-blur-sm">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[3px] bg-ink-3/60 rotate-[-18deg]" />
+                  <span className="relative text-xs font-black text-white/90 tracking-[0.25em] uppercase drop-shadow-lg bg-ink/40 px-4 py-2 rounded-full backdrop-blur-sm">
                     Sold Out
                   </span>
                 </div>
@@ -196,16 +216,18 @@ export default function ProductCard({
         </div>
 
         {/* ── Content Area ── */}
-        <div className="flex flex-col flex-1 p-2 sm:p-4 xl:p-4 bg-white relative z-10">
+        {/* Deliberately no z-index: a stacking context here would trap the
+            add-to-cart button beneath the stretched link overlay. */}
+        <div className="flex flex-col flex-1 p-3 sm:p-4 xl:p-5 bg-paper-2 relative">
           {/* Category tag */}
           {categoryName && (
-            <p className="text-xs uppercase tracking-[0.2em] text-brand-600 font-extrabold mb-2">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-brand-600 font-extrabold mb-2">
               {categoryName}
             </p>
           )}
 
           {/* Product name */}
-          <h3 className="font-display font-bold text-xs sm:text-sm leading-snug text-stone-900 group-hover:text-brand-600 transition-colors line-clamp-2 mb-2">
+          <h3 className="font-bold text-[15px] sm:text-lg leading-snug text-ink line-clamp-2 mb-2 [text-wrap:balance]">
             {product.name}
           </h3>
 
@@ -213,19 +235,21 @@ export default function ProductCard({
           <div className="flex-1 min-h-[8px]" />
 
           {/* Pricing row */}
-          <div className="mt-2 pt-2 sm:mt-4 sm:pt-4 border-t border-stone-100/80 flex items-end justify-between gap-2">
+          <div className="mt-2 pt-2 sm:mt-3 sm:pt-3 border-t border-ink-faint flex items-end justify-between gap-2">
             <div className="flex flex-col gap-0">
               {primaryVariant && (
                 <>
-                  <span className="text-xs sm:text-[13px] text-stone-700 font-bold bg-stone-100/90 px-2 py-0 rounded-full inline-block w-fit tabular-nums">
-                    {primaryVariant.weightValue}{primaryVariant.weightUnit}
-                  </span>
+                  {weightLabel && (
+                    <span className="text-[11px] sm:text-xs text-ink-2 font-bold bg-paper-3 px-2 py-0 rounded-md inline-block w-fit tabular-nums">
+                      {weightLabel}
+                    </span>
+                  )}
                   <div className="flex flex-wrap items-baseline gap-2 mt-0">
-                    <span className="text-sm sm:text-base font-black text-brand-600 tabular-nums">
+                    <span className="text-base sm:text-lg font-black text-brand-700 tabular-nums">
                       {formatPrice(primaryVariant.sellingPrice)}
                     </span>
                     {primaryVariant.mrp > primaryVariant.sellingPrice && (
-                      <span className="text-xs text-stone-400 font-semibold line-through tabular-nums">
+                      <span className="text-xs text-ink-faint font-semibold line-through tabular-nums">
                         {formatPrice(primaryVariant.mrp)}
                       </span>
                     )}
@@ -237,13 +261,13 @@ export default function ProductCard({
             {/* Ratings */}
             {(product.averageRating > 0 || product.reviewCount > 0) && (
               <div className="flex flex-col items-end gap-0 shrink-0">
-                <div className="flex items-center gap-0 bg-amber-50 border border-amber-200 px-2 py-0 rounded-lg">
-                  <Star size={9} className="fill-amber-500 text-amber-500" />
-                  <span className="text-xs font-bold text-amber-800 tabular-nums">
+                <div className="flex items-center gap-1 bg-gold-500/10 border border-gold-500/25 px-2 py-0 rounded-lg">
+                  <Star size={10} className="fill-gold-500 text-gold-500" />
+                  <span className="text-xs font-bold text-gold-700 tabular-nums">
                     {product.averageRating?.toFixed(1)}
                   </span>
                 </div>
-                <span className="text-xs text-stone-600 font-medium">
+                <span className="text-[11px] text-ink-3 font-medium tabular-nums">
                   ({product.reviewCount})
                 </span>
               </div>
@@ -252,14 +276,15 @@ export default function ProductCard({
 
           {/* Add to Cart Button — with high contrast CTA visual priority */}
           {!isOutOfStock && showAddToCart && primaryVariant && (
-            <div className="mt-2 sm:mt-2 pt-2 sm:pt-2 border-t border-stone-100">
+            <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-ink-faint relative z-30">
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={isAdding || justAdded}
                 className={cn(
-                  "w-full h-8 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-ui duration-short ease-out-custom focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 overflow-hidden relative shadow-sm",
+                  "w-full h-10 sm:h-11 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-ui duration-short ease-out-custom focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] overflow-hidden relative shadow-sm",
                     isAdding || justAdded
-                      ? "bg-emerald-100 text-emerald-900 border border-emerald-400"
+                      ? "bg-brand-100 text-brand-800 border border-brand-200"
                       : "bg-brand-600 text-white hover:bg-brand-700 hover:shadow-md active:scale-[0.98]"
                 )}
               >
@@ -271,7 +296,7 @@ export default function ProductCard({
                 <span className="relative flex items-center gap-2">
                   {justAdded ? (
                     <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-800">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       <span>Added</span>
@@ -294,7 +319,17 @@ export default function ProductCard({
             </div>
           )}
         </div>
-      </Link>
+
+        {/* Stretched link: covers the whole card for click/keyboard navigation.
+            Rendered last and at z-20 so it sits over the passive content, while
+            the wishlist and add-to-cart buttons (z-30) stay clickable. */}
+        <Link
+          href={`/products/${product.slug}`}
+          className="absolute inset-0 z-20 rounded-2xl focus:outline-none"
+        >
+          <span className="sr-only">View {product.name}</span>
+        </Link>
+      </div>
     </div>
   );
 }

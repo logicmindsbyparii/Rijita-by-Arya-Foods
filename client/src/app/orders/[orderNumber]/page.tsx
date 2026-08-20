@@ -17,13 +17,16 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Copy,
+  ExternalLink,
+  Banknote,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import QRCode from "react-qr-code";
 import { useQuery } from "@tanstack/react-query";
-import { orderApi, contentApi } from "@/lib/api";
-import { formatPrice, formatDate, generateWhatsAppUrl, getImageUrl } from "@/lib/utils";
-import { Order, OrderStatus } from "@/types";
+import { orderApi, contentApi, shippingApi } from "@/lib/api";
+import { formatPrice, formatDate, generateWhatsAppUrl, getImageUrl, applyWhatsAppTemplate } from "@/lib/utils";
+import { Order, OrderStatus, ShipmentTracking } from "@/types";
 
 const statusConfig: Record<OrderStatus, { label: string; color: string }> = {
   pending: { label: "Pending", color: "bg-amber-100 text-amber-700" },
@@ -46,8 +49,14 @@ export default function OrderDetailPage() {
     queryFn: () => contentApi.getSiteSettings(),
   });
   const settings = settingsData?.data?.settings;
-  const upiId = settings?.payment?.upiId || "merchant@upi";
+  // No placeholder fallback here. A stand-in VPA like "merchant@upi" still
+  // produced a perfectly scannable QR and a live "Pay via UPI App" button, so a
+  // store that had not configured UPI yet sent customers to pay a payee that
+  // does not exist. When it is unset the UPI block is hidden entirely and the
+  // WhatsApp path below carries the payment instead.
+  const upiId = (settings?.payment?.upiId || "").trim();
   const upiName = settings?.payment?.upiName || "RIJITA Store";
+  const upiConfigured = upiId.length > 0;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,6 +83,24 @@ export default function OrderDetailPage() {
     loadOrder();
   }, [orderNumber, loadOrder]);
 
+  // Live courier tracking — only polled once the order actually has a shipment
+  const hasShipment = Boolean(order?.shipping?.awbCode || order?.shipping?.shipmentId);
+  const { data: shipmentData } = useQuery({
+    queryKey: ["shipment", orderNumber],
+    queryFn: () => shippingApi.trackShipment(orderNumber),
+    enabled: Boolean(orderNumber) && hasShipment,
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
+  });
+  const shipment: ShipmentTracking | null = shipmentData?.data?.tracking ?? null;
+
+  const copyAwb = (awb: string) => {
+    navigator.clipboard.writeText(awb).then(
+      () => toast.success("Tracking number copied"),
+      () => toast.error("Could not copy tracking number")
+    );
+  };
+
   const whatsappNumber = settings?.whatsapp?.number || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
 
   const handleTrackOnWhatsApp = () => {
@@ -81,10 +108,15 @@ export default function OrderDetailPage() {
     
     let lines = [];
     if (order.status === "pending") {
-      lines = [
-        `Hello, I have placed Order #${order.orderNumber} for ₹${order.total}.`,
-        `Attached is my payment screenshot. Please confirm.`
-      ];
+      lines = order.paymentMethod === "cod"
+        ? [
+            `Hello, I have placed Order #${order.orderNumber} for ₹${order.total}.`,
+            `Please confirm my Cash on Delivery order.`
+          ]
+        : [
+            `Hello, I have placed Order #${order.orderNumber} for ₹${order.total}.`,
+            `Attached is my payment screenshot. Please confirm.`
+          ];
     } else {
       lines = [
         `*Order #${order.orderNumber}*`,
@@ -100,18 +132,22 @@ export default function OrderDetailPage() {
       ];
     }
     
-    const url = generateWhatsAppUrl(lines.join("\n"), whatsappNumber);
+    const message = applyWhatsAppTemplate(lines.join("\n"), settings?.whatsapp?.messageTemplate);
+    const url = generateWhatsAppUrl(message, whatsappNumber);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const getUpiUrl = () => {
-    if (!order) return "";
-    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${order.total}&cu=INR`;
+    if (!order || !upiConfigured) return "";
+    // The VPA is encoded like every other parameter — an admin-entered value
+    // containing a space or "&" would otherwise truncate the payee and hand
+    // the UPI app a malformed request.
+    return `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${order.total}&cu=INR`;
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <Loader2 size={32} className="animate-spin text-brand-500" />
       </div>
     );
@@ -119,7 +155,7 @@ export default function OrderDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,7 +167,7 @@ export default function OrderDetailPage() {
           <h2 className="text-xl font-display font-bold mb-2">Order Not Found</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <div className="flex items-center justify-center gap-4">
-            <button onClick={loadOrder} className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-ui">
+            <button onClick={loadOrder} className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium transition-ui">
               Try Again
             </button>
             <Link
@@ -151,7 +187,7 @@ export default function OrderDetailPage() {
   const statusInfo = statusConfig[order.status] || statusConfig.pending;
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <button
           onClick={() => (window.history.length > 1 ? router.back() : router.push("/orders"))}
@@ -237,7 +273,7 @@ export default function OrderDetailPage() {
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-muted-foreground tabular-nums"><IndianRupee size={12} />GST (5%)</span>
+                  <span className="flex items-center gap-2 text-muted-foreground tabular-nums"><IndianRupee size={12} />GST ({settings?.gst?.rate ?? 5}%)</span>
                   <span>{formatPrice(order.gstAmount)}</span>
                 </div>
                 <div className="border-t pt-2 flex items-center justify-between font-semibold">
@@ -274,6 +310,92 @@ export default function OrderDetailPage() {
               </div>
             )}
 
+            {hasShipment && (
+              <div className="p-4 border-b">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                  Shipment
+                </p>
+
+                <div className="rounded-xl border bg-brand-50/40 p-4 space-y-4">
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Truck size={14} className="text-brand-600" />
+                      <span className="font-medium">
+                        {shipment?.courierName || order.shipping?.courierName || "Courier assigned"}
+                      </span>
+                    </div>
+                    {(shipment?.awb || order.shipping?.awbCode) && (
+                      <button
+                        onClick={() => copyAwb(shipment?.awb || order.shipping?.awbCode || "")}
+                        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <span className="tabular-nums font-mono text-xs">
+                          AWB {shipment?.awb || order.shipping?.awbCode}
+                        </span>
+                        <Copy size={12} />
+                      </button>
+                    )}
+                  </div>
+
+                  {(shipment?.currentStatus || order.shipping?.status) && (
+                    <p className="text-xs text-muted-foreground">
+                      Latest courier update:{" "}
+                      <span className="font-medium text-foreground capitalize">
+                        {(shipment?.currentStatus || order.shipping?.status || "").toLowerCase()}
+                      </span>
+                    </p>
+                  )}
+
+                  {(shipment?.expectedDeliveryDate || order.shipping?.expectedDeliveryDate) && (
+                    <p className="text-xs text-muted-foreground">
+                      Expected delivery:{" "}
+                      <span className="font-medium text-foreground">
+                        {shipment?.expectedDeliveryDate || order.shipping?.expectedDeliveryDate}
+                      </span>
+                    </p>
+                  )}
+
+                  {(shipment?.trackUrl || order.shipping?.trackUrl) && (
+                    <a
+                      href={shipment?.trackUrl || order.shipping?.trackUrl || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
+                    >
+                      Track on courier website
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+
+                {shipment?.scans && shipment.scans.length > 0 && (
+                  <div className="mt-4 space-y-4">
+                    {shipment.scans.map((scan, i) => (
+                      <div key={i} className="flex items-start gap-4 text-sm">
+                        <div
+                          className={`w-2 h-2 mt-2 rounded-full flex-shrink-0 ${
+                            i === 0 ? "bg-brand-500" : "bg-border"
+                          }`}
+                        />
+                        <div>
+                          <p className="font-medium capitalize">
+                            {(scan.status || scan.activity || "Update").toLowerCase()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {scan.date}
+                            {scan.location && ` — ${scan.location}`}
+                          </p>
+                          {scan.activity && scan.status !== scan.activity && (
+                            <p className="text-xs text-muted-foreground">{scan.activity}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {order.tracking && order.tracking.length > 0 && (
               <div className="p-4 border-b">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Tracking</p>
@@ -304,13 +426,29 @@ export default function OrderDetailPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-emerald-900 mb-2">Payment Successful</h3>
                     <p className="text-sm text-emerald-800 tabular-nums">
-                      Your payment of {formatPrice(order.total)} via {order.paymentMethod === 'demo-online' || order.paymentMethod === 'online' ? 'Online Payment' : order.paymentMethod} was successful. Your order is confirmed!
+                      {order.paymentMethod === "cod"
+                        ? `Payment of ${formatPrice(order.total)} was collected on delivery. Your order is complete!`
+                        : `Your payment of ${formatPrice(order.total)} via ${order.paymentMethod === 'demo-online' || order.paymentMethod === 'online' ? 'Online Payment' : order.paymentMethod} was successful. Your order is confirmed!`}
                     </p>
                   </div>
                 </div>
               )}
 
-              {order.status === "pending" && order.paymentStatus !== "completed" && (
+              {order.status === "pending" && order.paymentStatus !== "completed" && order.paymentMethod === "cod" && (
+                <div className="mb-6 p-6 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-4">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
+                    <Banknote size={22} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-emerald-900 mb-2">Cash on Delivery</h3>
+                    <p className="text-sm text-emerald-800 tabular-nums">
+                      Pay {formatPrice(order.total)} in cash when your order arrives at your doorstep. No advance payment needed.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {order.status === "pending" && order.paymentStatus !== "completed" && order.paymentMethod !== "cod" && (
                 <div className="mb-6 p-6 rounded-xl bg-amber-50 border border-amber-200">
                   <h3 className="text-lg font-semibold text-amber-900 mb-2">Payment Required</h3>
                   <p className="text-sm text-amber-800 mb-4 tabular-nums">
@@ -318,35 +456,47 @@ export default function OrderDetailPage() {
                   </p>
                   
                   <div className="flex flex-col md:flex-row gap-8 items-center justify-center bg-white p-6 rounded-xl shadow-sm mb-4">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="p-2 bg-white border-2 border-brand-100 rounded-2xl shadow-sm">
-                        <QRCode value={getUpiUrl()} size={150} level="M" />
-                      </div>
-                      <p className="text-sm font-medium text-muted-foreground mt-2">Scan to Pay via any UPI App</p>
-                      <p className="text-xs text-muted-foreground font-semibold">{upiId}</p>
-                    </div>
+                    {upiConfigured && (
+                      <>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-2 bg-white border-2 border-brand-100 rounded-2xl shadow-sm">
+                            <QRCode value={getUpiUrl()} size={150} level="M" />
+                          </div>
+                          <p className="text-sm font-medium text-muted-foreground mt-2">Scan to Pay via any UPI App</p>
+                          <p className="text-xs text-muted-foreground font-semibold">{upiId}</p>
+                        </div>
 
-                    <div className="hidden md:block w-px h-32 bg-border"></div>
+                        <div className="hidden md:block w-px h-32 bg-border"></div>
+                      </>
+                    )}
 
                     <div className="flex flex-col items-center gap-4 w-full md:w-auto">
-                      <a
-                        href={getUpiUrl()}
-                        className="w-full inline-flex justify-center items-center gap-2 px-4 py-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-ui shadow-sm"
-                      >
-                        <IndianRupee size={18} />
-                        Pay via UPI App
-                      </a>
+                      {upiConfigured ? (
+                        <a
+                          href={getUpiUrl()}
+                          className="w-full inline-flex justify-center items-center gap-2 px-4 py-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-ui shadow-sm"
+                        >
+                          <IndianRupee size={18} />
+                          Pay via UPI App
+                        </a>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center max-w-xs">
+                          Message us on WhatsApp and we&apos;ll share the payment details for this order.
+                        </p>
+                      )}
                       <button
                         onClick={handleTrackOnWhatsApp}
                         className="w-full inline-flex justify-center items-center gap-2 px-4 py-4 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl transition-ui shadow-sm"
                       >
                         <MessageCircle size={18} />
-                        I have Paid - Send Screenshot
+                        {upiConfigured ? "I have Paid - Send Screenshot" : "Message us on WhatsApp"}
                       </button>
                     </div>
                   </div>
                   <p className="text-xs text-amber-700 text-center">
-                    Our team will confirm your payment and update this order shortly after you send the screenshot.
+                    {upiConfigured
+                      ? "Our team will confirm your payment and update this order shortly after you send the screenshot."
+                      : "Our team will share payment details and confirm your order on WhatsApp."}
                   </p>{" "}
                 </div>
               )}

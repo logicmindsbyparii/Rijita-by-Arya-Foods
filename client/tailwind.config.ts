@@ -21,6 +21,7 @@ const config: Config = {
           800: "#0F4218",
           850: "#104319", // footer base bar
           900: "#0A290F",
+          950: "#051408", // Very dark brand green instead of black
           DEFAULT: "#1B6E2A",
         },
         /* WhatsApp brand colours — fixed by WhatsApp, not ours to re-tint */
@@ -103,10 +104,12 @@ const config: Config = {
         border: "hsl(var(--border))",
       },
       fontFamily: {
-        display: ["var(--font-playfair)", "var(--font-marcellus)", "Georgia", "serif"],
+        display: ["var(--font-outfit)", "var(--font-jakarta)", "system-ui", "-apple-system", "sans-serif"],
         body: ["var(--font-jakarta)", "system-ui", "-apple-system", "sans-serif"],
         sans: ["var(--font-jakarta)", "system-ui", "-apple-system", "sans-serif"],
-        serif: ["var(--font-marcellus)", "var(--font-playfair)", "Georgia", "serif"],
+        /* Editorial serif — used ONLY as the italic-gold accent per DESIGN.md.
+           Playfair first: it carries a true italic axis (Marcellus does not). */
+        serif: ["var(--font-playfair)", "var(--font-marcellus)", "Georgia", "serif"],
         luxury: ["var(--font-cinzel)", "var(--font-playfair)", "serif"],
         modern: ["var(--font-jakarta)", "system-ui", "sans-serif"],
       },

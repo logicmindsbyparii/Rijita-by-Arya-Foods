@@ -118,8 +118,21 @@ export default function FaqPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const { data: settingsData } = useQuery({ queryKey: ["settings"], queryFn: () => contentApi.getSiteSettings(), staleTime: 10 * 60 * 1000 });
   const whatsappNumber = settingsData?.data?.settings?.whatsapp?.number || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
+  const freeShippingThreshold = settingsData?.data?.settings?.shipping?.freeShippingThreshold ?? 499;
+  const standardDeliveryCharge = settingsData?.data?.settings?.shipping?.standardDeliveryCharge ?? 49;
 
-  const filtered = faqs.filter((faq) => {
+  // The delivery-charge answer reflects the admin-configured shipping settings,
+  // so the FAQ never contradicts what checkout actually charges.
+  const faqList = faqs.map((faq) =>
+    faq.question === "What are your delivery charges?"
+      ? {
+          ...faq,
+          answer: `We offer free delivery on orders above ₹${freeShippingThreshold.toLocaleString("en-IN")}. For orders below ₹${freeShippingThreshold.toLocaleString("en-IN")}, a standard delivery charge of ₹${standardDeliveryCharge.toLocaleString("en-IN")} applies. We deliver across India.`,
+        }
+      : faq
+  );
+
+  const filtered = faqList.filter((faq) => {
     const matchSearch = !search ||
       faq.question.toLowerCase().includes(search.toLowerCase()) ||
       faq.answer.toLowerCase().includes(search.toLowerCase());
@@ -128,7 +141,7 @@ export default function FaqPage() {
   });
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -136,14 +149,14 @@ export default function FaqPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 rounded-full text-brand-700 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 border border-brand-600/20 bg-brand-600/10 rounded-full text-brand-700 text-sm font-medium mb-4">
             <HelpCircle size={16} />
             FAQ
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-            Frequently Asked <span className="text-brand-600">Questions</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink mb-4 tracking-tight">
+            Frequently Asked <span className="font-serif italic font-medium text-gold-600">Questions</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+          <p className="text-ink-2 max-w-2xl mx-auto text-lg [text-wrap:pretty]">
             Everything you need to know about ordering, shipping, products, and more.
             Can&apos;t find what you&apos;re looking for? Contact us!
           </p>
@@ -156,16 +169,16 @@ export default function FaqPage() {
           transition={{ delay: 0.1 }}
           className="relative max-w-xl mx-auto mb-8"
         >
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search questions..."
-            className="w-full pl-12 pr-10 py-4 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-ui text-sm"
+            className="w-full pl-12 pr-10 py-4 rounded-xl border border-rule bg-paper-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui text-sm"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-full">
+            <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-paper-2 rounded-full">
               <X size={14} />
             </button>
           )}
@@ -181,10 +194,10 @@ export default function FaqPage() {
           <button
             onClick={() => setActiveCategory("all")}
             className={cn(
-              "px-4 py-2 rounded-xl text-sm font-medium transition-ui",
+              "px-4 py-2 rounded-xl text-sm font-semibold transition-ui",
               activeCategory === "all"
-                ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-                : "bg-muted text-muted-foreground hover:bg-brand-50 hover:text-brand-600"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-700/20"
+                : "bg-paper-2 border border-rule text-ink-2 hover:border-brand-500 hover:text-brand-700"
             )}
           >
             All
@@ -194,10 +207,10 @@ export default function FaqPage() {
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-ui",
+                "px-4 py-2 rounded-xl text-sm font-semibold transition-ui",
                 activeCategory === cat
-                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-                  : "bg-muted text-muted-foreground hover:bg-brand-50 hover:text-brand-600"
+                  ? "bg-brand-600 text-white shadow-md shadow-brand-700/20"
+                  : "bg-paper-2 border border-rule text-ink-2 hover:border-brand-500 hover:text-brand-700"
               )}
             >
               {cat}
@@ -211,7 +224,7 @@ export default function FaqPage() {
             <HelpCircle size={40} className="mx-auto mb-4 text-muted-foreground/30" />
             <h3 className="text-lg font-medium mb-2">No matching questions</h3>
             <p className="text-muted-foreground mb-4">Try a different search term</p>
-            <button onClick={() => { setSearch(""); setActiveCategory("all"); }} className="px-6 py-2 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors">
+            <button onClick={() => { setSearch(""); setActiveCategory("all"); }} className="px-6 py-2 bg-brand-600 text-white rounded-xl font-medium text-sm hover:bg-brand-700 transition-colors">
               Reset Filters
             </button>
           </div>
@@ -227,18 +240,18 @@ export default function FaqPage() {
               return (
                 <div
                   key={i}
-                  className="border border-border rounded-xl overflow-hidden bg-white"
+                  className="border border-rule rounded-xl overflow-hidden bg-paper-2"
                 >
                   <button
                     onClick={() => setOpenId(isOpen ? null : i)}
-                    className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-paper-3 transition-colors"
                   >
-                    <span className="font-medium pr-4 text-sm md:text-base">{faq.question}</span>
+                    <span className="font-display font-bold text-ink pr-4 text-sm md:text-base">{faq.question}</span>
                     <ChevronDown
                       size={18}
                       className={cn(
-                        "text-muted-foreground flex-shrink-0 transition-transform duration-300",
-                        isOpen && "rotate-180"
+                        "text-ink-3 flex-shrink-0 transition-transform duration-300",
+                        isOpen && "rotate-180 text-brand-700"
                       )}
                     />
                   </button>
@@ -251,7 +264,7 @@ export default function FaqPage() {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
-                        <p className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                        <p className="px-4 pb-4 text-sm text-ink-2 leading-relaxed">
                           {faq.answer}
                         </p>
                       </motion.div>
@@ -268,17 +281,17 @@ export default function FaqPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-12 text-center bg-cream rounded-2xl p-8 border"
+          className="mt-12 text-center bg-paper-2 rounded-2xl p-8 border border-rule"
         >
-          <MessageSquare size={32} className="mx-auto mb-4 text-brand-400" />
-          <h3 className="text-xl font-display font-bold mb-2">Still Have Questions?</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+          <MessageSquare size={32} className="mx-auto mb-4 text-gold-600" />
+          <h3 className="text-xl font-display font-bold text-ink mb-2">Still Have Questions?</h3>
+          <p className="text-ink-2 mb-6 max-w-md mx-auto">
             Our team is here to help. Reach out to us and we&apos;ll get back to you within 24 hours.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 px-6 py-4 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-ui"
+              className="inline-flex items-center gap-2 px-6 py-4 bg-brand-600 text-white rounded-xl font-medium hover:bg-brand-700 transition-ui"
             >
               <MessageSquare size={16} />
               Contact Us
@@ -287,7 +300,7 @@ export default function FaqPage() {
               href={`https://wa.me/${whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-ui"
+              className="inline-flex items-center gap-2 px-6 py-4 bg-whatsapp text-white rounded-xl font-medium hover:bg-whatsapp-600 transition-ui"
             >
               Chat on WhatsApp
             </a>

@@ -1,20 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-interface FetchOptions extends RequestInit {
-  params?: Record<string, string | number | boolean | undefined>;
-}
-
-class ApiError extends Error {
-  status: number;
-  data: any;
-
-  constructor(message: string, status: number, data?: any) {
-    super(message);
-    this.status = status;
-    this.data = data;
-    this.name = "ApiError";
-  }
-}
+import { API_BASE, ApiError, FetchOptions, parseResponseBody, extractErrorMessage } from "@shared/api";
 
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
@@ -104,10 +88,10 @@ async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): 
     }
   }
 
-  const data = await response.json();
+  const data = await parseResponseBody(response);
 
   if (!response.ok) {
-    throw new ApiError(data.message || "API Error", response.status, data);
+    throw new ApiError(extractErrorMessage(data, response.status), response.status, data);
   }
 
   return data;
@@ -171,6 +155,61 @@ export const orderApi = {
 
   verifyPayment: (orderNumber: string) =>
     fetchApi(`/orders/${orderNumber}/pay`, { method: "PUT" }),
+};
+
+// ==================== SHIPPING API (Shiprocket) ====================
+export const shippingApi = {
+  getStatus: () => fetchApi("/admin/shipping/status"),
+
+  getPickupLocations: () => fetchApi("/admin/shipping/pickup-locations"),
+
+  /** Courier rates for one order's destination — powers the AWB courier picker. */
+  getCourierOptions: (orderId: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/couriers`),
+
+  createShipment: (
+    orderId: string,
+    data?: {
+      pickupLocation?: string;
+      length?: number;
+      breadth?: number;
+      height?: number;
+      weight?: number;
+      courierId?: string;
+      autoAssignAwb?: boolean;
+    }
+  ) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket`, {
+      method: "POST",
+      body: JSON.stringify(data || {}),
+    }),
+
+  assignAwb: (orderId: string, courierId?: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/awb`, {
+      method: "POST",
+      body: JSON.stringify({ courierId }),
+    }),
+
+  schedulePickup: (orderId: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/pickup`, { method: "POST" }),
+
+  generateLabel: (orderId: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/label`, { method: "POST" }),
+
+  generateInvoice: (orderId: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/invoice`, { method: "POST" }),
+
+  generateManifest: (orderId: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/manifest`, { method: "POST" }),
+
+  refreshTracking: (orderId: string) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/track`),
+
+  cancelShipment: (orderId: string, data?: { cancelOrder?: boolean; note?: string }) =>
+    fetchApi(`/admin/orders/${orderId}/shiprocket/cancel`, {
+      method: "POST",
+      body: JSON.stringify(data || { cancelOrder: true }),
+    }),
 };
 
 // ==================== ADMIN API ====================

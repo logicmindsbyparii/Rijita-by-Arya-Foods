@@ -10,9 +10,9 @@ function Badge({ className, variant = "default", ...props }: BadgeProps) {
     default: "bg-brand-600 text-white",
     secondary: "bg-secondary text-secondary-foreground",
     destructive: "bg-red-500 text-white",
-    outline: "border border-border text-foreground",
-    success: "bg-green-100 text-green-700",
-    warning: "bg-amber-100 text-amber-700",
+    outline: "border border-rule text-ink-2",
+    success: "bg-brand-600/10 text-brand-700",
+    warning: "bg-gold-500/15 text-gold-800",
   };
 
   return (

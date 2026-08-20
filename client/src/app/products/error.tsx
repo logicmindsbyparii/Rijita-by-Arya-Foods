@@ -16,7 +16,7 @@ export default function ProductsError({
   }, [error]);
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4 pt-36 sm:pt-40 lg:pt-44">
+    <div className="min-h-[60vh] flex items-center justify-center px-4 pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px]">
       <div className="text-center max-w-md">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
           <AlertTriangle size={32} className="text-red-500" />
@@ -28,7 +28,7 @@ export default function ProductsError({
         <div className="flex flex-wrap justify-center gap-4">
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-ui"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-ui"
           >
             <RefreshCw size={14} />
             Try Again

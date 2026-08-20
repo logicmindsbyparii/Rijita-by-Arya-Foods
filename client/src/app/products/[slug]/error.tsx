@@ -11,7 +11,7 @@ export default function ProductDetailError({
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 bg-white flex items-center justify-center">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 bg-white flex items-center justify-center">
       <div className="text-center max-w-md mx-auto px-4">
         <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center ring-1 ring-red-100">
           <AlertTriangle size={36} className="text-red-400" />

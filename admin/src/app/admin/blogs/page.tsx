@@ -105,6 +105,11 @@ export default function AdminBlogs() {
   }, [fetchBlogs]);
 
   const handleDelete = async (id: string) => {
+    // Deleting was a single unguarded click here, unlike every other admin list
+    // (products, users, categories, coupons, collections, contacts, orders all
+    // confirm first). The server hard-deletes with no soft-delete or undo, so a
+    // misclick permanently destroyed an authored post.
+    if (!window.confirm("Delete this blog post permanently? This cannot be undone.")) return;
     try {
       setDeleting(id);
       await adminApi.deleteBlog(id);
@@ -466,7 +471,10 @@ function BlogModal({
       fd.append("metaTitle", form.metaTitle);
       fd.append("metaDescription", form.metaDescription);
       fd.append("isPublished", String(form.isPublished));
-      if (imageFile) fd.append("image", imageFile);
+      if (imageFile) {
+        fd.append("featuredImage", imageFile);
+        fd.append("image", imageFile);
+      }
 
       if (editItem) {
         await adminApi.updateBlog(editItem._id, fd);
@@ -505,7 +513,7 @@ function BlogModal({
               <FileText className="h-4 w-4 text-brand-500" />
               {editItem ? "Edit Blog Post" : "New Blog Post"}
             </h2>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
+            <button onClick={onClose} aria-label="Close blog form" className="p-2 rounded-lg hover:bg-muted transition-colors">
               <X size={18} />
             </button>
           </div>
@@ -595,23 +603,42 @@ function BlogModal({
 
             <div>
               <label className="block text-sm font-medium mb-2">Featured Image</label>
-              <label className="flex items-center gap-4 px-4 py-4 rounded-xl border border-dashed border-border hover:border-brand-500 cursor-pointer transition-colors bg-background">
-                <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {imageFile ? imageFile.name : "Click to upload image"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0">
-                    PNG, JPG, WebP up to 5MB
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                />
-              </label>
+              <div className="space-y-2">
+                {(imageFile || editItem?.featuredImage) && (
+                  <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-border group bg-muted/30">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageFile ? URL.createObjectURL(imageFile) : editItem?.featuredImage}
+                      alt="Blog Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setImageFile(null)}
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+                <label className="flex items-center gap-4 px-4 py-4 rounded-xl border border-dashed border-border hover:border-brand-500 cursor-pointer transition-colors bg-background">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-ink)]">
+                      {imageFile ? imageFile.name : editItem?.featuredImage ? "Change featured image" : "Click to upload image"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0">
+                      PNG, JPG, WebP up to 5MB
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="border-t border-border pt-4">

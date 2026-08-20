@@ -41,7 +41,7 @@ import toast from "react-hot-toast";
 import { productApi, contentApi } from "@/lib/api";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
-import { cn, formatPrice, calculateDiscount, generateWhatsAppUrl, handleImageError, getImageUrl } from "@/lib/utils";
+import { cn, formatPrice, calculateDiscount, generateWhatsAppUrl, handleImageError, getImageUrl, PLACEHOLDER_IMAGE, getPrimaryVariant } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,13 +68,22 @@ export default function ProductDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [justAddedToCart, setJustAddedToCart] = useState(false);
-  const [galleryMode, setGalleryMode] = useState<"photos" | "3d">("photos");
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["product", slug],
     queryFn: () => productApi.getProductBySlug(slug!),
     enabled: !!slug,
   });
+
+  // Free-delivery threshold comes from admin Settings — never hardcoded, so the
+  // badge stays truthful when the store changes the threshold.
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => contentApi.getSiteSettings(),
+    staleTime: 10 * 60 * 1000,
+  });
+  const freeShippingThreshold = settingsData?.data?.settings?.shipping?.freeShippingThreshold ?? 499;
+  const whatsappNumber = settingsData?.data?.settings?.whatsapp?.number || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
 
   const product: Product | undefined = data?.data?.product || data?.data;
 
@@ -135,6 +144,20 @@ export default function ProductDetailPage() {
     setQuantity(1);
   }, [selectedVariantIndex]);
 
+  // Land on a variant the customer can actually buy. The index defaulted to 0,
+  // so a product whose first pack was sold out (or deactivated) opened with a
+  // disabled "Add to Cart" and an out-of-stock notice, even when its other
+  // sizes were in stock. Keyed on the product id so a background refetch does
+  // not stomp a selection the customer has since made.
+  useEffect(() => {
+    const variants = product?.variants;
+    if (!variants?.length) return;
+    const preferred = getPrimaryVariant(variants);
+    const idx = preferred ? variants.indexOf(preferred) : -1;
+    if (idx > -1) setSelectedVariantIndex(idx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?._id]);
+
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return;
     if (selectedVariant.stock <= 0) {
@@ -153,7 +176,7 @@ export default function ProductDetailPage() {
   const handleWhatsAppOrder = () => {
     if (!product || !selectedVariant) return;
     const message = `Hi! I'd like to order:\n\n${product.name}\n${selectedVariant.weight}\n${formatPrice(selectedVariant.sellingPrice)} x ${quantity}\n\nTotal: ${formatPrice(selectedVariant.sellingPrice * quantity)}\n\nPlease share the payment details. Thank you!`;
-    window.open(generateWhatsAppUrl(message), "_blank");
+    window.open(generateWhatsAppUrl(message, whatsappNumber), "_blank");
   };
 
   const handleSubmitReview = async () => {
@@ -194,6 +217,40 @@ export default function ProductDetailPage() {
     }
   };
 
+  /**
+   * Human-readable weight label — the admin's display string ("500 g") wins,
+   * falling back to value+unit so a missing display string never renders as
+   * a raw "500g". Mirrors ProductCard's weightLabel logic.
+   */
+  const weightLabel = (v: Variant | undefined) =>
+    v?.weight?.trim() || (v ? `${v.weightValue ?? ""}${v.weightUnit ?? ""}`.trim() : "");
+
+  /**
+   * Price per unit for the "per g / per 100g" hint. formatPrice() rounds to
+   * whole rupees, so a direct sellingPrice/weightValue division renders "₹0"
+   * for small units (₹90 / 500g = ₹0.18 → "₹0 per g"). Indian retail convention
+   * is per-100g for gram packs, per-kg for kg packs — pick the right denominator
+   * and keep enough decimals to never show ₹0.
+   */
+  const unitPriceLabel = (v: Variant | undefined) => {
+    if (!v || !v.sellingPrice || !v.weightValue || v.weightValue <= 0) return "";
+    if (v.weightUnit === "kg") {
+      const perKg = v.sellingPrice / (v.weightValue / 1000);
+      return `${formatPrice(perKg)} per kg`;
+    }
+    if (v.weightUnit === "g" && v.weightValue >= 100) {
+      const per100 = (v.sellingPrice / v.weightValue) * 100;
+      return `${formatPrice(per100)} per 100g`;
+    }
+    // Small packs — show the exact unit price with 2 decimals, never ₹0.
+    const perUnit = v.sellingPrice / v.weightValue;
+    const formatted =
+      perUnit >= 1
+        ? formatPrice(perUnit)
+        : `₹${perUnit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${formatted} per ${v.weightUnit || "unit"}`;
+  };
+
   const nutritionFields = [
     { key: "calories", label: "Calories", unit: "kcal" },
     { key: "protein", label: "Protein", unit: "g" },
@@ -209,7 +266,7 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+<div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12">
             <div className="space-y-4">
@@ -237,7 +294,7 @@ export default function ProductDetailPage() {
 
   if (isError || !product) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
             <AlertTriangle size={36} className="text-red-500" />
@@ -248,7 +305,7 @@ export default function ProductDetailPage() {
           </p>
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 px-6 py-4 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-4 bg-brand-600 text-white rounded-xl font-medium hover:bg-brand-700 transition-colors"
           >
             <ChevronLeft size={16} />
             Browse Products
@@ -264,7 +321,7 @@ export default function ProductDetailPage() {
     typeof product.category === "object" ? product.category?.slug : "";
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16">
+    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumbs */}
         <motion.nav
@@ -313,7 +370,7 @@ export default function ProductDetailPage() {
 
                   {/* Main swiper — click to open lightbox */}
                   <div
-                    className="rounded-2xl overflow-hidden bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100 aspect-square cursor-zoom-in group relative"
+                    className="rounded-2xl overflow-hidden bg-gradient-to-br from-paper-2 via-gold-500/10 to-paper-3 aspect-square cursor-zoom-in group relative"
                     onClick={(e) => {
                       // Don't open lightbox when clicking navigation arrows
                       if ((e.target as HTMLElement).closest(".swiper-button-prev, .swiper-button-next, .swiper-button-lock")) return;
@@ -337,7 +394,7 @@ export default function ProductDetailPage() {
                           <SwiperSlide key={i} data-swiper-slide-index={i}>
                             <div className="relative aspect-square w-full h-full">
                               <Image
-                                src={img ? getImageUrl(img) : "/placeholder.svg"}
+                                src={img ? getImageUrl(img) : PLACEHOLDER_IMAGE}
                                 alt={`${product.name} - Image ${i + 1}`}
                                 fill
                                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -352,8 +409,8 @@ export default function ProductDetailPage() {
                     </Swiper>
 
                     {/* Zoom hint */}
-                    <div className="absolute bottom-4 right-4 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-stone-600">
+                    <div className="absolute bottom-4 right-4 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-2">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         <line x1="11" y1="8" x2="11" y2="14" />
@@ -384,7 +441,7 @@ export default function ProductDetailPage() {
                             >
                               <Image
                                 src={getImageUrl(img)}
-                                alt={`Thumbnail ${i + 1}`}
+                                alt={`${product.name} thumbnail ${i + 1}`}
                                 fill
                                 sizes="80px"
                                 className="object-cover"
@@ -412,11 +469,12 @@ export default function ProductDetailPage() {
               </Link>
             )}
 
-            <h1 className="text-3xl md:text-4xl font-display font-bold leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink tracking-tight leading-tight [text-wrap:balance]">
               {product.name}
             </h1>
 
-            {/* Rating */}
+            {/* Rating — hidden until a genuine rating/review exists */}
+            {(product.averageRating > 0 || product.reviewCount > 0) && (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -425,24 +483,28 @@ export default function ProductDetailPage() {
                     size={16}
                     className={cn(
                       i < Math.round(product.averageRating || 0)
-                        ? "fill-brand-500 text-brand-500"
-                        : "fill-muted text-muted"
+                        ? "fill-gold-500 text-gold-500"
+                        : "fill-ink-faint text-ink-faint"
                     )}
                   />
                 ))}
               </div>
-              <span className="text-sm font-medium tabular-nums">{product.averageRating?.toFixed(1) || "0.0"}</span>
-              <span className="text-sm text-muted-foreground">
-                ({product.reviewCount || 0} reviews)
+              <span className="text-sm font-medium tabular-nums text-ink-2">{product.averageRating?.toFixed(1)}</span>
+              <span className="text-sm text-ink-3">
+                ({product.reviewCount || 0} review{product.reviewCount === 1 ? "" : "s"})
               </span>
               {product.totalSold > 0 && (
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-2 rounded-lg">
+                <span className="text-xs text-ink-2 bg-paper-3 px-2 py-2 rounded-lg">
                   {product.totalSold}+ sold
                 </span>
               )}
             </div>
+            )}
 
-            {product.shortDescription && (
+            {/* A description that merely repeats the product name (common in
+                early catalogue data) is not content — don't render it as one. */}
+            {product.shortDescription &&
+              product.shortDescription.trim().toLowerCase() !== product.name.trim().toLowerCase() && (
               <p className="text-muted-foreground leading-relaxed">
                 {product.shortDescription}
               </p>
@@ -450,17 +512,17 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="flex items-baseline gap-4">
-              <span className="text-3xl font-bold text-brand-600 tabular-nums">
+              <span className="text-3xl sm:text-4xl font-black text-ink tabular-nums">
                 {formatPrice(selectedVariant?.sellingPrice || 0)}
               </span>
               {selectedVariant && selectedVariant.mrp > selectedVariant.sellingPrice && (
                 <>
-                  <span className="text-xl text-muted-foreground line-through tabular-nums">
+                  <span className="text-xl text-ink-3 line-through tabular-nums">
                     {formatPrice(selectedVariant.mrp)}
                   </span>
-                  <Badge variant="success" className="text-xs tabular-nums">
+                  <span className="font-serif italic text-gold-600 text-base tabular-nums">
                     Save {formatPrice(selectedVariant.mrp - selectedVariant.sellingPrice)}
-                  </Badge>
+                  </span>
                 </>
               )}
             </div>
@@ -469,18 +531,22 @@ export default function ProductDetailPage() {
             {product.variants && product.variants.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <label className="text-sm font-medium text-stone-700">
+                  <label className="text-sm font-medium text-ink-2">
                     Select Weight
                   </label>
-                  {selectedVariant && (
-                    <span className="text-xs text-stone-400 tabular-nums">
-                      {formatPrice(selectedVariant.sellingPrice / (selectedVariant.weightValue || 1))}{" "}
-                      per {selectedVariant.weightUnit || "unit"}
+                  {unitPriceLabel(selectedVariant) && (
+                    <span className="text-xs text-ink-3 tabular-nums">
+                      {unitPriceLabel(selectedVariant)}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.variants.map((variant, index) => {
+                    // Deactivated variants are not orderable — place_order
+                    // rejects them outright — so offering one here only led the
+                    // customer to a failure at checkout. Skipped rather than
+                    // disabled: an unbuyable pack is not a choice at all.
+                    if (variant.isActive === false) return null;
                     const isActive = index === selectedVariantIndex;
                     const isInStock = variant.stock > 0;
                     const variantDiscount = calculateDiscount(variant.mrp, variant.sellingPrice);
@@ -498,24 +564,24 @@ export default function ProductDetailPage() {
                         className={cn(
                           "relative flex flex-col items-center px-4 py-4 rounded-xl border-2 transition-ui min-w-[90px]",
                           isActive
-                            ? "border-[var(--color-brand)] bg-[var(--color-brand)]/[0.06] shadow-sm"
+                            ? "border-brand-600 bg-brand-600/5 shadow-sm"
                             : isInStock
-                            ? "border-stone-200 hover:border-stone-300 bg-white"
-                            : "border-stone-200 bg-stone-50 opacity-50 cursor-not-allowed"
+                            ? "border-rule hover:border-gold-500/60 bg-paper-2"
+                            : "border-rule bg-paper-3 opacity-50 cursor-not-allowed"
                         )}
                       >
-                        {/* Weight label */}
-                        <span className="text-sm font-bold text-stone-800">
-                          {variant.weightValue}{variant.weightUnit}
+                        {/* Weight label — display string when present (matches ProductCard) */}
+                        <span className="text-sm font-bold text-ink">
+                          {weightLabel(variant)}
                         </span>
 
                         {/* Price */}
                         <div className="flex items-baseline gap-2 mt-0 tabular-nums">
-                          <span className={cn("text-xs font-bold", isActive ? "text-[var(--color-brand)]" : "text-stone-700")}>
+                          <span className={cn("text-xs font-bold", isActive ? "text-[var(--color-brand)]" : "text-ink-2")}>
                             {formatPrice(variant.sellingPrice)}
                           </span>
                           {variant.mrp > variant.sellingPrice && (
-                            <span className="text-xs text-stone-400 line-through tabular-nums">
+                            <span className="text-xs text-ink-3 line-through tabular-nums">
                               {formatPrice(variant.mrp)}
                             </span>
                           )}
@@ -523,13 +589,13 @@ export default function ProductDetailPage() {
 
                         {/* Discount or OOS badge */}
                         {isInStock && variantDiscount > 0 && (
-                          <span className="absolute -top-2 -right-2 px-2 py-0 bg-emerald-500 text-white text-xs font-bold rounded-md leading-none tabular-nums">
+                          <span className="absolute -top-2 -right-2 px-2 py-0 bg-gold-500 text-brand-950 text-xs font-bold rounded-md leading-none tabular-nums">
                             Save {formatPrice(savings)}
                           </span>
                         )}
                         {!isInStock && (
-                          <span className="absolute -top-2 -right-2 px-2 py-0 bg-stone-400 text-white text-xs font-bold rounded-md leading-none">
-                            OOS
+                          <span className="absolute -top-2 -right-2 px-2 py-0 bg-ink text-paper text-[10px] font-bold rounded-md leading-none uppercase tracking-wide">
+                            Sold out
                           </span>
                         )}
                       </button>
@@ -559,22 +625,22 @@ export default function ProductDetailPage() {
 
             {/* ── Quantity & Add to Cart ── */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center border-2 border-stone-200 rounded-xl overflow-hidden bg-white">
+              <div className="flex items-center border-2 border-rule rounded-xl overflow-hidden bg-paper-2">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
-                  className="h-12 w-12 flex items-center justify-center hover:bg-stone-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="h-12 w-12 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Decrease quantity"
                 >
                   <Minus size={15} />
                 </button>
-                <span className="h-12 w-14 flex items-center justify-center font-bold text-base border-x border-stone-200 text-stone-800 select-none">
+                <span className="h-12 w-14 flex items-center justify-center font-bold text-base border-x border-rule text-ink select-none">
                   {quantity}
                 </span>
                 <button
                   onClick={() => setQuantity((q) => Math.min(selectedVariant?.stock ?? 10, q + 1))}
                   disabled={quantity >= (selectedVariant?.stock ?? 10)}
-                  className="h-12 w-12 flex items-center justify-center hover:bg-stone-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="h-12 w-12 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Increase quantity"
                 >
                   <Plus size={15} />
@@ -587,8 +653,8 @@ export default function ProductDetailPage() {
                 className={cn(
                   "flex-1 h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-ui overflow-hidden relative",
                   isAddingToCart || justAddedToCart
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
-                    : "bg-[var(--color-brand)] text-white hover:opacity-90 border border-[var(--color-brand)] shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                    ? "bg-brand-100 text-brand-800 border border-brand-200"
+                    : "bg-brand-600 text-white hover:bg-brand-700 border border-brand-700 shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
                 )}
               >
                 {isAddingToCart && (
@@ -597,7 +663,7 @@ export default function ProductDetailPage() {
                 <span className="relative flex items-center gap-2">
                   {justAddedToCart ? (
                     <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-800">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       Added to Cart
@@ -620,11 +686,11 @@ export default function ProductDetailPage() {
             </div>
 
             {/* ── Total ── */}
-            <div className="flex items-center justify-between p-4 bg-amber-50/60 rounded-xl border border-amber-100/60">
-              <span className="text-sm font-medium text-amber-800">
-                Total <span className="text-amber-600 font-normal tabular-nums">({quantity} × {formatPrice(selectedVariant?.sellingPrice || 0)})</span>
+            <div className="flex items-center justify-between p-4 bg-gold-500/10 rounded-xl border border-gold-500/25">
+              <span className="text-sm font-medium text-gold-800">
+                Total <span className="text-gold-600 font-normal tabular-nums">({quantity} × {formatPrice(selectedVariant?.sellingPrice || 0)})</span>
               </span>
-              <span className="text-lg font-black text-amber-800 tabular-nums">
+              <span className="text-lg font-black text-ink tabular-nums">
                 {formatPrice((selectedVariant?.sellingPrice || 0) * quantity)}
               </span>
             </div>
@@ -632,7 +698,7 @@ export default function ProductDetailPage() {
             {/* ── WhatsApp Order ── */}
             <button
               onClick={handleWhatsAppOrder}
-              className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 transition-colors border border-emerald-600"
+              className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-whatsapp text-white hover:bg-whatsapp-600 transition-colors border border-whatsapp-700"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -644,35 +710,37 @@ export default function ProductDetailPage() {
             <div className="flex gap-4">
               <button
                 onClick={handleShare}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-rule text-sm font-medium text-ink-2 hover:bg-paper-3 transition-colors"
               >
                 <Share2 size={14} />
                 Share
               </button>
             </div>
 
-            {/* ── Quick Info ── */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-stone-100">
+            {/* ── Quick Info — palette-restrained, hairline-tinted ── */}
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-rule">
               <div className="text-center">
-                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-green-50 flex items-center justify-center">
-                  <Leaf size={18} className="text-green-600" />
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-brand-600/10 border border-brand-600/15 flex items-center justify-center">
+                  <Leaf size={18} className="text-brand-700" />
                 </div>
-                <p className="text-xs font-medium">100% Pure</p>
-                <p className="text-xs text-muted-foreground">No Preservatives</p>
+                <p className="text-xs font-semibold text-ink">100% Pure</p>
+                <p className="text-xs text-ink-3">No Preservatives</p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Truck size={18} className="text-blue-600" />
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gold-500/10 border border-gold-500/25 flex items-center justify-center">
+                  <Truck size={18} className="text-gold-600" />
                 </div>
-                <p className="text-xs font-medium">Free Delivery</p>
-                <p className="text-xs text-muted-foreground">Above ₹499</p>
+                <p className="text-xs font-semibold text-ink">Free Delivery</p>
+                <p className="text-xs text-ink-3">
+                  Above ₹{freeShippingThreshold.toLocaleString("en-IN")}
+                </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <Shield size={18} className="text-purple-600" />
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-ink-faint border border-rule flex items-center justify-center">
+                  <Shield size={18} className="text-ink-2" />
                 </div>
-                <p className="text-xs font-medium">FSSAI Approved</p>
-                <p className="text-xs text-muted-foreground">Quality Assured</p>
+                <p className="text-xs font-semibold text-ink">FSSAI Approved</p>
+                <p className="text-xs text-ink-3">Quality Assured</p>
               </div>
             </div>
           </motion.div>
@@ -699,8 +767,8 @@ export default function ProductDetailPage() {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-ui whitespace-nowrap snap-start",
                     activeTab === tab.key
-                      ? "bg-white text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-paper-2 text-ink shadow-sm"
+                      : "text-ink-3 hover:text-ink"
                   )}
                 >
                   {tab.label}
@@ -721,8 +789,11 @@ export default function ProductDetailPage() {
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
                     <h3 className="text-lg font-semibold mb-4">About this product</h3>
-                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                      {product.description || "No description available."}
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line max-w-[65ch]">
+                      {product.description &&
+                      product.description.trim().toLowerCase() !== product.name.trim().toLowerCase()
+                        ? product.description
+                        : "No description available."}
                     </p>
                   </div>
                   <div className="space-y-4">
@@ -777,39 +848,57 @@ export default function ProductDetailPage() {
                 exit={{ opacity: 0, y: -10 }}
               >
                 {product.nutritionalInfo ? (
-                  <div className="max-w-lg">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-2 bg-green-50 rounded-xl">
-                        <Apple size={20} className="text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">Nutritional Information</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Per serving ({product.nutritionalInfo.servingSize || "100g"})
-                        </p>
-                      </div>
-                    </div>
-                    <div className="rounded-xl border border-border overflow-hidden">
-                      {nutritionFields.map((field, i) => {
-                        const value = (product.nutritionalInfo as any)[field.key];
-                        if (value === undefined || value === null) return null;
-                        return (
-                          <div
-                            key={field.key}
-                            className={cn(
-                              "flex items-center justify-between px-4 py-4",
-                              i % 2 === 0 ? "bg-muted/30" : "bg-white"
-                            )}
-                          >
-                            <span className="text-sm">{field.label}</span>
-                            <span className="text-sm font-medium">
-                              {value} {field.unit}
-                            </span>
+                  (() => {
+                    // A zero/blank nutrition sheet (unfilled admin form) must
+                    // not render as "0 kcal, 0 g …" rows — show the unavailable
+                    // state instead, same as a missing object.
+                    const rows = nutritionFields.filter((field) => {
+                      const value = (product.nutritionalInfo as any)?.[field.key];
+                      return value !== undefined && value !== null && Number(value) > 0;
+                    });
+                    if (rows.length === 0) {
+                      return (
+                        <div className="text-center py-12">
+                          <Info size={36} className="mx-auto text-muted-foreground/30 mb-4" />
+                          <p className="text-muted-foreground">Nutritional information not available for this product.</p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="max-w-lg">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="p-2 bg-brand-600/10 rounded-xl">
+                            <Apple size={20} className="text-brand-700" />
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          <div>
+                            <h3 className="text-lg font-semibold">Nutritional Information</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Per serving ({product.nutritionalInfo.servingSize || "100g"})
+                            </p>
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-border overflow-hidden">
+                          {rows.map((field, i) => {
+                            const value = (product.nutritionalInfo as any)[field.key];
+                            return (
+                              <div
+                                key={field.key}
+                                className={cn(
+                                  "flex items-center justify-between px-4 py-4",
+                                  i % 2 === 0 ? "bg-muted/30" : "bg-paper-2"
+                                )}
+                              >
+                                <span className="text-sm">{field.label}</span>
+                                <span className="text-sm font-medium">
+                                  {Number(value)} {field.unit}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <div className="text-center py-12">
                     <Info size={36} className="mx-auto text-muted-foreground/30 mb-4" />
@@ -828,8 +917,8 @@ export default function ProductDetailPage() {
                 {product.ingredients ? (
                   <div className="max-w-2xl">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-2 bg-amber-50 rounded-xl">
-                        <Leaf size={20} className="text-amber-600" />
+                      <div className="p-2 bg-gold-500/10 rounded-xl">
+                        <Leaf size={20} className="text-gold-600" />
                       </div>
                       <h3 className="text-lg font-semibold">Ingredients</h3>
                     </div>
@@ -875,7 +964,7 @@ export default function ProductDetailPage() {
                       <div className="space-y-4">
                         {/* Star rating selector */}
                         <div>
-                          <label className="block text-sm font-medium text-stone-700 mb-2">
+                          <label className="block text-sm font-medium text-ink-2 mb-2">
                             Your Rating *
                           </label>
                           <div className="flex gap-2">
@@ -894,13 +983,13 @@ export default function ProductDetailPage() {
                                   className={cn(
                                     "transition-ui duration-150",
                                     star <= reviewForm.rating
-                                      ? "fill-amber-400 text-amber-400 drop-shadow-sm"
-                                      : "fill-stone-100 text-stone-200"
+                                      ? "fill-gold-500 text-gold-500 drop-shadow-sm"
+                                      : "fill-ink-faint text-ink-faint"
                                   )}
                                 />
                               </button>
                             ))}
-                            <span className="text-xs text-stone-400 self-center ml-2">
+                            <span className="text-xs text-ink-3 self-center ml-2">
                               {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][reviewForm.rating]}
                             </span>
                           </div>
@@ -908,8 +997,8 @@ export default function ProductDetailPage() {
 
                         {/* Title */}
                         <div>
-                          <label className="block text-sm font-medium text-stone-700 mb-2">
-                            Title <span className="text-stone-400 font-normal">(optional)</span>
+                          <label className="block text-sm font-medium text-ink-2 mb-2">
+                            Title <span className="text-ink-3 font-normal">(optional)</span>
                           </label>
                           <input
                             type="text"
@@ -917,13 +1006,13 @@ export default function ProductDetailPage() {
                             onChange={(e) => setReviewForm((p) => ({ ...p, title: e.target.value }))}
                             placeholder="Summarize your experience"
                             maxLength={100}
-                            className="flex w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm focus:outline-none focus:border-[var(--color-brand)] focus:ring-0 transition-ui placeholder:text-stone-400"
+                            className="flex w-full rounded-xl border border-rule bg-paper-2 px-4 py-2 text-sm focus:outline-none focus:border-transparent focus:ring-2 focus:ring-[var(--color-focus)] transition-ui placeholder:text-ink-3"
                           />
                         </div>
 
                         {/* Comment */}
                         <div>
-                          <label className="block text-sm font-medium text-stone-700 mb-2">
+                          <label className="block text-sm font-medium text-ink-2 mb-2">
                             Your Review *
                           </label>
                           <textarea
@@ -932,12 +1021,12 @@ export default function ProductDetailPage() {
                             rows={4}
                             maxLength={500}
                             placeholder="What did you like or dislike? How was the taste, packaging, delivery?"
-                            className="flex w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm focus:outline-none focus:border-[var(--color-brand)] focus:ring-0 transition-ui resize-none placeholder:text-stone-400"
+                            className="flex w-full rounded-xl border border-rule bg-paper-2 px-4 py-2 text-sm focus:outline-none focus:border-transparent focus:ring-2 focus:ring-[var(--color-focus)] transition-ui resize-none placeholder:text-ink-3"
                           />
                           <div className="flex justify-end mt-2">
                             <span className={cn(
                               "text-xs",
-                              reviewForm.comment.length > 450 ? "text-amber-500 font-medium" : "text-stone-400"
+                              reviewForm.comment.length > 450 ? "text-gold-600 font-medium" : "text-ink-3"
                             )}>
                               {reviewForm.comment.length}/500
                             </span>
@@ -947,7 +1036,7 @@ export default function ProductDetailPage() {
                         <button
                           onClick={handleSubmitReview}
                           disabled={submittingReview || !reviewForm.comment.trim()}
-                          className="w-full sm:w-auto px-6 py-2 rounded-xl bg-[var(--color-brand)] text-white text-sm font-bold hover:opacity-90 transition-ui disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                          className="w-full sm:w-auto px-6 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-ui disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
                         >
                           {submittingReview && (
                             <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1080,40 +1169,40 @@ export default function ProductDetailPage() {
           <motion.div
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-stone-200 shadow-2xl px-4 py-4 lg:hidden"
+            className="fixed bottom-0 inset-x-0 z-40 bg-paper-2 border-t border-rule shadow-2xl px-4 py-4 lg:hidden"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-stone-500 font-medium truncate">{product.name}</p>
+                <p className="text-xs text-ink-3 font-medium truncate">{product.name}</p>
                 <div className="flex items-baseline gap-2 mt-0">
-                  <span className="text-sm font-bold text-stone-800">
+                  <span className="text-sm font-bold text-ink">
                     {selectedVariant ? formatPrice(selectedVariant.sellingPrice) : ""}
                   </span>
                   {selectedVariant && (
-                    <span className="text-xs text-stone-400">
-                      ×{quantity} · {selectedVariant.weightValue}{selectedVariant.weightUnit}
+                    <span className="text-xs text-ink-3">
+                      ×{quantity} · {weightLabel(selectedVariant)}
                     </span>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {/* Quantity in sticky */}
-                <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden">
+                <div className="flex items-center border border-rule rounded-lg overflow-hidden">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-stone-50 transition-colors disabled:opacity-30"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30"
                     aria-label="Decrease"
                   >
                     <Minus size={12} />
                   </button>
-                  <span className="w-8 h-8 flex items-center justify-center text-xs font-bold border-x border-stone-200 text-stone-800 select-none">
+                  <span className="w-8 h-8 flex items-center justify-center text-xs font-bold border-x border-rule text-ink select-none">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity((q) => Math.min(selectedVariant?.stock ?? 10, q + 1))}
                     disabled={quantity >= (selectedVariant?.stock ?? 10)}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-stone-50 transition-colors disabled:opacity-30"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30"
                     aria-label="Increase"
                   >
                     <Plus size={12} />
@@ -1126,8 +1215,8 @@ export default function ProductDetailPage() {
                   className={cn(
                     "px-4 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-ui",
                     justAddedToCart
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
-                      : "bg-[var(--color-brand)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                      ? "bg-brand-600/10 text-brand-700 border border-brand-600/25"
+                      : "bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >
                   {justAddedToCart ? (
@@ -1151,7 +1240,7 @@ export default function ProductDetailPage() {
           <motion.div
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 md:p-8"
+            className="fixed inset-0 z-50 bg-brand-950/95 backdrop-blur-sm flex items-center justify-center p-4 md:p-8"
           >
             <button
               onClick={() => setLightboxOpen(false)}

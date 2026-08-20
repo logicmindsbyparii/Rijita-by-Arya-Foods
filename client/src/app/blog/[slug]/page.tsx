@@ -85,7 +85,7 @@ export default function BlogDetailPage() {
   if (isError) {
     const is404 = (error as any)?.status === 404;
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           {is404 ? (
             <>
@@ -127,7 +127,7 @@ export default function BlogDetailPage() {
 
   if (!blog) {
     return (
-      <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 flex items-center justify-center">
+      <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
             <BookOpen size={44} className="text-muted-foreground" />
@@ -141,7 +141,7 @@ export default function BlogDetailPage() {
   }
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-20">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.nav
           initial={{ opacity: 0, y: -8 }}
@@ -308,7 +308,7 @@ export default function BlogDetailPage() {
 
 function BlogDetailSkeleton() {
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-20">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-6 pt-4">
           <Skeleton className="h-4 w-48" />

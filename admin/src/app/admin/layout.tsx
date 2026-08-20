@@ -27,6 +27,17 @@ interface NavItem {
   icon: React.ElementType;
 }
 
+// Destinations offered by the ⌘K palette. Hoisted out of the render so the
+// filtered list backing the UI is the same one the Enter key acts on.
+const paletteItems: { label: string; href: string; desc: string; icon: React.ElementType }[] = [
+  { label: "Dashboard", href: "/admin", desc: "Main control panel", icon: LayoutDashboard },
+  { label: "Products", href: "/admin/products", desc: "Manage catalog items", icon: Package },
+  { label: "Orders", href: "/admin/orders", desc: "View sales transactions", icon: ShoppingBag },
+  { label: "Categories", href: "/admin/categories", desc: "Configure product groups", icon: Tags },
+  { label: "Coupons", href: "/admin/coupons", desc: "Edit discount values", icon: TicketPercent },
+  { label: "Settings", href: "/admin/settings", desc: "System adjustments", icon: Settings },
+];
+
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Products", href: "/admin/products", icon: Package },
@@ -76,7 +87,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
       if (e.key === "Escape") {
-        if (searchOpen) setSearchOpen(false);
+        if (searchOpen) {
+          setSearchOpen(false);
+          setAdminSearchQuery("");
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -95,6 +109,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   };
+
+  const paletteResults = paletteItems.filter(
+    (item) =>
+      !adminSearchQuery ||
+      item.label.toLowerCase().includes(adminSearchQuery.toLowerCase()) ||
+      item.desc.toLowerCase().includes(adminSearchQuery.toLowerCase())
+  );
+
+  const closePalette = useCallback(() => {
+    setSearchOpen(false);
+    setAdminSearchQuery("");
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -367,7 +393,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.3 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSearchOpen(false)}
+              onClick={closePalette}
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
             />
             {/* Palette Dialog */}
@@ -390,16 +416,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     placeholder="Search products, orders, pages, coupons..."
                     className="flex-1 text-sm bg-transparent border-0 outline-none focus:ring-0 text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)]"
                     onKeyDown={(e) => {
-                      if (e.key === "Escape") setSearchOpen(false);
+                      if (e.key === "Escape") closePalette();
                       if (e.key === "ArrowDown") {
                         e.preventDefault();
                         const links = document.querySelectorAll('[data-palette-link]');
                         (links[0] as HTMLElement)?.focus();
                       }
+                      // The palette advertised "press Enter" but never handled
+                      // the key, so Enter did nothing at all. Open the top
+                      // match, which is what the highlighted-first-result
+                      // layout implies.
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const target = paletteResults[0];
+                        if (target) {
+                          closePalette();
+                          router.push(target.href);
+                        }
+                      }
                     }}
                   />
                   <button
-                    onClick={() => setSearchOpen(false)}
+                    onClick={closePalette}
                     className="p-2 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-muted)] text-[11px] font-mono font-medium transition-colors"
                   >
                     ESC
@@ -408,39 +446,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 {/* Results */}
                 <div className="p-2 max-h-[340px] overflow-y-auto space-y-0">
-                  {adminSearchQuery && (
+                  {adminSearchQuery && paletteResults.length > 0 && (
                     <div className="px-4 py-2 text-xs text-[var(--color-muted)]">
-                      Press <kbd className="px-2 py-0 rounded bg-[var(--color-surface-2)] font-mono text-[10px]">Enter</kbd> to search all
+                      Press <kbd className="px-2 py-0 rounded bg-[var(--color-surface-2)] font-mono text-[10px]">Enter</kbd> to open{" "}
+                      <span className="font-semibold text-[var(--color-ink-3)]">{paletteResults[0].label}</span>
+                    </div>
+                  )}
+                  {adminSearchQuery && paletteResults.length === 0 && (
+                    <div className="px-4 py-6 text-center text-xs text-[var(--color-muted)]">
+                      No pages match &ldquo;{adminSearchQuery}&rdquo;.
                     </div>
                   )}
                   <div className="space-y-0">
-                    <p className="text-[10px] font-bold text-[var(--color-ink-3)] uppercase tracking-[0.12em] px-4 py-2">
-                      Quick Navigation
-                    </p>
-                    {[
-                      { label: "Dashboard", href: "/admin", desc: "Main control panel", icon: LayoutDashboard },
-                      { label: "Products", href: "/admin/products", desc: "Manage catalog items", icon: Package },
-                      { label: "Orders", href: "/admin/orders", desc: "View sales transactions", icon: ShoppingBag },
-                      { label: "Categories", href: "/admin/categories", desc: "Configure product groups", icon: Tags },
-                      { label: "Coupons", href: "/admin/coupons", desc: "Edit discount values", icon: TicketPercent },
-                      { label: "Settings", href: "/admin/settings", desc: "System adjustments", icon: Settings },
-                    ]
-                      .filter(item =>
-                        !adminSearchQuery ||
-                        item.label.toLowerCase().includes(adminSearchQuery.toLowerCase()) ||
-                        item.desc.toLowerCase().includes(adminSearchQuery.toLowerCase())
-                      )
-                      .map((item, idx) => {
+                    {paletteResults.length > 0 && (
+                      <p className="text-[10px] font-bold text-[var(--color-ink-3)] uppercase tracking-[0.12em] px-4 py-2">
+                        Quick Navigation
+                      </p>
+                    )}
+                    {paletteResults
+                      .map((item) => {
                         const Icon = item.icon;
                         return (
                           <Link
                             key={item.href}
                             href={item.href}
                             data-palette-link
-                            onClick={() => {
-                              setSearchOpen(false);
-                              setAdminSearchQuery("");
-                            }}
+                            onClick={closePalette}
                             className="group flex items-center gap-4 p-2 rounded-xl hover:bg-[var(--color-surface-hover)] text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30"
                           >
                             <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-2)] group-hover:bg-white flex items-center justify-center shrink-0 border border-[var(--color-rule)] transition-colors">

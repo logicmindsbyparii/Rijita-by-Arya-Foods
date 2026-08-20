@@ -82,6 +82,32 @@ describe("cart reducer via useCart", () => {
     expect(result.current.subtotal).toBe(1600);
   });
 
+  it("treats variants without _id as distinct lines (keyed by sku)", () => {
+    // Catalogue variants have no _id (Mongo doesn't generate one for embedded
+    // docs; the admin form never sends one) — so identity must fall back to sku.
+    const { _id, ...variantWithoutId } = mockVariant;
+    const variantB = { ...mockVariant, sku: "P-1000", weight: "1kg", weightValue: 1000, sellingPrice: 700 };
+    const variantBNoId = { ...variantB, _id: undefined };
+    const { result } = renderHook(() => useCart(), { wrapper });
+    act(() => {
+      result.current.addItem(mockProduct, variantWithoutId as Variant, 1);
+    });
+    act(() => {
+      result.current.addItem(mockProduct, variantBNoId, 2);
+    });
+    // Two distinct variants of the same product must stay separate lines
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.itemCount).toBe(3);
+    expect(result.current.subtotal).toBe(400 + 700 * 2);
+
+    // Removing one variant must not remove the other
+    act(() => {
+      result.current.removeItem("p1", "P-500");
+    });
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].variant.sku).toBe("P-1000");
+  });
+
   it("removes item", () => {
     const { result } = renderHook(() => useCart(), { wrapper });
     act(() => {

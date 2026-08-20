@@ -35,10 +35,10 @@ const benefits = [
 ];
 
 const pricingTiers = [
-  { label: "₹2,000 - ₹5,000", discount: "10% Off", badge: "Standard" },
-  { label: "₹5,000 - ₹15,000", discount: "15% Off", badge: "Silver", color: "from-gray-400 to-gray-500" },
-  { label: "₹15,000 - ₹50,000", discount: "20% Off", badge: "Gold", color: "from-spice-gold to-amber-600" },
-  { label: "₹50,000+", discount: "25% Off", badge: "Platinum", color: "from-brand-500 to-orange-600" },
+  { label: "₹2,000 - ₹5,000", discount: "10% Off", badge: "Standard", color: "bg-paper-3 text-ink-2 border border-rule" },
+  { label: "₹5,000 - ₹15,000", discount: "15% Off", badge: "Silver", color: "bg-ink-2 text-paper" },
+  { label: "₹15,000 - ₹50,000", discount: "20% Off", badge: "Gold", color: "bg-gold-500 text-brand-950" },
+  { label: "₹50,000+", discount: "25% Off", badge: "Platinum", color: "bg-brand-800 text-white" },
 ];
 
 export default function WholesalePage() {
@@ -75,21 +75,21 @@ export default function WholesalePage() {
   };
 
   return (
-    <div className="min-h-screen pt-36 sm:pt-40 lg:pt-44 pb-16 overflow-hidden">
+    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero */}
         <motion.div
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 rounded-full text-brand-700 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 border border-brand-600/20 bg-brand-600/10 rounded-full text-brand-700 text-sm font-medium mb-4">
             <ShoppingBag size={16} />
             Wholesale Program
           </div>
-          <h1 className="text-4xl md:text-6xl font-display font-bold mb-4">
-            Bulk Order & <span className="text-brand-600">Wholesale</span>
+          <h1 className="text-4xl md:text-6xl font-display font-black text-ink mb-4 tracking-tight">
+            Bulk Order & <span className="font-serif italic font-medium text-gold-600">Wholesale</span>
           </h1>
-          <p className="text-muted-foreground max-w-3xl mx-auto text-lg">
+          <p className="text-ink-2 max-w-3xl mx-auto text-lg [text-wrap:pretty]">
             Stock your shelves with the finest Indian snacks. Join our wholesale program
             and enjoy exclusive pricing, priority support, and seamless delivery across India.
           </p>
@@ -106,13 +106,13 @@ export default function WholesalePage() {
               <motion.div
                 key={benefit.title}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-6 border card-hover"
+                className="bg-paper-2 rounded-2xl p-6 border border-rule card-hover"
               >
-                <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
-                  <Icon size={24} className="text-brand-500" />
+                <div className="w-12 h-12 rounded-xl bg-brand-600/10 flex items-center justify-center mb-4">
+                  <Icon size={24} className="text-brand-700" />
                 </div>
-                <h3 className="font-display font-bold mb-2">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                <h3 className="font-display font-bold text-ink mb-2">{benefit.title}</h3>
+                <p className="text-sm text-ink-2">{benefit.description}</p>
               </motion.div>
             );
           })}
@@ -125,18 +125,18 @@ export default function WholesalePage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-display font-bold text-center mb-8">
-            Pricing <span className="text-brand-600">Tiers</span>
+          <h2 className="text-3xl font-display font-black text-ink text-center mb-8">
+            Pricing <span className="font-serif italic font-medium text-gold-600">Tiers</span>
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {pricingTiers.map((tier) => (
-              <div key={tier.label} className="bg-white rounded-2xl border p-6 text-center card-hover">
-                <div className={cn("inline-block px-4 py-2 rounded-full text-xs font-semibold text-white mb-4 bg-gradient-to-r", tier.color || "bg-muted")}>
+              <div key={tier.label} className="bg-paper-2 rounded-2xl border border-rule p-6 text-center card-hover">
+                <div className={cn("inline-block px-4 py-2 rounded-full text-xs font-semibold mb-4", tier.color)}>
                   {tier.badge}
                 </div>
-                <p className="text-2xl font-bold font-display mb-2">{tier.discount}</p>
-                <p className="text-sm text-muted-foreground">on orders of</p>
-                <p className="text-lg font-semibold mt-2">{tier.label}</p>
+                <p className="text-2xl font-bold font-display text-ink mb-2">{tier.discount}</p>
+                <p className="text-sm text-ink-2">on orders of</p>
+                <p className="text-lg font-semibold text-ink mt-2">{tier.label}</p>
               </div>
             ))}
           </div>
@@ -144,10 +144,10 @@ export default function WholesalePage() {
 
         {/* Process */}
         <motion.div
-          className="bg-cream rounded-2xl p-8 md:p-12 border mb-16"
+          className="bg-paper-2 rounded-2xl p-8 md:p-12 border border-rule mb-16"
         >
-          <h2 className="text-3xl font-display font-bold text-center mb-10">
-            How It <span className="text-brand-600">Works</span>
+          <h2 className="text-3xl font-display font-black text-ink text-center mb-10">
+            How It <span className="font-serif italic font-medium text-gold-600">Works</span>
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -157,11 +157,11 @@ export default function WholesalePage() {
               { step: "04", title: "Doorstep Delivery", desc: "Receive your order with free delivery" },
             ].map((step) => (
               <div key={step.step} className="text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-500 text-white flex items-center justify-center text-xl font-bold font-display">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-xl font-bold font-display">
                   {step.step}
                 </div>
-                <h4 className="font-semibold mb-2">{step.title}</h4>
-                <p className="text-sm text-muted-foreground">{step.desc}</p>
+                <h4 className="font-semibold text-ink mb-2">{step.title}</h4>
+                <p className="text-sm text-ink-2">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -173,37 +173,37 @@ export default function WholesalePage() {
             className="lg:col-span-3"
           >
             {submitted ? (
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-                <CheckCircle size={48} className="mx-auto mb-4 text-green-500" />
-                <h3 className="text-xl font-display font-bold text-green-800 mb-2">Inquiry Submitted!</h3>
-                <p className="text-green-700/80 mb-6">Our wholesale team will reach out within 24 hours with a customized quote.</p>
+              <div className="bg-brand-600/5 border border-brand-600/20 rounded-2xl p-8 text-center">
+                <CheckCircle size={48} className="mx-auto mb-4 text-brand-600" />
+                <h3 className="text-xl font-display font-bold text-ink mb-2">Inquiry submitted.</h3>
+                <p className="text-ink-2 mb-6">Our wholesale team will reach out within 24 hours with a customized quote.</p>
                 <Button onClick={() => setSubmitted(false)} variant="outline">Submit Another Inquiry</Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <h3 className="text-2xl font-display font-bold mb-2">Send Us Your Requirements</h3>
-                <p className="text-muted-foreground mb-4">Fill in the details and our team will get back to you with a customized quote.</p>
+                <h3 className="text-2xl font-display font-bold text-ink mb-2">Send Us Your Requirements</h3>
+                <p className="text-ink-2 mb-4">Fill in the details and our team will get back to you with a customized quote.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Name *</label>
-                    <input type="text" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="w-full px-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm" placeholder="Your name" />
+                    <label htmlFor="ws-name" className="block text-sm font-medium text-ink-2 mb-2">Name *</label>
+                    <input id="ws-name" type="text" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="w-full h-12 px-4 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] text-sm" placeholder="Your name" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Email *</label>
-                    <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} className="w-full px-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm" placeholder="your@email.com" />
+                    <label htmlFor="ws-email" className="block text-sm font-medium text-ink-2 mb-2">Email *</label>
+                    <input id="ws-email" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} className="w-full h-12 px-4 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] text-sm" placeholder="your@email.com" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Phone *</label>
-                    <input type="tel" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} className="w-full px-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm" placeholder="+91 98765 43210" />
+                    <label htmlFor="ws-phone" className="block text-sm font-medium text-ink-2 mb-2">Phone *</label>
+                    <input id="ws-phone" type="tel" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} className="w-full h-12 px-4 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] text-sm" placeholder="+91 98765 43210" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Company / Store Name</label>
-                    <input type="text" value={form.company} onChange={(e) => setForm({...form, company: e.target.value})} className="w-full px-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm" placeholder="Your business name" />
+                    <label htmlFor="ws-company" className="block text-sm font-medium text-ink-2 mb-2">Company / Store Name</label>
+                    <input id="ws-company" type="text" value={form.company} onChange={(e) => setForm({...form, company: e.target.value})} className="w-full h-12 px-4 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] text-sm" placeholder="Your business name" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Message / Requirements</label>
-                  <textarea value={form.message} onChange={(e) => setForm({...form, message: e.target.value})} rows={4} className="w-full px-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm resize-none" placeholder="Tell us about your requirements, estimated quantity, etc." />
+                  <label htmlFor="ws-message" className="block text-sm font-medium text-ink-2 mb-2">Message / Requirements</label>
+                  <textarea id="ws-message" value={form.message} onChange={(e) => setForm({...form, message: e.target.value})} rows={4} className="w-full px-4 py-3 rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] text-sm resize-none" placeholder="Tell us about your requirements, estimated quantity, etc." />
                 </div>
                 <Button type="submit" disabled={submitting} size="lg">
                   {submitting ? "Submitting..." : <><Send size={16} className="mr-2" /> Submit Inquiry</>}
@@ -216,17 +216,17 @@ export default function WholesalePage() {
           <motion.div
             className="lg:col-span-2 space-y-6"
           >
-            <div className="bg-gradient-to-br from-brand-500 to-spice-gold rounded-2xl p-6 text-white">
-              <Headphones size={28} className="mb-4" />
+            <div className="bg-brand-800 rounded-2xl p-6 text-white">
+              <Headphones size={28} className="mb-4 text-gold-400" />
               <h4 className="font-display font-bold text-lg mb-2">Need Help?</h4>
-              <p className="text-white/80 text-sm mb-4">Our wholesale team is available to assist you.</p>
-              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white text-brand-600 rounded-xl text-sm font-medium hover:bg-white/90 transition-colors">
+              <p className="text-paper/80 text-sm mb-4">Our wholesale team is available to assist you.</p>
+              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-gold-500 text-brand-950 rounded-xl text-sm font-bold hover:bg-gold-600 transition-colors">
                 Chat on WhatsApp
               </a>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border space-y-4">
-              <h4 className="font-semibold">Quick Info</h4>
+            <div className="bg-paper-2 rounded-2xl p-6 border border-rule space-y-4">
+              <h4 className="font-display font-bold text-ink">Quick Info</h4>
               {[
                 { label: "Min. Order", value: "₹2,000" },
                 { label: "Delivery", value: "Pan India (Free)" },
@@ -234,16 +234,16 @@ export default function WholesalePage() {
                 { label: "Response Time", value: "Within 24 hours" },
               ].map((info) => (
                 <div key={info.label} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{info.label}</span>
-                  <span className="font-medium">{info.value}</span>
+                  <span className="text-ink-3">{info.label}</span>
+                  <span className="font-medium text-ink">{info.value}</span>
                 </div>
               ))}
             </div>
 
-            <div className="bg-cream rounded-2xl p-6 border text-center">
-              <Users size={24} className="mx-auto mb-2 text-brand-500" />
-              <p className="text-sm font-medium">Trusted by 50+ businesses</p>
-              <p className="text-xs text-muted-foreground mt-2">Across India</p>
+            <div className="bg-paper-2 rounded-2xl p-6 border border-rule text-center">
+              <Users size={24} className="mx-auto mb-2 text-brand-700" />
+              <p className="text-sm font-medium text-ink">Partner with retailers across India</p>
+              <p className="text-xs text-ink-3 mt-2">Bulk orders · Custom packaging · Priority support</p>
             </div>
           </motion.div>
         </div>

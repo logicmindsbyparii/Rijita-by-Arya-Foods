@@ -80,6 +80,11 @@ export default function AdminReviews() {
   };
 
   const handleDelete = async (id: string) => {
+    // Was a single unguarded click, and it sits right next to Approve in the
+    // moderation row — the two easiest actions to mix up. Deleting also
+    // recomputes the product's rating, so a misclick silently moves the star
+    // average on the storefront with no way back.
+    if (!window.confirm("Delete this review permanently? This cannot be undone.")) return;
     try {
       setDeleting(id);
       await adminApi.deleteReview(id);
