@@ -50,11 +50,8 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    externalDir: true,
-  },
+  experimental: {},
   async rewrites() {
-    const adminUrl = process.env.ADMIN_URL || 'http://localhost:3001';
     return [
       {
         source: '/api/:path*',
@@ -63,14 +60,6 @@ const nextConfig = {
       {
         source: '/uploads/:path*',
         destination: 'http://localhost:5001/uploads/:path*',
-      },
-      {
-        source: '/admin',
-        destination: `${adminUrl}/admin`,
-      },
-      {
-        source: '/admin/:path*',
-        destination: `${adminUrl}/admin/:path*`,
       },
     ];
   },
