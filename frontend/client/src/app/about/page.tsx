@@ -278,11 +278,11 @@ export default function AboutPage() {
       </div>
 
       {/* ═══ 2. INTEREST: GAPLESS BENTO GRID (The Values) ═══ */}
-      <section className="py-32 lg:py-48 px-6 sm:px-12 lg:px-24 bg-paper relative z-20">
+      <section className="py-20 lg:py-48 px-4 sm:px-12 lg:px-24 bg-paper relative z-20">
         <div className="max-w-[1600px] mx-auto">
           
-          <div className="mb-20 flex flex-col items-center text-center">
-            <h2 className="text-[48px] sm:text-[64px] lg:text-[80px] font-black tracking-[-0.04em] leading-[0.9] text-brand-950 max-w-4xl">
+          <div className="mb-12 lg:mb-20 flex flex-col items-center text-center">
+            <h2 className="text-[40px] sm:text-[64px] lg:text-[80px] font-black tracking-[-0.04em] leading-[0.9] text-brand-950 max-w-4xl">
               <span className="block">Our Mission &</span>
               <span className="font-serif italic text-brand-700 tracking-[-0.02em] block mt-2 sm:mt-4">Core Values.</span>
             </h2>
@@ -297,19 +297,19 @@ export default function AboutPage() {
             
             {/* Top Wide Block */}
             {values[0] && (
-              <div className="bento-item md:col-span-2 bg-brand-950 text-white rounded-[40px] p-10 lg:p-16 flex flex-col justify-between overflow-hidden relative group">
+              <div className="bento-item md:col-span-2 bg-brand-950 text-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 lg:p-16 flex flex-col justify-between overflow-hidden relative group">
                 <div className="absolute inset-0 bg-brand-900 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                <div className="relative z-10 flex flex-col lg:flex-row gap-12 lg:gap-24 items-start lg:items-center">
+                <div className="relative z-10 flex flex-col lg:flex-row gap-8 sm:gap-12 lg:gap-24 items-start lg:items-center">
                   <div className="lg:w-1/2">
-                    <div className="w-16 h-16 rounded-full bg-gold-500/20 flex items-center justify-center mb-8 text-gold-500 border border-gold-500/30">
-                      <ShieldCheck size={32} />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gold-500/20 flex items-center justify-center mb-6 sm:mb-8 text-gold-500 border border-gold-500/30">
+                      <ShieldCheck size={28} className="sm:w-8 sm:h-8 w-6 h-6" />
                     </div>
-                    <h3 className="text-4xl sm:text-6xl font-black tracking-tight mb-6">{values[0].title}</h3>
-                    <p className="text-xl text-brand-200 font-medium leading-relaxed">{values[0].description}</p>
+                    <h3 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4 sm:mb-6">{values[0].title}</h3>
+                    <p className="text-lg sm:text-xl text-brand-200 font-medium leading-relaxed">{values[0].description}</p>
                   </div>
-                  <div className="lg:w-1/2 bg-brand-900/50 p-8 rounded-3xl border border-brand-800">
-                    <h4 className="text-sm font-bold tracking-[0.2em] uppercase text-gold-500 mb-4">Our Mission</h4>
-                    <p className="text-2xl font-serif italic text-white/90 leading-relaxed">&ldquo;{mission}&rdquo;</p>
+                  <div className="w-full lg:w-1/2 bg-brand-900/50 p-6 lg:p-8 rounded-[24px] sm:rounded-3xl border border-brand-800">
+                    <h4 className="text-xs sm:text-sm font-bold tracking-[0.2em] uppercase text-gold-500 mb-3 sm:mb-4">Our Mission</h4>
+                    <p className="text-xl sm:text-2xl font-serif italic text-white/90 leading-relaxed">&ldquo;{mission}&rdquo;</p>
                   </div>
                 </div>
               </div>
@@ -317,29 +317,29 @@ export default function AboutPage() {
 
             {/* Bottom Left Block */}
             {values[1] && (
-              <div className="bento-item md:col-span-1 bg-brand-50 border border-brand-200 rounded-[40px] p-10 lg:p-16 flex flex-col justify-between group hover:bg-white transition-colors duration-500 shadow-sm hover:shadow-xl">
-                <div className="w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center mb-12 text-brand-700">
-                  <Leaf size={32} />
+              <div className="bento-item md:col-span-1 bg-brand-50 border border-brand-200 rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 lg:p-16 flex flex-col justify-between group hover:bg-white transition-colors duration-500 shadow-sm hover:shadow-xl">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand-100 flex items-center justify-center mb-8 lg:mb-12 text-brand-700">
+                  <Leaf size={28} className="sm:w-8 sm:h-8 w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-3xl sm:text-5xl font-black tracking-tight text-brand-950 mb-6">{values[1].title}</h3>
-                  <p className="text-xl text-brand-800 font-medium leading-relaxed">{values[1].description}</p>
+                  <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-brand-950 mb-4 sm:mb-6">{values[1].title}</h3>
+                  <p className="text-lg sm:text-xl text-brand-800 font-medium leading-relaxed">{values[1].description}</p>
                 </div>
               </div>
             )}
 
             {/* Bottom Right Block */}
             {values[2] && (
-              <div className="bento-item md:col-span-1 bg-gold-500 rounded-[40px] p-10 lg:p-16 flex flex-col justify-between group hover:bg-gold-400 transition-colors duration-500 shadow-sm hover:shadow-xl">
-                <div className="w-16 h-16 rounded-full bg-brand-950/10 flex items-center justify-center mb-12 text-brand-950">
-                  <Star size={32} />
+              <div className="bento-item md:col-span-1 bg-gold-500 rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 lg:p-16 flex flex-col justify-between group hover:bg-gold-400 transition-colors duration-500 shadow-sm hover:shadow-xl">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand-950/10 flex items-center justify-center mb-8 lg:mb-12 text-brand-950">
+                  <Star size={28} className="sm:w-8 sm:h-8 w-6 h-6" />
                 </div>
                 <div>
-                  <div className="w-12 h-12 rounded-full bg-brand-900 border border-brand-800 flex items-center justify-center shrink-0 mb-6">
-                    <span className="text-brand-300 font-serif text-2xl leading-none">&ldquo;</span>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-900 border border-brand-800 flex items-center justify-center shrink-0 mb-4 sm:mb-6">
+                    <span className="text-brand-300 font-serif text-xl sm:text-2xl leading-none">&ldquo;</span>
                   </div>
-                  <h3 className="text-3xl sm:text-5xl font-black tracking-tight text-brand-950 mb-6">{values[2].title}</h3>
-                  <p className="text-xl text-brand-950/80 font-medium leading-relaxed">{values[2].description}</p>
+                  <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-brand-950 mb-4 sm:mb-6">{values[2].title}</h3>
+                  <p className="text-lg sm:text-xl text-brand-950/80 font-medium leading-relaxed">{values[2].description}</p>
                 </div>
               </div>
             )}
