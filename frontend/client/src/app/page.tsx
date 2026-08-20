@@ -14,24 +14,23 @@ const API_BASE = getServerApiBase();
 
 export const dynamic = 'force-dynamic';
 
-// The homepage must always reflect the live catalog. cache: "no-store" is
-// required even with force-dynamic below — without it, Next.js serves these
-// fetches from its persistent Data Cache (.next/cache/fetch-cache), which can
-// keep deleted products/categories/collections visible indefinitely.
+// The homepage must always reflect the live catalog, so fetchServerJson sends
+// cache: "no-store" — required even with force-dynamic below, because without
+// it Next.js serves these from its persistent Data Cache
+// (.next/cache/fetch-cache), which can keep deleted products/categories/
+// collections visible indefinitely.
+//
+// Every section falls back to an empty state, so a cold-starting or down API
+// must degrade rather than hang the render until the platform's function
+// timeout kills the whole page. 8s is deliberately below the smallest plausible
+// serverless execution limit so the page owns its own failure mode rather than
+// being cut off mid-render; fetchServerJson enforces it even when Next.js drops
+// the abort signal. Raise it (with `export const maxDuration`) only if waiting
+// out a backend cold start is preferable to rendering empty shelves.
+const HOME_FETCH_TIMEOUT_MS = 8000;
+
 async function fetchServer<T = any>(endpoint: string): Promise<T | null> {
-  try {
-    // Every section falls back to an empty state, so a cold-starting or down
-    // API must degrade rather than hang the render until the platform's
-    // function timeout kills the whole page.
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+  return fetchServerJson<T>(`${API_BASE}${endpoint}`, HOME_FETCH_TIMEOUT_MS);
 }
 
 export default async function HomePage() {
@@ -41,7 +40,7 @@ export default async function HomePage() {
     // filter tabs carry true per-category counts (not an 8-item subset).
     fetchServer("/products?limit=100"),
     fetchServer("/categories"),
-    fetch(`${API_BASE}/settings`, { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetchServer("/settings"),
     fetchServer("/blogs?limit=3"),
     fetchServer("/recipes?limit=3"),
   ]);
