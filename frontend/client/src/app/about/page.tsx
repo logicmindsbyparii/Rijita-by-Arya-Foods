@@ -470,13 +470,13 @@ export default function AboutPage() {
                 </div>
 
                 {/* Hover Reveal Image */}
-                <div className="w-full lg:w-1/4 flex justify-start lg:justify-end">
-                  <div className="w-[180px] sm:w-[220px] aspect-[4/3] relative overflow-hidden rounded-2xl shadow-xl lg:opacity-0 lg:-translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:scale-95 group-hover:scale-100">
+                <div className="w-full lg:w-1/4 flex justify-start lg:justify-end mt-6 lg:mt-0">
+                  <div className="w-full sm:w-[220px] aspect-[4/3] relative overflow-hidden rounded-2xl shadow-xl lg:opacity-0 lg:-translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:scale-95 group-hover:scale-100">
                     <Image 
                       src={getImageUrl(story.image || story.featuredImage || NAMKEEN_IMAGES.mixture)} 
                       alt={story.title} 
                       fill 
-                      className="object-cover filter grayscale group-hover:grayscale-0 transition-all duration-700"
+                      className="object-cover transition-all duration-700 group-hover:scale-105"
                     />
                   </div>
                 </div>
