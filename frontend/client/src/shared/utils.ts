@@ -60,7 +60,7 @@ export function getImageUrl(path: string | undefined): string {
     normalizedPath.startsWith("/blogs") ||
     normalizedPath.startsWith("/recipes")
   ) {
-    const envApi = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+    const envApi = process.env.NEXT_PUBLIC_API_URL || "/api";
     const baseUrl = envApi.replace(/\/api$/, "");
 
     if (typeof window !== "undefined") {
