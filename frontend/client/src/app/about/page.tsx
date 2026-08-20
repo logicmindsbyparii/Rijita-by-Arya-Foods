@@ -377,7 +377,7 @@ export default function AboutPage() {
               </div>
               <h2 
                 ref={scrubTextRef}
-                className="text-[24px] sm:text-[32px] lg:text-[40px] font-black tracking-tight leading-[1.2] max-w-4xl text-white"
+                className="text-[20px] sm:text-[28px] lg:text-[36px] font-black tracking-tight leading-[1.2] max-w-4xl text-white"
               >
                 {founderBio.split(" ").map((word: string, i: number) => {
                   const isEmphasized = word.toLowerCase().includes("authentic") || word.toLowerCase().includes("uncorrupted") || word.toLowerCase().includes("home-made") || word.toLowerCase().includes("passion");
