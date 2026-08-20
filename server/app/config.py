@@ -57,6 +57,27 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         extra = "ignore"
 
+    @property
+    def is_production(self) -> bool:
+        """Whether this process is serving real traffic.
+
+        Deliberately *detected* as well as declared. NODE_ENV defaults to
+        "development", so the two protections keyed off it — the Secure flag on
+        the refresh cookie and the weak-secret guard below — both fail open when
+        the variable is simply forgotten on the host. That is not hypothetical:
+        the Render deployment ran with NODE_ENV unset, handing out a 30-day
+        refresh token without Secure while accepting tokens signed with the
+        committed dev secret.
+
+        Render sets RENDER=true in every service, so treat its presence as
+        production regardless of what NODE_ENV claims. Deployment should be
+        something you opt out of, not something you remember to opt into.
+        """
+        if self.NODE_ENV.strip().lower() == "production":
+            return True
+        return bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+
+
 settings = Settings()
 
 
@@ -67,7 +88,7 @@ def _assert_production_secrets(cfg: "Settings") -> None:
     two JWT defaults are in version control — so the API would keep serving
     happily while accepting tokens anyone could sign. Better to refuse to start.
     """
-    if cfg.NODE_ENV != "production":
+    if not cfg.is_production:
         return
     weak = [
         name
@@ -81,8 +102,12 @@ def _assert_production_secrets(cfg: "Settings") -> None:
         raise RuntimeError(
             "Refusing to start in production with insecure "
             + " and ".join(weak)
-            + ". Set a strong random value in the server .env "
-            "(e.g. `python -c \"import secrets; print(secrets.token_hex(32))\"`)."
+            + ". Set a strong random value as an environment variable on the host "
+            "(Render: Dashboard > Environment) or in the server .env locally. "
+            "Generate one with "
+            "`python -c \"import secrets; print(secrets.token_hex(32))\"`. "
+            "Rotating these invalidates existing sessions, which is intended: "
+            "any token signed with the committed dev secret must stop working."
         )
 
 

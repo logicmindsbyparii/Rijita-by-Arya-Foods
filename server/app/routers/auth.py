@@ -41,7 +41,7 @@ def set_refresh_cookie(response: Response, token: str) -> None:
         max_age=REFRESH_COOKIE_MAX_AGE,
         path="/api/auth",
         samesite="lax",
-        secure=settings.NODE_ENV == "production",
+        secure=settings.is_production,
     )
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -191,7 +191,7 @@ async def logout(response: Response):
         path="/api/auth",
         httponly=True,
         samesite="lax",
-        secure=settings.NODE_ENV == "production",
+        secure=settings.is_production,
     )
     return {"success": True, "data": {}, "message": "Logged out"}
 

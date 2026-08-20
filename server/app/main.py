@@ -72,7 +72,7 @@ if settings.CORS_ORIGINS:
 # CORS_ORIGINS list and nothing else.
 dev_origin_regex = (
     None
-    if settings.NODE_ENV == "production"
+    if settings.is_production
     else r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://[a-z0-9-]+\.ngrok(-free)?\.(io|app|dev)"
 )
 
@@ -150,7 +150,11 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled server exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"success": False, "message": str(exc) if settings.NODE_ENV == "development" else "Internal server error"}
+        # Keyed off is_production, and inverted: the old test leaked whenever
+        # NODE_ENV was literally "development", which is its default — so an
+        # unconfigured host returned raw exception text. A failed Atlas
+        # connection answered public callers with the cluster's shard hostnames.
+        content={"success": False, "message": "Internal server error" if settings.is_production else str(exc)}
     )
 
 @app.get("/api/health")
@@ -159,7 +163,9 @@ async def health_check():
         "status": "ok",
         "service": "rijita-fastapi-backend",
         "timestamp": time.time(),
-        "environment": settings.NODE_ENV
+        # The effective mode, not the raw flag. Reporting NODE_ENV verbatim is
+        # what made this look fine while every protection keyed off it was off.
+        "environment": "production" if settings.is_production else settings.NODE_ENV,
     }
 
 @app.get("/")
