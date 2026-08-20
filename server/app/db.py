@@ -1,4 +1,5 @@
 from typing import Optional, Any
+import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from bson import ObjectId
 from app.config import settings
@@ -9,12 +10,21 @@ logger = logging.getLogger("rijita.db")
 class Database:
     client: Optional[AsyncIOMotorClient] = None
     db: Optional[AsyncIOMotorDatabase] = None
+    index_task: Optional["asyncio.Task"] = None
 
 db_instance = Database()
 
 async def connect_db():
     logger.info(f"Connecting to MongoDB at {settings.MONGODB_URI.split('@')[-1] if '@' in settings.MONGODB_URI else settings.MONGODB_URI}")
-    db_instance.client = AsyncIOMotorClient(settings.MONGODB_URI)
+    # Cap server selection: the driver's 30s default, multiplied by the ~21
+    # index operations below, turns an unreachable cluster (Atlas IP allowlist
+    # missing the host's egress range, say) into a ten-minute startup during
+    # which the platform's health check fails and the app is killed and
+    # restarted forever, with the socket hanging open for every caller.
+    db_instance.client = AsyncIOMotorClient(
+        settings.MONGODB_URI,
+        serverSelectionTimeoutMS=10000,
+    )
     # Extract DB name from URI if present, default to 'rijita'
     db_name = "rijita"
     if "/" in settings.MONGODB_URI.split("://")[-1]:
@@ -25,10 +35,21 @@ async def connect_db():
     db_instance.db = db_instance.client[db_name]
     logger.info(f"Connected to MongoDB database: '{db_name}'")
     
-    # Initialize indexes asynchronously
-    await ensure_indexes()
+    # Index creation is a maintenance task, not a precondition for serving —
+    # awaiting it here would gate the whole app (including /api/health) on the
+    # cluster being reachable at boot. Run it alongside instead.
+    db_instance.index_task = asyncio.create_task(_ensure_indexes_safely())
+
+async def _ensure_indexes_safely():
+    try:
+        await ensure_indexes()
+    except Exception as e:
+        logger.warning(f"MongoDB index initialization failed: {e}")
 
 async def close_db():
+    task = getattr(db_instance, "index_task", None)
+    if task and not task.done():
+        task.cancel()
     if db_instance.client:
         db_instance.client.close()
         logger.info("MongoDB connection closed.")

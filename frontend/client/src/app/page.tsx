@@ -6,14 +6,11 @@ import StoriesRecipesSection from "@/components/home/StoriesRecipesSection";
 import EditorialStory from "@/components/home/EditorialStory";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import FeaturedProductSpotlight from "@/components/home/FeaturedProductSpotlight";
+import { fetchServerJson, getServerApiBase } from "@/shared/api";
 
 // Server components cannot fetch relative URLs — /api only works through the
 // Next.js rewrite in the browser. Resolve to an absolute backend URL here.
-const API_BASE = (() => {
-  const raw = process.env.NEXT_PUBLIC_API_URL;
-  if (raw && raw.startsWith("http")) return raw.replace(/\/$/, "");
-  return "http://localhost:5001/api";
-})();
+const API_BASE = getServerApiBase();
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +20,13 @@ export const dynamic = 'force-dynamic';
 // keep deleted products/categories/collections visible indefinitely.
 async function fetchServer<T = any>(endpoint: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
+    // Every section falls back to an empty state, so a cold-starting or down
+    // API must degrade rather than hang the render until the platform's
+    // function timeout kills the whole page.
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {

@@ -1,16 +1,37 @@
 /** @type {import('next').NextConfig} */
 
 /**
- * Uploads are served by the API host. In dev that's localhost:5001; in any
- * other environment it's whatever NEXT_PUBLIC_API_URL points at. Deriving the
- * pattern from the same env var the data layer uses keeps the image optimizer
- * and the API in step — if the API is reachable, its images are too.
+ * The browser always talks to the API through the same-origin `/api` rewrite,
+ * so NEXT_PUBLIC_API_URL stays "/api" in every deployed environment. That is
+ * what keeps the httpOnly refresh cookie (SameSite=Lax, set by the FastAPI
+ * backend) first-party — a cross-site XHR straight to the Render host would
+ * silently drop it and log the user out on every refresh.
+ *
+ * The rewrite destination itself needs a real origin, which only server-side
+ * code can see: API_ORIGIN (e.g. https://rijita-by-arya-foods.onrender.com).
+ * NEXT_PUBLIC_API_URL is still honoured when it is absolute, so existing
+ * localhost setups keep working unchanged.
+ */
+function apiOrigin() {
+  for (const raw of [process.env.API_ORIGIN, process.env.NEXT_PUBLIC_API_URL]) {
+    if (!raw) continue;
+    try {
+      return new URL(raw).origin;
+    } catch {
+      // Relative value (e.g. "/api") — not an origin, keep looking.
+    }
+  }
+  return 'http://localhost:5001';
+}
+
+/**
+ * Uploads are served by the API host. Deriving the image pattern from the same
+ * origin the rewrite uses keeps the optimizer and the API in step — if the API
+ * is reachable, its images are too.
  */
 function apiImagePattern() {
-  const raw = process.env.NEXT_PUBLIC_API_URL;
-  if (!raw) return [];
   try {
-    const { protocol, hostname, port } = new URL(raw);
+    const { protocol, hostname, port } = new URL(apiOrigin());
     return [
       {
         protocol: protocol.replace(':', ''),
@@ -52,16 +73,7 @@ const nextConfig = {
   },
   experimental: {},
   async rewrites() {
-    const raw = process.env.NEXT_PUBLIC_API_URL;
-    let host = 'http://localhost:5001';
-    if (raw) {
-      try {
-        const url = new URL(raw);
-        host = url.origin;
-      } catch {
-        // leave default
-      }
-    }
+    const host = apiOrigin();
     return [
       {
         source: '/api/:path*',
