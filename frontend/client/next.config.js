@@ -52,14 +52,24 @@ const nextConfig = {
   },
   experimental: {},
   async rewrites() {
+    const raw = process.env.NEXT_PUBLIC_API_URL;
+    let host = 'http://localhost:5001';
+    if (raw) {
+      try {
+        const url = new URL(raw);
+        host = url.origin;
+      } catch {
+        // leave default
+      }
+    }
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5001/api/:path*',
+        destination: `${host}/api/:path*`,
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:5001/uploads/:path*',
+        destination: `${host}/uploads/:path*`,
       },
     ];
   },
