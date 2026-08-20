@@ -39,13 +39,19 @@ export function getImageUrl(path: string | undefined): string {
   if (!path) return PLACEHOLDER_IMAGE;
   if (path.startsWith("data:") || path.startsWith("blob:")) return path;
 
+  const isProd = process.env.NODE_ENV === "production";
+  const defaultBackend = isProd ? "https://rijita-by-arya-foods.onrender.com" : "http://localhost:5001";
+
+  let backendUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!backendUrl || backendUrl === "/api" || backendUrl.startsWith("/")) {
+    backendUrl = defaultBackend;
+  } else {
+    backendUrl = backendUrl.replace(/\/api$/, "");
+  }
+
   if (path.startsWith("http://") || path.startsWith("https://")) {
-    if (typeof window !== "undefined") {
-      const currentHost = window.location.hostname;
-      if (currentHost !== "localhost" && currentHost !== "127.0.0.1" && path.includes("localhost:5001")) {
-        const relativePath = path.replace(/https?:\/\/localhost:5001/, "");
-        return `${window.location.protocol}//${window.location.host}${relativePath}`;
-      }
+    if (isProd && path.includes("localhost:5001")) {
+      return path.replace(/https?:\/\/localhost:5001/, defaultBackend);
     }
     return path;
   }
@@ -60,17 +66,7 @@ export function getImageUrl(path: string | undefined): string {
     normalizedPath.startsWith("/blogs") ||
     normalizedPath.startsWith("/recipes")
   ) {
-    const envApi = process.env.NEXT_PUBLIC_API_URL || "/api";
-    const baseUrl = envApi.replace(/\/api$/, "");
-
-    if (typeof window !== "undefined") {
-      const currentHost = window.location.hostname;
-      if (currentHost !== "localhost" && currentHost !== "127.0.0.1" && baseUrl.includes("localhost")) {
-        return `${window.location.protocol}//${window.location.host}${normalizedPath}`;
-      }
-    }
-
-    return `${baseUrl}${normalizedPath}`;
+    return `${backendUrl}${normalizedPath}`;
   }
 
   return normalizedPath;

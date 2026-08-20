@@ -21,7 +21,7 @@ function apiOrigin() {
       // Relative value (e.g. "/api") — not an origin, keep looking.
     }
   }
-  return 'http://localhost:5001';
+  return process.env.NODE_ENV === 'production' ? 'https://rijita-by-arya-foods.onrender.com' : 'http://localhost:5001';
 }
 
 /**
@@ -55,6 +55,11 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       ...apiImagePattern(),
+      {
+        protocol: 'https',
+        hostname: 'rijita-by-arya-foods.onrender.com',
+        pathname: '/**',
+      },
       {
         protocol: 'http',
         hostname: 'localhost',
