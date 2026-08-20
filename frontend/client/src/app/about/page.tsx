@@ -426,13 +426,13 @@ export default function AboutPage() {
       </section>
 
       {/* ═══ 4. THE HERITAGE CHRONICLES (Blog/Story mapping) ═══ */}
-      <section className="py-32 lg:py-48 px-6 sm:px-12 lg:px-24 bg-[#FAF9F6] text-brand-950 relative">
+      <section className="py-20 lg:py-48 px-4 sm:px-12 lg:px-24 bg-[#FAF9F6] text-brand-950 relative">
         <div className="max-w-[1400px] mx-auto">
           
-          <div className="flex flex-col md:flex-row justify-between items-end mb-24 gap-12">
-            <h2 className="text-[56px] md:text-[80px] lg:text-[110px] font-black tracking-tighter leading-[0.9] uppercase">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 lg:mb-24 gap-8 lg:gap-12">
+            <h2 className="text-[40px] md:text-[64px] lg:text-[80px] font-black tracking-tighter leading-[0.9] uppercase">
               Heritage<br />
-              <span className="text-brand-800 italic font-serif lowercase tracking-normal text-[64px] md:text-[96px] lg:text-[120px]">chronicles</span>
+              <span className="text-brand-800 italic font-serif lowercase tracking-normal text-[48px] md:text-[72px] lg:text-[96px]">chronicles</span>
             </h2>
             <Link 
               href="/blog" 
@@ -464,7 +464,7 @@ export default function AboutPage() {
 
                 {/* Title */}
                 <div className="w-full lg:w-2/4 mb-8 lg:mb-0 pr-8">
-                  <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight group-hover:text-white transition-colors line-clamp-2">
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight group-hover:text-white transition-colors line-clamp-2">
                     {story.title}
                   </h3>
                 </div>
