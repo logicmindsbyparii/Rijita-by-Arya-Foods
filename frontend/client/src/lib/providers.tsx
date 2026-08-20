@@ -72,6 +72,19 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [settings]);
 
+  const isAdmin = pathname?.startsWith("/admin");
+
+  if (isAdmin) {
+    return (
+      <>
+        <Suspense fallback={null}>
+          <RouteProgressBar />
+        </Suspense>
+        <main id="main-content" className="flex-1 relative">{children}</main>
+      </>
+    );
+  }
+
   return (
     <>
       <Suspense fallback={null}>

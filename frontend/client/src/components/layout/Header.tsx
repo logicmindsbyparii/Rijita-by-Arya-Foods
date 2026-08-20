@@ -765,11 +765,11 @@ export default function Header() {
                             <span>Wishlist</span>
                           </Link>
                           {user?.role && ["admin", "superadmin"].includes(user.role) && (
-                            <a href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3002"} onClick={() => setIsUserMenuOpen(false)} role="menuitem"
+                            <Link href="/admin" onClick={() => setIsUserMenuOpen(false)} role="menuitem"
                               className="flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-extrabold hover:bg-gold-500/10 rounded-xl transition-colors text-brand-700 hover:text-gold-800">
                               <Settings size={15} className="text-gold-600" />
                               <span>Admin Dashboard</span>
-                            </a>
+                            </Link>
                           )}
                           <div className="h-px bg-paper-3 my-1 mx-2" />
                           <button onClick={handleLogout} role="menuitem"
@@ -970,11 +970,11 @@ export default function Header() {
                     </Link>
                   ))}
                   {user?.role && ["admin", "superadmin"].includes(user.role) && (
-                    <a href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3002"} onClick={() => setIsMobileMenuOpen(false)}
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-extrabold text-gold-800 bg-gold-500/10 hover:bg-gold-500/20 transition-ui">
                       <Settings size={18} className="text-gold-600" />
                       <span>Admin Panel</span>
-                    </a>
+                    </Link>
                   )}
                   <button onClick={handleLogout}
                     className="flex w-full items-center gap-3.5 px-4 py-3.5 mt-2 rounded-xl text-sm font-extrabold text-rose-600 bg-rose-50/80 hover:bg-rose-100 transition-colors">
