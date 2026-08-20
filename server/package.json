@@ -4,7 +4,7 @@
   "description": "RIJITA by Arya Foods - Backend API (Python/FastAPI)",
   "scripts": {
     "dev": "venv/bin/python main.py",
-    "build": "echo 'Python backend - no build required'",
+    "build": "venv/bin/pip install -r requirements.txt",
     "start": "venv/bin/python main.py",
     "seed": "cross-env NODE_OPTIONS=\"--no-deprecation\" tsx src/seeds/seed.ts"
   },

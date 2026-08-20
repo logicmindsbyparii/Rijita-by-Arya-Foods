@@ -50,6 +50,9 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    externalDir: true,
+  },
   async rewrites() {
     return [
       {

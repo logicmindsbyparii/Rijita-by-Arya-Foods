@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -37,6 +37,15 @@ const quickLinks = [
   { href: "/recipes", label: "Recipes" },
 ];
 
+function SearchParamsSync({ onSearchChange }: { onSearchChange: (search: string) => void }) {
+  const searchParams = useSearchParams();
+  const searchParam = searchParams?.get("search") || "";
+  useEffect(() => {
+    onSearchChange(searchParam);
+  }, [searchParam, onSearchChange]);
+  return null;
+}
+
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,15 +63,8 @@ export default function Header() {
   const megaTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchParam = searchParams?.get("search") || "";
   const { itemCount } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
-
-  // Sync header search with URL so it shows the current query when opened
-  useEffect(() => {
-    setSearchQuery(searchParam);
-  }, [searchParam]);
 
   const { data: settingsData } = useQuery({
     queryKey: ["settings"],
@@ -362,6 +364,9 @@ export default function Header() {
 
   return (
     <>
+    <Suspense fallback={null}>
+      <SearchParamsSync onSearchChange={setSearchQuery} />
+    </Suspense>
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-[var(--z-sticky-nav)] transition-transform duration-300",
