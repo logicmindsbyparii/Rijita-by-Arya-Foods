@@ -72,14 +72,18 @@ export function getImageUrl(path: string | undefined): string {
   return normalizedPath;
 }
 
-export const DEFAULT_LOGO_IMAGE = "/uploads/logo.png";
+export const DEFAULT_LOGO_IMAGE = "";
 
-export function getLogoUrl(path?: string): string {
-  if (path && path.trim() !== "" && path !== PLACEHOLDER_IMAGE) {
+export function getLogoUrl(path?: string, updatedAt?: string | Date): string | null {
+  if (path && path.trim() !== "" && path !== PLACEHOLDER_IMAGE && path !== "/uploads/logo.png") {
     const resolved = getImageUrl(path);
     if (resolved && resolved !== PLACEHOLDER_IMAGE) {
+      if (updatedAt) {
+        const time = new Date(updatedAt).getTime();
+        return `${resolved}?v=${time}`;
+      }
       return resolved;
     }
   }
-  return getImageUrl(DEFAULT_LOGO_IMAGE);
+  return null;
 }

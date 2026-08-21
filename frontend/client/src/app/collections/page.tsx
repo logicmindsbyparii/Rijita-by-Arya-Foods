@@ -122,8 +122,8 @@ export default function CollectionsPage() {
                       <span className="text-6xl select-none group-hover:scale-110 transition-transform duration-500">
                         🎁
                       </span>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0 transition-transform duration-500">
                         <span className="inline-flex items-center gap-2 text-sm font-medium text-white">
                           Explore Collection
                           <ChevronRight size={14} />

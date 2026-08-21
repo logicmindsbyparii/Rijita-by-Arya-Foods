@@ -88,6 +88,121 @@ export async function parseResponseBody(response: Response): Promise<any> {
   }
 }
 
+/**
+ * Build the authenticated `fetchApi` used by a surface (storefront or admin).
+ *
+ * Both surfaces read and write the same localStorage tokens and ran byte-identical
+ * copies of this function; the only real difference was where to send a user whose
+ * refresh failed, so that is the one parameter. The refresh de-duplication state
+ * lives in the closure, so concurrent 401s trigger a single refresh attempt.
+ */
+export function createFetchApi(loginPath: string) {
+  let isRefreshing = false;
+  let refreshPromise: Promise<boolean> | null = null;
+
+  async function tryRefreshToken(): Promise<boolean> {
+    const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
+    if (!refreshToken) return false;
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      const payload = data?.data || data;
+      const newAccessToken = payload?.accessToken;
+      const newRefreshToken = payload?.refreshToken;
+      if (newAccessToken) {
+        localStorage.setItem("accessToken", newAccessToken);
+        if (newRefreshToken) localStorage.setItem("refreshToken", newRefreshToken);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  return async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+    const { params, ...fetchOpts } = options;
+
+    let url = `${API_BASE}${endpoint}`;
+
+    if (params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") {
+          searchParams.append(key, String(value));
+        }
+      });
+      const qs = searchParams.toString();
+      if (qs) url += `?${qs}`;
+    }
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(url, { ...fetchOpts, headers });
+    } catch {
+      // fetch only rejects on network-level failure (server unreachable, DNS,
+      // CORS preflight, offline). Surface that as an ApiError so callers can use
+      // the same `err.message` path they use for HTTP errors.
+      throw new ApiError("Unable to reach the server. Please check your connection.", 0);
+    }
+
+    if (response.status === 401 && typeof window !== "undefined") {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = tryRefreshToken().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+      }
+      const refreshed = await refreshPromise;
+
+      if (refreshed) {
+        const newToken = localStorage.getItem("accessToken");
+        if (newToken) headers["Authorization"] = `Bearer ${newToken}`;
+        try {
+          response = await fetch(url, { ...fetchOpts, headers });
+        } catch {
+          throw new ApiError("Unable to reach the server. Please check your connection.", 0);
+        }
+      } else {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        if (window.location.pathname !== loginPath && !window.location.pathname.startsWith(loginPath)) {
+          window.location.href = loginPath;
+        }
+      }
+    }
+
+    const data = await parseResponseBody(response);
+
+    if (!response.ok) {
+      throw new ApiError(extractErrorMessage(data, response.status), response.status, data);
+    }
+
+    return data as T;
+  };
+}
+
 export function extractErrorMessage(data: any, status: number): string {
   if (typeof data?.message === "string" && data.message) return data.message;
   const detail = data?.detail;

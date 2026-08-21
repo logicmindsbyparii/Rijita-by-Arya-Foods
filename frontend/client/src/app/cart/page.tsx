@@ -156,7 +156,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
+    <div className="min-h-screen pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-40 lg:pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -268,12 +268,12 @@ export default function CartPage() {
                                   )
                                 }
                                 disabled={item.quantity <= 1}
-                                className="p-2 hover:bg-paper-3 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="w-11 h-11 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 aria-label="Decrease quantity"
                               >
                                 <Minus size={14} />
                               </button>
-                              <span className="w-10 text-center text-sm font-medium select-none tabular-nums">
+                              <span className="w-10 h-11 flex items-center justify-center text-sm font-medium select-none tabular-nums">
                                 {item.quantity}
                               </span>
                               <button
@@ -285,7 +285,7 @@ export default function CartPage() {
                                   )
                                 }
                                 disabled={item.quantity >= variant.stock}
-                                className="p-2 hover:bg-paper-3 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="w-11 h-11 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 aria-label="Increase quantity"
                               >
                                 <Plus size={14} />
@@ -338,7 +338,7 @@ export default function CartPage() {
                     </div>
                     <button
                       onClick={handleRemoveCoupon}
-                      className="p-2 hover:bg-gold-500/20 rounded-full transition-colors"
+                      className="w-10 h-10 flex items-center justify-center hover:bg-gold-500/20 rounded-full transition-colors"
                       aria-label="Remove coupon"
                     >
                       <X size={14} className="text-gold-600" />
@@ -356,13 +356,13 @@ export default function CartPage() {
                         }}
                         onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
                         placeholder="Enter coupon code"
-                        className="w-full px-4 py-2 text-sm rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui"
+                        className="w-full px-4 h-12 text-sm rounded-xl border border-rule bg-paper focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)] transition-ui"
                       />
                     </div>
                     <button
                       onClick={handleApplyCoupon}
                       disabled={couponLoading || !couponCode.trim()}
-                      className="px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 text-white text-sm font-semibold rounded-xl transition-ui"
+                      className="px-6 h-12 bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 text-white text-sm font-semibold rounded-xl transition-ui"
                     >
                       {couponLoading ? (
                         <span className="flex items-center gap-2">
@@ -433,7 +433,7 @@ export default function CartPage() {
 
                 <Link
                   href="/checkout"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-ui hover:shadow-lg hover:shadow-brand-700/25 group"
+                  className="hidden lg:inline-flex w-full items-center justify-center gap-2 px-6 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-ui hover:shadow-lg hover:shadow-brand-700/25 group"
                 >
                   <CreditCard size={18} />
                   Proceed to Checkout
@@ -455,6 +455,24 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Sticky Action Bar */}
+      {items.length > 0 && (
+        <div className="lg:hidden fixed bottom-safe left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-brand-950/10 z-40">
+          <div className="flex items-center justify-between mb-3 px-2">
+            <span className="text-sm font-semibold text-brand-950">Total</span>
+            <span className="text-lg font-black text-brand-700">{formatPrice(total)}</span>
+          </div>
+          <Link
+            href="/checkout"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-brand-600 text-white font-bold shadow-lg shadow-brand-900/20 active:scale-[0.98] transition-all"
+          >
+            <CreditCard size={18} />
+            Proceed to Checkout
+            <ArrowRight size={18} />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

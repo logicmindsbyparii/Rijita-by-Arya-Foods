@@ -99,7 +99,7 @@ export default function StoriesRecipesSection({
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]"
+              className="text-[40px] sm:text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]"
             >
               Stories &{" "}
               <span className="text-gold-600 font-serif italic font-medium block mt-2">
@@ -169,7 +169,7 @@ export default function StoriesRecipesSection({
           {secondary.length > 0 && (
             <div
               className={cn(
-                "grid grid-cols-1 gap-6 sm:gap-8 lg:col-span-12",
+                "flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:gap-8 lg:col-span-12 gap-5",
                 hasFeatured ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"
               )}
             >
@@ -180,6 +180,7 @@ export default function StoriesRecipesSection({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-100px" }}
                   transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-[85vw] sm:w-auto shrink-0 snap-center sm:snap-align-none"
                 >
                   <CompactStoryCard blog={blog} index={i + 1} />
                 </motion.div>
@@ -200,7 +201,7 @@ function FeaturedStoryCard({ blog, index }: { blog: Blog; index: number }) {
   return (
     <Link
       href={`/blog/${blog.slug}`}
-      className="group relative block w-full min-h-[420px] lg:min-h-[540px] rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-brand-900 shadow-[0_30px_60px_-15px_rgba(5,20,8,0.18)] focus-ring"
+      className="group relative block w-full min-h-[320px] sm:min-h-[420px] lg:min-h-[540px] rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden bg-brand-900 shadow-[0_30px_60px_-15px_rgba(5,20,8,0.18)] focus-ring"
     >
       <Image
         src={img.src}
@@ -223,7 +224,7 @@ function FeaturedStoryCard({ blog, index }: { blog: Blog; index: number }) {
         </span>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-10 z-10">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider mb-3 sm:mb-4">
           <span className="inline-flex items-center gap-1.5">
             <Calendar size={13} />
@@ -265,21 +266,21 @@ function RecipeCard({ recipe, index }: { recipe: Recipe; index: number }) {
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="group flex items-stretch gap-4 sm:gap-5 bg-white border border-ink-soft rounded-2xl sm:rounded-3xl overflow-hidden hover:border-brand-500/50 hover:shadow-[0_20px_50px_-20px_rgba(27,110,42,0.25)] transition-all duration-300 focus-ring"
+      className="group flex flex-col sm:flex-row items-stretch gap-0 sm:gap-5 bg-white border border-ink-soft rounded-2xl sm:rounded-3xl overflow-hidden hover:border-brand-500/50 hover:shadow-[0_20px_50px_-20px_rgba(27,110,42,0.25)] transition-all duration-300 focus-ring"
     >
-      <div className="relative w-28 sm:w-44 shrink-0 overflow-hidden bg-brand-50">
+      <div className="relative w-full sm:w-44 h-48 sm:h-auto shrink-0 overflow-hidden bg-brand-50">
         <Image
           src={img.src}
           alt={recipe.title}
           fill
-          sizes="(max-width: 640px) 7rem, 11rem"
+          sizes="(max-width: 640px) 100vw, 11rem"
           className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           onError={img.onError}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-950/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
-      <div className="flex flex-col justify-center py-4 sm:py-5 pr-4 sm:pr-6 min-w-0">
+      <div className="flex flex-col justify-center p-5 sm:py-5 sm:pl-0 sm:pr-6 min-w-0">
         <span
           className={cn(
             "inline-flex self-start items-center gap-1 px-2 py-1 rounded-md border text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest mb-2",

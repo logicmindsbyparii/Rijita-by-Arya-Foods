@@ -812,7 +812,7 @@ function ProductsContent() {
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-ink-3 mb-4">Categories</h4>
                       <div className="space-y-2">
-                        <label className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-paper-3 text-sm">
+                        <label className="flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-colors active:bg-paper-3 text-sm">
                           <input
                             type="checkbox"
                             checked={selectedCategorySlugs.length === 0}
@@ -826,7 +826,7 @@ function ProductsContent() {
                         {categories.map((cat: any) => (
                           <label
                             key={cat._id}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors hover:bg-paper-3 text-sm"
+                            className="flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-colors active:bg-paper-3 text-sm"
                           >
                             <input
                               type="checkbox"
@@ -858,7 +858,7 @@ function ProductsContent() {
                             key={range.label}
                             onClick={() => { togglePriceRange(range.min, range.max); }}
                             className={cn(
-                              "w-full text-left px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
+                              "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors flex items-center gap-2",
                               Number(minPrice) === range.min && (range.max ? Number(maxPrice) === range.max : !maxPrice)
                                 ? "bg-gold-500/10 text-gold-700 font-semibold"
                                 : "text-ink-2 hover:bg-paper-3"
@@ -895,7 +895,7 @@ function ProductsContent() {
                             key={r}
                             onClick={() => { updateParams({ rating: Number(rating) === r ? undefined : String(r) }); }}
                             className={cn(
-                              "w-full text-left px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
+                              "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors flex items-center gap-2",
                               Number(rating) === r
                                 ? "bg-gold-500/10 text-gold-700 font-semibold"
                                 : "text-ink-2 hover:bg-paper-3"
@@ -917,13 +917,13 @@ function ProductsContent() {
                   <div className="px-4 py-4 border-t border-rule shrink-0 flex gap-2">
                     <button
                       onClick={clearFilters}
-                      className="flex-1 py-2 rounded-xl border border-rule text-sm font-medium text-ink-2 hover:bg-paper-3 transition-colors"
+                      className="flex-1 py-3 rounded-xl border border-rule text-sm font-medium text-ink-2 active:bg-paper-3 transition-colors"
                     >
                       Clear
                     </button>
                     <button
                       onClick={() => setShowMobileFilters(false)}
-                      className="flex-1 py-2 rounded-xl bg-[var(--color-brand)] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                      className="flex-1 py-3 rounded-xl bg-[var(--color-brand)] text-white text-sm font-bold hover:opacity-90 transition-opacity"
                     >
                       Show Results
                     </button>
@@ -1187,10 +1187,10 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="flex flex-col sm:flex-row gap-6 p-4 sm:p-6 rounded-[2rem] border border-ink-soft hover:border-ink/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 bg-paper-2 group"
+      className="flex flex-row gap-4 sm:gap-6 p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-ink-soft hover:border-ink/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 bg-paper-2 group"
     >
       {/* Image */}
-      <div className="w-full sm:w-48 h-48 sm:h-48 rounded-[1.5rem] bg-paper-3 overflow-hidden flex-shrink-0 relative">
+      <div className="w-28 sm:w-48 h-28 sm:h-48 rounded-xl sm:rounded-[1.5rem] bg-paper-3 overflow-hidden flex-shrink-0 relative">
         {product.images?.[0] ? (
           <Image
             src={getImageUrl(product.images[0])}
@@ -1227,13 +1227,13 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
             {categoryName}
           </p>
         )}
-        <h3 className="text-lg sm:text-xl font-display font-bold text-ink group-hover:text-brand-600 transition-colors line-clamp-2 leading-tight">
+        <h3 className="text-base sm:text-xl font-display font-bold text-ink group-hover:text-brand-600 transition-colors line-clamp-2 leading-tight">
           {product.name}
         </h3>
 
         {product.shortDescription &&
           product.shortDescription.trim().toLowerCase() !== product.name.trim().toLowerCase() && (
-          <p className="text-xs sm:text-sm text-ink-3 line-clamp-2 mt-0">
+          <p className="text-[11px] sm:text-sm text-ink-3 line-clamp-2 mt-0">
             {product.shortDescription}
           </p>
         )}
@@ -1250,21 +1250,21 @@ function ProductListItem({ product, index = 0 }: { product: any; index?: number 
                 />
               ))}
             </div>
-            <span className="text-xs text-ink-3 font-medium tabular-nums">
+            <span className="text-[10px] sm:text-xs text-ink-3 font-medium tabular-nums">
               {product.averageRating?.toFixed(1)} ({product.reviewCount})
             </span>
           </div>
         )}
 
         {/* Pricing row */}
-        <div className="flex items-center gap-4 mt-auto pt-4">
+        <div className="flex items-center gap-2 sm:gap-4 mt-auto pt-2 sm:pt-4">
           {primaryVariant && (
             <>
-              <span className="text-xl sm:text-2xl font-black text-ink tabular-nums">
+              <span className="text-lg sm:text-2xl font-black text-ink tabular-nums">
                 {formatPrice(primaryVariant.sellingPrice)}
               </span>
               {primaryVariant.mrp > primaryVariant.sellingPrice && (
-                <span className="text-sm sm:text-base text-ink-3 line-through font-semibold tabular-nums">
+                <span className="text-xs sm:text-base text-ink-3 line-through font-semibold tabular-nums">
                   {formatPrice(primaryVariant.mrp)}
                 </span>
               )}

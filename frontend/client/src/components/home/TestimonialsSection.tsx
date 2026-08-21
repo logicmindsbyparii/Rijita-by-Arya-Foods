@@ -93,7 +93,7 @@ export default function TestimonialsSection({
               <span>Community Voices</span>
             </div>
 
-            <h2 className="text-5xl sm:text-6xl lg:text-7xl font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]">
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]">
               Trusted by <br className="hidden sm:inline" /> purists.
             </h2>
 
@@ -133,7 +133,7 @@ export default function TestimonialsSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="break-inside-avoid bg-white rounded-[2rem] p-8 border border-ink-soft shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand-200 transition-all duration-500 group flex flex-col"
+              className="break-inside-avoid bg-white rounded-[2rem] p-6 sm:p-8 border border-ink-soft shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand-200 transition-all duration-500 group flex flex-col"
             >
               <div className="flex items-start justify-between gap-4 mb-6">
                 <Stars rating={r.rating} size={16} />
@@ -146,7 +146,7 @@ export default function TestimonialsSection({
                 <h4 className="font-bold text-ink text-lg mb-2">{r.title}</h4>
               )}
 
-              <blockquote className="text-ink-2 text-base sm:text-lg font-medium leading-relaxed mb-8 flex-grow [text-wrap:pretty]">
+              <blockquote className="text-ink-2 text-[15px] sm:text-lg font-medium leading-relaxed mb-6 sm:mb-8 flex-grow [text-wrap:pretty]">
                 &ldquo;{r.comment}&rdquo;
               </blockquote>
 
@@ -172,14 +172,14 @@ export default function TestimonialsSection({
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="break-inside-avoid bg-brand-900 rounded-[2rem] p-8 sm:p-10 flex flex-col items-start relative overflow-hidden group shadow-lg"
+            className="break-inside-avoid bg-brand-900 rounded-[2rem] p-6 sm:p-10 flex flex-col items-start relative overflow-hidden group shadow-lg"
           >
             <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
               <MessageSquareQuote size={120} className="rotate-12 translate-x-8 -translate-y-8 group-hover:rotate-0 transition-transform duration-700" />
             </div>
             <div className="relative z-10 w-full">
-              <h3 className="text-3xl font-display font-black text-white mb-4 leading-tight">Your voice matters.</h3>
-              <p className="text-brand-200 font-medium mb-8 text-lg">Experience our 100% Jain purity and let us know your thoughts.</p>
+              <h3 className="text-2xl sm:text-3xl font-display font-black text-white mb-3 sm:mb-4 leading-tight">Your voice matters.</h3>
+              <p className="text-brand-200 font-medium mb-6 sm:mb-8 text-base sm:text-lg">Experience our 100% Jain purity and let us know your thoughts.</p>
               <Link
                 href="/products"
                 className="inline-flex items-center gap-2 bg-gold-500 text-brand-900 px-8 py-4 rounded-xl font-bold hover:bg-gold-400 transition-colors focus-ring active:scale-95"

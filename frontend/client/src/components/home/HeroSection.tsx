@@ -110,7 +110,7 @@ export default function HeroSection({
       </div>
 
       {/* Main Content - Centered */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-16 flex flex-col items-center justify-center text-center mt-16">
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-16 flex flex-col items-center justify-center text-center mt-8 sm:mt-16">
         <AnimatePresence mode="wait">
           <motion.div
             key={`content-${activeIndex}`}
@@ -129,23 +129,23 @@ export default function HeroSection({
             </div>
 
             {/* Massive Heading */}
-            <h1 className="text-[64px] sm:text-[88px] lg:text-[120px] font-black tracking-[-0.04em] leading-[0.9] text-white drop-shadow-2xl">
+            <h1 className="text-[36px] min-[400px]:text-[44px] sm:text-[88px] lg:text-[120px] font-black tracking-[-0.04em] leading-[1] sm:leading-[0.9] text-white drop-shadow-2xl text-balance">
               <span className="block">{banner.title || "The Taste of"}</span>
-              <span className="block font-serif italic font-medium text-gold-400 tracking-[-0.02em] mt-2 sm:mt-4">
+              <span className="block font-serif italic font-medium text-gold-400 tracking-[-0.02em] mt-1 sm:mt-4">
                 {banner.subtitle || "Heritage."}
               </span>
             </h1>
 
             {/* Description */}
-            <p className="text-lg sm:text-xl lg:text-2xl text-white/80 max-w-2xl mt-8 font-medium leading-relaxed [text-wrap:balance]">
+            <p className="text-sm min-[400px]:text-base sm:text-xl lg:text-2xl text-white/80 max-w-2xl mt-4 sm:mt-8 font-medium leading-relaxed [text-wrap:balance]">
               {banner.description}
             </p>
 
             {/* CTAs */}
-            <div className="mt-12 flex flex-col sm:flex-row items-center gap-6 justify-center">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center gap-3 sm:gap-6 justify-center w-full max-w-xs sm:max-w-none px-4 sm:px-0 mx-auto">
               <Link
                 href={banner.link || "/products"}
-                className="group relative inline-flex items-center justify-center gap-4 px-8 py-4 bg-white text-brand-950 rounded-full font-bold text-lg hover:bg-brand-50 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 overflow-hidden"
+                className="group w-full sm:w-auto relative inline-flex items-center justify-center gap-4 px-6 py-4 bg-white text-brand-950 rounded-full font-bold text-base sm:text-lg hover:bg-brand-50 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 overflow-hidden"
               >
                 <span className="relative z-10">Explore Our Shop</span>
                 <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform" />
@@ -153,7 +153,7 @@ export default function HeroSection({
 
               <Link
                 href="/about"
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-transparent text-white border border-white/30 rounded-full font-bold text-lg hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 bg-transparent text-white border border-white/30 rounded-full font-bold text-base sm:text-lg hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300"
               >
                 <PlayCircle size={20} className="text-brand-400" />
                 <span>Our Heritage</span>
@@ -164,23 +164,23 @@ export default function HeroSection({
       </div>
 
       {/* Bottom Purity Stats - Glassmorphism Dock */}
-      <div className="absolute bottom-8 left-6 right-6 sm:left-8 sm:right-8 lg:left-16 lg:right-16 z-30">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 p-6 sm:px-12 sm:py-8 bg-brand-950/40 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(5,20,8,0.5)]">
+      <div className="absolute bottom-6 sm:bottom-8 left-4 right-4 sm:left-8 sm:right-8 lg:left-16 lg:right-16 z-30">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 p-3 px-4 sm:p-6 sm:px-12 sm:py-8 bg-brand-950/50 backdrop-blur-2xl rounded-[2rem] sm:rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(5,20,8,0.5)]">
 
-          <div className="flex flex-1 items-center justify-between md:justify-start w-full md:w-auto gap-8 sm:gap-16">
-            <div className="flex flex-col">
-              <span className="text-3xl sm:text-4xl font-serif text-white tracking-tight">0%</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/50 mt-1">Onion & Garlic</span>
+          <div className="flex flex-1 items-center justify-between md:justify-start w-full md:w-auto gap-3 sm:gap-8 lg:gap-16 overflow-x-auto snap-x snap-mandatory no-scrollbar sm:mask-gradient-x px-1 sm:px-0">
+            <div className="flex flex-col shrink-0 text-center md:text-left snap-start">
+              <span className="text-xl min-[400px]:text-2xl sm:text-3xl lg:text-4xl font-serif text-white tracking-tight">0%</span>
+              <span className="text-[8px] min-[400px]:text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] text-white/60 mt-1">Onion & Garlic</span>
             </div>
-            <div className="w-px h-12 bg-white/10" />
-            <div className="flex flex-col">
-              <span className="text-3xl sm:text-4xl font-serif text-white tracking-tight">100%</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/50 mt-1">Groundnut Oil</span>
+            <div className="w-px h-6 sm:h-12 bg-white/10 shrink-0" />
+            <div className="flex flex-col shrink-0 text-center md:text-left snap-start">
+              <span className="text-xl min-[400px]:text-2xl sm:text-3xl lg:text-4xl font-serif text-white tracking-tight">100%</span>
+              <span className="text-[8px] min-[400px]:text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] text-white/60 mt-1">Groundnut Oil</span>
             </div>
-            <div className="hidden sm:block w-px h-12 bg-white/10" />
-            <div className="hidden sm:flex flex-col">
-              <span className="text-3xl sm:text-4xl font-serif text-white tracking-tight">24h</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/50 mt-1">Fresh Batches</span>
+            <div className="w-px h-6 sm:h-12 bg-white/10 shrink-0" />
+            <div className="flex flex-col shrink-0 text-center md:text-left snap-start">
+              <span className="text-xl min-[400px]:text-2xl sm:text-3xl lg:text-4xl font-serif text-white tracking-tight">24h</span>
+              <span className="text-[8px] min-[400px]:text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.15em] text-white/60 mt-1">Fresh Batches</span>
             </div>
           </div>
 

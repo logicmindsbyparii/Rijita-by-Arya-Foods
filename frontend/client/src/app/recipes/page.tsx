@@ -110,10 +110,10 @@ export default function RecipesPage() {
                 Our Kitchen Stories
               </span>
             </div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black text-brand-950 tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-black text-brand-950 tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] mb-6">
               Our Journal <span className="text-gold-600 font-serif italic font-medium block mt-2"> &amp; Recipes.</span>
             </h1>
-            <p className="text-ink-2 max-w-2xl text-lg sm:text-xl font-medium leading-relaxed [text-wrap:pretty]">
+            <p className="text-ink-2 max-w-2xl text-base sm:text-lg lg:text-xl font-medium leading-relaxed [text-wrap:pretty]">
               Discover culinary inspiration, quick snack ideas, and traditional recipes crafted around our pure Jain snacks and sweets.
             </p>
           </motion.div>
@@ -226,7 +226,7 @@ export default function RecipesPage() {
                 <motion.div key={recipe._id} variants={cardVariants} className="h-full">
                   <Link
                     href={`/recipes/${recipe.slug}`}
-                    className="recipe-card group block h-full rounded-[2rem] border border-white/60 bg-white/70 backdrop-blur-xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-brand-200 transition-all duration-500 overflow-hidden flex flex-col relative"
+                    className="recipe-card group block h-full rounded-[2rem] border border-white/60 bg-white/70 backdrop-blur-xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] lg:hover:-translate-y-1 hover:border-brand-200 transition-all duration-500 overflow-hidden flex flex-col relative"
                   >
                     {/* Ambient Glow Backplate on Hover */}
                     <div className="absolute inset-0 bg-brand-500/5 rounded-full blur-3xl pointer-events-none transition-opacity opacity-0 group-hover:opacity-100 duration-700" />

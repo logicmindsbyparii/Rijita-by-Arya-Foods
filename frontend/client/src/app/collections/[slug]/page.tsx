@@ -155,7 +155,7 @@ export default function CollectionDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-2xl overflow-hidden mb-10"
+          className="relative rounded-2xl overflow-hidden mb-10 min-h-[280px] md:min-h-[350px]"
         >
           {collection.image ? (
             <Image
@@ -177,7 +177,7 @@ export default function CollectionDetailPage() {
               <Sparkles size={14} />
               Collection
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold mb-3 drop-shadow">
+            <h1 className="text-3xl md:text-5xl font-display font-bold mb-2 md:mb-3 drop-shadow">
               {collection.name}
             </h1>
             {collection.description && (

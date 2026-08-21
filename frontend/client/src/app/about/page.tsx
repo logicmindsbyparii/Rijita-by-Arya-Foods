@@ -235,7 +235,7 @@ export default function AboutPage() {
                     {part}
                     {idx === 0 && (
                       <span 
-                        className="inline-block w-32 sm:w-48 h-12 sm:h-20 rounded-[40px] align-middle bg-cover bg-center mx-3 sm:mx-6 shadow-inner ring-4 ring-gold-500/20 hover:scale-105 transition-transform duration-700 ease-out" 
+                        className="inline-block w-24 sm:w-48 h-10 sm:h-20 rounded-full sm:rounded-[40px] align-middle bg-cover bg-center mx-2 sm:mx-6 shadow-inner ring-4 ring-gold-500/20 hover:scale-105 transition-transform duration-700 ease-out" 
                         style={{backgroundImage: `url(${getImageUrl(founderImage)})`}}
                       />
                     )}
@@ -360,7 +360,8 @@ export default function AboutPage() {
           />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(5,20,8,0.7)_0%,rgba(5,20,8,0.98)_100%)]" />
           {/* Subtle noise overlay */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
         </div>
 
         {/* Decorative ambient glow */}
@@ -449,7 +450,7 @@ export default function AboutPage() {
               <Link 
                 href={story.slug ? `/blog/${story.slug}` : "/blog"}
                 key={story._id || i}
-                className="group flex flex-col lg:flex-row justify-between items-start lg:items-center py-12 lg:py-16 border-b-2 border-brand-950/10 hover:bg-brand-900 hover:px-8 lg:hover:px-12 transition-all duration-500 ease-out"
+                className="group flex flex-col lg:flex-row justify-between items-start lg:items-center py-12 lg:py-16 border-b-2 border-brand-950/10 lg:hover:bg-brand-900 lg:hover:px-12 transition-all duration-500 ease-out"
               >
                 {/* Number & Category */}
                 <div className="flex items-center gap-8 mb-6 lg:mb-0 w-full lg:w-1/4">
@@ -471,7 +472,7 @@ export default function AboutPage() {
 
                 {/* Hover Reveal Image */}
                 <div className="w-full lg:w-1/4 flex justify-start lg:justify-end mt-6 lg:mt-0">
-                  <div className="w-full sm:w-[220px] aspect-[4/3] relative overflow-hidden rounded-2xl shadow-xl lg:opacity-0 lg:-translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:scale-95 group-hover:scale-100">
+                  <div className="w-full sm:w-[220px] aspect-[4/3] relative overflow-hidden rounded-2xl shadow-xl lg:opacity-0 lg:-translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-expo-out lg:scale-95 group-hover:scale-100">
                     <Image 
                       src={getImageUrl(story.image || story.featuredImage || NAMKEEN_IMAGES.mixture)} 
                       alt={story.title} 
@@ -490,7 +491,7 @@ export default function AboutPage() {
       {/* ═══ 5. ACTION: FOOTER CTA ═══ */}
       <section className="py-32 lg:py-56 px-6 text-center bg-brand-50 border-t border-brand-100">
         <div className="max-w-5xl mx-auto flex flex-col items-center">
-          <h2 className="text-[64px] sm:text-[88px] lg:text-[140px] font-black tracking-[-0.04em] leading-[0.85] text-brand-950 mb-16">
+          <h2 className="text-[48px] sm:text-[88px] lg:text-[140px] font-black tracking-[-0.04em] leading-[0.85] text-brand-950 mb-10 sm:mb-16">
             <span className="block">Taste the</span>
             <span className="font-serif italic text-brand-600 tracking-[-0.02em] block mt-4">Difference.</span>
           </h2>

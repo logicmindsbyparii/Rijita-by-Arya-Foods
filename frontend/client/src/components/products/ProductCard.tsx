@@ -122,7 +122,7 @@ export default function ProductCard({
         two buttons stacked above it.
       */}
       <div
-        className="group flex flex-col w-full h-full bg-paper-2 rounded-2xl border border-rule overflow-hidden transition-[transform,box-shadow,border-color] duration-short ease-out-custom hover:shadow-lg hover:-translate-y-1 hover:border-brand-200 relative focus-within:ring-2 focus-within:ring-[var(--color-focus)]"
+        className="group flex flex-col w-full h-full bg-paper rounded-[2rem] shadow-sm hover:shadow-[0_30px_60px_-20px_rgba(10,41,15,0.12)] border border-rule/50 hover:border-brand-200/50 overflow-hidden transition-all duration-700 ease-expo-out hover:-translate-y-2 relative focus-within:ring-2 focus-within:ring-brand-500"
       >
         {/* ── Image Container ── */}
         <div className="relative aspect-[4/5] bg-paper-3 overflow-hidden shrink-0">
@@ -134,7 +134,7 @@ export default function ProductCard({
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition-transform duration-long ease-out-custom group-hover:scale-[1.04]"
+              className="object-cover transition-transform duration-1200 ease-expo-out group-hover:scale-[1.08]"
               onError={() => setImgError(true)}
             />
           ) : (
@@ -159,10 +159,10 @@ export default function ProductCard({
                 <span
                   key={badge.label}
                   className={cn(
-                    "w-fit rounded-lg px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] backdrop-blur-md",
+                    "w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-xl shadow-sm",
                     badge.tone === "gold"
-                      ? "bg-gold-500 text-brand-950 border border-gold-400"
-                      : "bg-paper-2/90 text-ink-3 border border-rule"
+                      ? "bg-gold-400 text-brand-950"
+                      : "bg-white/90 text-brand-800"
                   )}
                 >
                   {badge.label}
@@ -178,7 +178,7 @@ export default function ProductCard({
             disabled={toggleWishlistMutation.isPending}
             aria-pressed={!!isInWishlist}
             className={cn(
-              "absolute top-2 right-2 sm:top-4 sm:right-4 z-30 w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-sm border border-white/60 flex items-center justify-center transition-[background-color,border-color] duration-short ease-out-custom shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] disabled:opacity-60",
+              "absolute top-2 right-2 sm:top-4 sm:right-4 z-30 w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-sm border border-white/60 flex items-center justify-center transition-[background-color,border-color] duration-short ease-out-custom shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] disabled:opacity-60",
               isInWishlist ? "bg-rose-50 border-rose-200" : "hover:bg-rose-50 hover:border-rose-200"
             )}
             aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
@@ -218,16 +218,16 @@ export default function ProductCard({
         {/* ── Content Area ── */}
         {/* Deliberately no z-index: a stacking context here would trap the
             add-to-cart button beneath the stretched link overlay. */}
-        <div className="flex flex-col flex-1 p-3 sm:p-4 xl:p-5 bg-paper-2 relative">
+        <div className="flex flex-col flex-1 p-4 sm:p-6 bg-paper relative">
           {/* Category tag */}
           {categoryName && (
-            <p className="text-[11px] uppercase tracking-[0.2em] text-brand-600 font-extrabold mb-2">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-brand-600 font-black mb-2 opacity-80">
               {categoryName}
             </p>
           )}
 
           {/* Product name */}
-          <h3 className="font-bold text-[15px] sm:text-lg leading-snug text-ink line-clamp-2 mb-2 [text-wrap:balance]">
+          <h3 className="font-display font-black text-lg sm:text-xl leading-tight text-ink line-clamp-2 mb-2 [text-wrap:balance] group-hover:text-brand-800 transition-colors duration-500">
             {product.name}
           </h3>
 
@@ -282,10 +282,10 @@ export default function ProductCard({
                 onClick={handleAddToCart}
                 disabled={isAdding || justAdded}
                 className={cn(
-                  "w-full h-10 sm:h-11 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-ui duration-short ease-out-custom focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] overflow-hidden relative shadow-sm",
+                  "w-full h-12 rounded-full text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all duration-500 ease-expo-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 overflow-hidden relative",
                     isAdding || justAdded
-                      ? "bg-brand-100 text-brand-800 border border-brand-200"
-                      : "bg-brand-600 text-white hover:bg-brand-700 hover:shadow-md active:scale-[0.98]"
+                      ? "bg-brand-100 text-brand-800"
+                      : "bg-brand-700 text-white hover:bg-brand-800 hover:shadow-lg hover:shadow-brand-900/20 hover:-translate-y-0.5 active:scale-95"
                 )}
               >
                 {/* Loading shimmer overlay */}

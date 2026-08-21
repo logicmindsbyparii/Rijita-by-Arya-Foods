@@ -75,7 +75,7 @@ export default function ProductShowcase({
   const showingAll = active === "all";
 
   return (
-    <section className="relative pt-32 pb-48 bg-paper text-ink overflow-visible selection:bg-gold-500/30">
+    <section className="relative pt-16 sm:pt-32 pb-20 sm:pb-48 bg-paper text-ink overflow-visible selection:bg-gold-500/30">
       {/* Editorial background texture */}
       <div className="absolute inset-0 bg-[radial-gradient(#05140806_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none" />
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-500/5 blur-[120px] rounded-full pointer-events-none translate-x-1/2 -translate-y-1/2" />
@@ -83,7 +83,7 @@ export default function ProductShowcase({
       <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header - Editorial & Asymmetrical */}
-        <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-16 mb-24">
+        <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 sm:gap-16 mb-8 sm:mb-24">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -91,7 +91,7 @@ export default function ProductShowcase({
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-5xl"
           >
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-10">
+            <div className="inline-flex items-center gap-3 px-4 py-2 sm:px-5 sm:py-2.5 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-8 sm:mb-10">
               {isArrivals ? (
                 <Sparkles size={16} className="text-brand-600" />
               ) : (
@@ -102,15 +102,15 @@ export default function ProductShowcase({
               </span>
             </div>
 
-            <h2 className="text-6xl md:text-8xl lg:text-[7.5rem] font-display font-black text-ink tracking-tight leading-[0.95] [text-wrap:balance]">
+            <h2 className="text-[36px] sm:text-5xl md:text-7xl lg:text-[7.5rem] font-display font-black text-ink tracking-tight leading-[1.05] sm:leading-[0.95] [text-wrap:balance]">
               {title}{" "}
               <span className="text-gold-600 font-serif italic font-medium block mt-2 opacity-90">
                 {subtitle}
               </span>
             </h2>
 
-            <div className="mt-12 flex flex-col sm:flex-row sm:items-center gap-8">
-              <p className="text-ink-2 text-lg sm:text-xl font-medium leading-relaxed max-w-xl">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
+              <p className="text-ink-2 text-base sm:text-xl font-medium leading-relaxed max-w-xl">
                 {DESC[variant]}
               </p>
               
@@ -135,29 +135,29 @@ export default function ProductShowcase({
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="shrink-0 flex items-center gap-8"
+            className="hidden sm:flex shrink-0 items-center justify-between gap-4 sm:gap-8 pt-4 sm:pt-0"
           >
-            <div className="text-right">
-              <span className="text-7xl lg:text-8xl font-display font-black text-brand-700 tabular-nums leading-none tracking-tighter">
+            <div className="text-left sm:text-right">
+              <span className="text-[56px] sm:text-7xl lg:text-8xl font-display font-black text-brand-700 tabular-nums leading-none tracking-tighter">
                 {products.length}
               </span>
-              <span className="block mt-2 text-xs font-bold uppercase tracking-widest text-ink-3">
+              <span className="block mt-1 sm:mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-ink-3">
                 {isArrivals ? "just landed" : "signature picks"}
               </span>
             </div>
-            <Link href="/products" className="group relative flex items-center justify-center w-24 h-24 rounded-full bg-brand-700 text-white overflow-hidden shadow-2xl shadow-brand-900/20 hover:scale-105 transition-all duration-500 focus-ring">
-              <div className="absolute inset-0 bg-brand-800 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]" />
-              <ArrowRight size={32} className="relative z-10 group-hover:rotate-45 transition-transform duration-500" />
+            <Link href="/products" className="group relative flex items-center justify-center w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-brand-700 text-white overflow-hidden shadow-2xl shadow-brand-900/20 hover:scale-105 transition-all duration-500 focus-ring">
+              <div className="absolute inset-0 bg-brand-800 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-expo-out" />
+              <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 relative z-10 group-hover:rotate-45 transition-transform duration-500" />
             </Link>
           </motion.div>
         </div>
 
         {/* Filter Bar - Floating Glassmorphism */}
-        <div className="sticky top-24 z-30 flex justify-center mb-16 pointer-events-none">
+        <div className="sticky top-20 sm:top-24 z-30 flex justify-center mb-8 sm:mb-16 pointer-events-none">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="pointer-events-auto flex overflow-x-auto no-scrollbar items-center gap-2 p-2 bg-white/80 backdrop-blur-xl border border-white/40 rounded-full shadow-[0_16px_40px_-12px_rgba(5,20,8,0.1)]"
+            className="pointer-events-auto flex overflow-x-auto snap-x snap-mandatory no-scrollbar items-center gap-2 p-1.5 sm:p-2 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_-12px_rgba(5,20,8,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)] rounded-full w-[calc(100vw-2rem)] sm:w-auto mask-gradient-x sm:mask-none px-4 sm:px-2 mx-auto"
           >
             {categoryFilters.map((tab) => {
               const isActive = active === tab.id;
@@ -168,7 +168,7 @@ export default function ProductShowcase({
                   onClick={() => setActiveFilter(tab.id)}
                   aria-pressed={isActive}
                   className={cn(
-                    "relative px-6 py-3.5 text-sm whitespace-nowrap rounded-full focus-ring group shrink-0 transition-colors duration-300",
+                    "relative px-4 py-2 sm:px-6 sm:py-3.5 text-xs sm:text-sm whitespace-nowrap rounded-full focus-ring group shrink-0 transition-colors duration-300 snap-start",
                     isActive ? "text-white font-black" : "text-ink-2 font-bold hover:text-ink hover:bg-brand-50"
                   )}
                 >
@@ -208,15 +208,15 @@ export default function ProductShowcase({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16"
+                className="flex sm:grid flex-nowrap sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-x-10 sm:gap-y-24 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none no-scrollbar pb-8 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0"
               >
                 {displayProducts.map((product, i) => {
                   // Create a staggering effect for desktop grids
                   const staggerClasses = [
                     "xl:translate-y-0",
-                    "xl:translate-y-16",
-                    "xl:translate-y-32",
-                    "xl:translate-y-8"
+                    "xl:translate-y-24",
+                    "xl:translate-y-12",
+                    "xl:translate-y-32"
                   ][i % 4];
 
                   return (
@@ -228,7 +228,7 @@ export default function ProductShowcase({
                       exit={{ opacity: 0, scale: 0.9, y: 20 }}
                       transition={{ duration: 0.8, delay: (i % 4) * 0.1, ease: [0.16, 1, 0.3, 1] }}
                       key={product._id}
-                      className={cn("h-full", staggerClasses)}
+                      className={cn("h-full w-[80vw] sm:w-auto shrink-0 snap-center sm:snap-align-none", staggerClasses)}
                     >
                       <ProductCard product={product} index={i} showAddToCart />
                     </motion.div>
@@ -241,13 +241,13 @@ export default function ProductShowcase({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-ink-soft rounded-[3rem] bg-paper-2"
+                className="flex flex-col items-center justify-center py-16 sm:py-32 px-6 sm:px-12 text-center border border-dashed border-ink-soft rounded-[2rem] sm:rounded-[3rem] bg-paper-2 shadow-inner mx-4 sm:mx-0"
               >
-                <div className="w-20 h-20 rounded-3xl bg-white border border-ink-soft flex items-center justify-center mb-6 shadow-sm">
-                  <Ban size={32} className="text-ink-3" />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-white border border-ink-soft flex items-center justify-center mb-6 shadow-sm">
+                  <Ban size={28} className="text-ink-3 sm:w-8 sm:h-8" />
                 </div>
-                <p className="font-display font-black text-3xl text-ink tracking-tight">No products found.</p>
-                <p className="text-lg font-medium text-ink-3 mt-3 max-w-md">
+                <p className="font-display font-black text-2xl sm:text-3xl text-ink tracking-tight">No products found.</p>
+                <p className="text-base sm:text-lg font-medium text-ink-3 mt-3 max-w-md px-4 sm:px-0 [text-wrap:balance]">
                   {active !== "all"
                     ? "Every other collection is still ready for you."
                     : "Check back soon — new batches land regularly."}
@@ -255,7 +255,7 @@ export default function ProductShowcase({
                 {active !== "all" && (
                   <button
                     onClick={() => setActiveFilter("all")}
-                    className="mt-8 inline-flex items-center gap-3 px-8 py-4 rounded-full bg-brand-700 text-white text-sm font-extrabold uppercase tracking-widest hover:bg-brand-800 transition-all duration-300 shadow-xl shadow-brand-900/15 focus-ring active:scale-[0.98]"
+                    className="mt-8 inline-flex items-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-brand-700 text-white text-xs sm:text-sm font-extrabold uppercase tracking-widest hover:bg-brand-800 transition-all duration-300 shadow-xl shadow-brand-900/15 focus-ring active:scale-[0.98]"
                   >
                     View all {products.length} products
                     <ArrowRight size={16} />
@@ -272,7 +272,7 @@ export default function ProductShowcase({
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mt-48 flex flex-col items-center border-t border-ink-faint pt-16"
+            className="mt-24 sm:mt-48 flex flex-col items-center border-t border-ink-faint pt-12 sm:pt-16"
           >
             <div className="flex flex-col items-center gap-4">
               <span className="text-xs font-black uppercase tracking-[0.2em] text-ink-3">
@@ -287,6 +287,14 @@ export default function ProductShowcase({
             </div>
           </motion.div>
         )}
+
+        {/* Mobile View All CTA */}
+        <div className="mt-8 flex sm:hidden justify-center w-full">
+          <Link href="/products" className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-brand-700 text-white text-sm font-extrabold uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-brand-900/15 focus-ring">
+            View All Products
+            <ArrowRight size={18} />
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -304,12 +312,12 @@ function ProductShowcaseEmpty({
   const isArrivals = variant === "arrivals";
 
   return (
-    <section className="relative py-32 sm:py-48 bg-paper text-ink overflow-hidden border-t border-ink-faint">
+    <section className="relative py-16 sm:py-48 bg-paper text-ink overflow-hidden border-t border-ink-faint">
       <div className="absolute inset-0 bg-[radial-gradient(#05140808_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-brand-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 mb-20">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 sm:gap-10 mb-12 sm:mb-20">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -317,7 +325,7 @@ function ProductShowcaseEmpty({
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-4xl"
           >
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-8">
+            <div className="inline-flex items-center gap-3 px-4 py-2 sm:px-5 sm:py-2.5 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-6 sm:mb-8">
               {isArrivals ? (
                 <Sparkles size={16} className="text-brand-600" />
               ) : (
@@ -328,14 +336,14 @@ function ProductShowcaseEmpty({
               </span>
             </div>
 
-            <h2 className="text-6xl md:text-8xl lg:text-[7.5rem] font-display font-black text-ink tracking-tight leading-[0.95] [text-wrap:balance]">
+            <h2 className="text-[36px] sm:text-6xl md:text-8xl lg:text-[7.5rem] font-display font-black text-ink tracking-tight leading-[1.05] sm:leading-[0.95] [text-wrap:balance]">
               {title}{" "}
               <span className="text-gold-600 font-serif italic font-medium block mt-2 opacity-90">
                 {subtitle}
               </span>
             </h2>
 
-            <p className="mt-8 text-ink-2 text-xl font-medium leading-relaxed max-w-2xl">
+            <p className="mt-6 sm:mt-8 text-ink-2 text-base sm:text-xl font-medium leading-relaxed max-w-2xl [text-wrap:balance]">
               {DESC[variant]}
             </p>
           </motion.div>
@@ -346,41 +354,41 @@ function ProductShowcaseEmpty({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative overflow-hidden rounded-[3rem] border border-dashed border-brand-500/30 bg-paper-2 flex flex-col items-center justify-center px-6 py-32 text-center"
+          className="relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-dashed border-brand-500/30 bg-paper-2 shadow-inner flex flex-col items-center justify-center px-6 sm:px-12 py-16 sm:py-32 text-center mx-4 sm:mx-0"
         >
           <motion.div
             animate={{ y: [0, -12, 0] }}
             transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-            className="relative w-24 h-24 rounded-full bg-white border border-brand-200 shadow-xl shadow-brand-900/5 flex items-center justify-center mb-8"
+            className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white border border-brand-200 shadow-xl shadow-brand-900/5 flex items-center justify-center mb-8"
           >
             {isArrivals ? (
-              <Sparkles size={36} className="text-brand-600" />
+              <Sparkles size={36} className="text-brand-600 sm:w-9 sm:h-9 w-7 h-7" />
             ) : (
-              <ShieldCheck size={36} className="text-brand-600" />
+              <ShieldCheck size={36} className="text-brand-600 sm:w-9 sm:h-9 w-7 h-7" />
             )}
           </motion.div>
 
-          <h3 className="relative text-4xl sm:text-5xl font-display font-black text-ink tracking-tight [text-wrap:balance]">
+          <h3 className="relative text-3xl sm:text-5xl font-display font-black text-ink tracking-tight [text-wrap:balance]">
             {isArrivals ? "New batches are on the way." : "The next batch is in the kitchen."}
           </h3>
 
-          <p className="relative mt-6 text-ink-2 text-lg sm:text-xl font-medium max-w-xl leading-relaxed [text-wrap:pretty]">
+          <p className="relative mt-4 sm:mt-6 text-ink-2 text-base sm:text-xl font-medium max-w-xl leading-relaxed [text-wrap:pretty]">
             {isArrivals
               ? "Freshly fried 100% Jain namkeen lands here as soon as it leaves the kadai — pure groundnut oil, zero onion, zero garlic."
               : "Our signature 100% Jain namkeen is being handcrafted in small batches. Check back shortly — or explore the journal while you wait."}
           </p>
 
-          <div className="relative mt-12 flex flex-wrap items-center justify-center gap-6">
+          <div className="relative mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-3 px-10 py-5 rounded-full bg-brand-700 text-white text-sm font-extrabold uppercase tracking-widest hover:bg-brand-800 transition-colors focus-ring shadow-xl shadow-brand-900/15 active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-brand-700 text-white text-xs sm:text-sm font-extrabold uppercase tracking-widest hover:bg-brand-800 transition-colors focus-ring shadow-xl shadow-brand-900/15 active:scale-[0.98]"
             >
               Read the Journal
               <ArrowRight size={18} />
             </Link>
             <Link
               href="/categories"
-              className="inline-flex items-center gap-3 px-10 py-5 rounded-full border border-ink-soft bg-white text-ink-2 text-sm font-extrabold uppercase tracking-widest hover:text-brand-700 hover:border-brand-300 transition-colors focus-ring active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 rounded-full border border-ink-soft bg-white text-ink-2 text-xs sm:text-sm font-extrabold uppercase tracking-widest hover:text-brand-700 hover:border-brand-300 transition-colors focus-ring active:scale-[0.98]"
             >
               Explore Collections
             </Link>

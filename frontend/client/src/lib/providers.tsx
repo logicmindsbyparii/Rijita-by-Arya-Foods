@@ -94,7 +94,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       <main id="main-content" className="flex-1 relative">{children}</main>
       <Footer />
       <CookieConsent />
-      <ScrollToTop />
+      {/* Hide scroll-to-top on product detail pages (has its own sticky bottom bar) */}
+      {!/^\/products\/[^/]+$/.test(pathname || "") && <ScrollToTop />}
     </>
   );
 }

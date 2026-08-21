@@ -394,17 +394,17 @@ export default function Header() {
 
         {settings?.announcement?.isActive && settings.announcement.text ? (
           <div className="flex-1 text-center px-2" title="Announcement">
-            <span className="text-white tracking-widest">{settings.announcement.text}</span>
+            <span className="text-white tracking-widest text-balance leading-tight block">{settings.announcement.text}</span>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-3 sm:gap-6 mx-auto lg:mx-0">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 mx-auto lg:mx-0 text-center">
             <span className="inline-flex items-center gap-2 text-white/90">
               <Leaf size={12} className="text-gold-500" />
               100% Pure Jain
             </span>
             <span className="hidden sm:inline opacity-20">|</span>
-            <span className="text-white/80">Zero Onion • Zero Garlic</span>
-            <span className="hidden sm:inline opacity-20">|</span>
+            <span className="hidden sm:inline text-white/80">Zero Onion • Zero Garlic</span>
+            <span className="hidden md:inline opacity-20">|</span>
             <span className="hidden md:inline text-gold-400">
               Free Express Shipping &gt; ₹{Number(settings?.shipping?.freeShippingThreshold ?? 499).toLocaleString("en-IN")}
             </span>
@@ -432,15 +432,15 @@ export default function Header() {
 
       {/* ── Main Navbar (Floating Glass Pill) ── */}
       <div className={cn(
-        "w-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] px-4 sm:px-6 lg:px-8",
+        "w-full transition-all duration-700 ease-expo-out px-4 sm:px-6 lg:px-8",
         isScrolled ? "pt-2" : "pt-2 sm:pt-3"
       )}>
         <nav
           className={cn(
-            "mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-7xl relative z-50",
+            "mx-auto transition-all duration-700 ease-expo-out max-w-7xl relative z-50",
             isScrolled
-              ? "bg-white/70 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(5,20,8,0.1)] border border-white/40 rounded-[2rem] py-1 px-6 sm:px-8"
-              : "bg-white shadow-[0_20px_60px_-15px_rgba(5,20,8,0.05)] border border-transparent rounded-[2rem] py-1.5 md:py-2 px-6 sm:px-8"
+              ? "bg-white/70 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(5,20,8,0.1)] border border-white/40 rounded-[2rem] py-1 px-4 sm:px-8"
+              : "bg-white shadow-[0_20px_60px_-15px_rgba(5,20,8,0.05)] border border-transparent rounded-[2rem] py-1.5 md:py-2 px-4 sm:px-8"
           )}
         >
           <div className="flex items-center justify-between">
@@ -474,24 +474,40 @@ export default function Header() {
                   ? "h-9 sm:h-10 md:h-11 lg:h-12"
                   : "h-11 sm:h-13 md:h-15 lg:h-16 xl:h-18"
               )}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getLogoUrl(settings?.logo || clientLogo || undefined, settings?.updatedAt)}
-                  alt={siteName}
-                  suppressHydrationWarning
-                  className={cn(
-                    "w-auto object-contain mix-blend-multiply filter contrast-[1.03] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
-                    isScrolled
-                      ? "h-9 sm:h-10 md:h-11 lg:h-12 max-w-[180px] lg:max-w-[220px]"
-                      : "h-11 sm:h-13 md:h-15 lg:h-16 xl:h-18 max-w-[220px] md:max-w-[280px] lg:max-w-[340px]"
-                  )}
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (!target.src.includes("logo.png")) {
-                      target.src = "/uploads/logo.png";
-                    }
-                  }}
-                />
+                {(() => {
+                  const logoUrl = getLogoUrl(settings?.logo || clientLogo || undefined, settings?.updatedAt);
+                  if (logoUrl) {
+                    return (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={logoUrl}
+                        alt={siteName}
+                        suppressHydrationWarning
+                        className={cn(
+                          "w-auto object-contain mix-blend-multiply filter contrast-[1.03] transition-all duration-700 ease-expo-out",
+                          isScrolled
+                            ? "h-9 sm:h-10 md:h-11 lg:h-12 max-w-[140px] sm:max-w-[180px] lg:max-w-[220px]"
+                            : "h-11 sm:h-13 md:h-15 lg:h-16 xl:h-18 max-w-[150px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]"
+                        )}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent && parent.lastElementChild?.tagName !== 'SPAN') {
+                            const span = document.createElement('span');
+                            span.className = "text-xl sm:text-3xl md:text-4xl font-black text-brand-900 tracking-tight whitespace-nowrap font-serif";
+                            span.innerText = siteName;
+                            parent.appendChild(span);
+                          }
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <span className="text-xl sm:text-3xl md:text-4xl font-black text-brand-900 tracking-tight whitespace-nowrap font-serif px-2">
+                      {siteName}
+                    </span>
+                  );
+                })()}
               </div>
             </Link>
 

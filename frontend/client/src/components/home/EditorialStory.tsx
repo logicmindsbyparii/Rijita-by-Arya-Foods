@@ -47,7 +47,7 @@ export default function EditorialStory({
           {/* Left Column: Heritage Showcase — editorial split layout instead of card-within-card */}
           <div className="lg:col-span-6 space-y-5">
             {/* Main heritage image — full bleed, no card wrapper */}
-            <div className="relative aspect-[16/10] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-paper-2 border border-ink-faint shadow-[0_32px_80px_-20px_rgba(26,20,10,0.2)]">
+            <div className="relative aspect-[2/1] sm:aspect-[16/10] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-paper-2 border border-ink-faint shadow-[0_32px_80px_-20px_rgba(26,20,10,0.2)]">
               {imageUrl ? (
                 <Image
                   src={getImageUrl(imageUrl)}
@@ -110,7 +110,7 @@ export default function EditorialStory({
               </motion.div>
 
               <motion.h2
-                className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-ink tracking-tighter leading-[1.05] [text-wrap:balance]"
+                className="text-[32px] sm:text-5xl lg:text-6xl font-display font-black text-ink tracking-tighter leading-[1.1] sm:leading-[1.05] [text-wrap:balance]"
               >
                 {heading}
               </motion.h2>
@@ -144,10 +144,10 @@ export default function EditorialStory({
             <div className="pt-2 sm:pt-4">
               <Link
                 href="/products"
-                className="group inline-flex items-center justify-between sm:justify-start gap-4 px-6 sm:pl-8 sm:pr-2 py-3.5 sm:py-2 rounded-xl sm:rounded-full bg-brand-700 hover:bg-brand-800 text-white font-extrabold text-xs sm:text-base transition-ui duration-300 shadow-xl shadow-brand-700/20 active:scale-[0.98] focus-ring w-full sm:w-auto"
+                className="group inline-flex items-center justify-between sm:justify-start gap-4 px-6 sm:pl-8 sm:pr-2 py-4 sm:py-2 rounded-xl sm:rounded-full bg-brand-700 hover:bg-brand-800 text-white font-extrabold text-sm sm:text-base transition-ui duration-300 shadow-xl shadow-brand-700/20 active:scale-[0.98] focus-ring w-full sm:w-auto"
               >
                 <span>Explore 100% Jain Products</span>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white text-brand-700 flex items-center justify-center group-hover:translate-x-1 transition-transform shadow-md shrink-0">
+                <div className="w-10 h-10 rounded-full bg-white text-brand-700 flex items-center justify-center group-hover:translate-x-1 transition-transform shadow-md shrink-0">
                   <ArrowRight size={16} />
                 </div>
               </Link>

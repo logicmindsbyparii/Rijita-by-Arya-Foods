@@ -13,7 +13,7 @@ const TICKER_ITEMS = [
 
 export default function JainMarqueeTicker() {
   return (
-    <div className="relative py-3.5 sm:py-4 bg-gold-500/10 border-y border-gold-500/30 text-brand-800 overflow-hidden select-none z-20">
+    <div className="relative py-2.5 sm:py-4 bg-gold-500/10 border-y border-gold-500/30 text-brand-800 overflow-hidden select-none z-20">
       {/* Subtle gold dot texture — breaks the flat surface */}
       <div className="absolute inset-0 bg-[radial-gradient(#B8893012_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-r from-gold-500/10 via-transparent to-gold-500/10 pointer-events-none" />

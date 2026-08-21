@@ -69,7 +69,7 @@ export default function JainPuritySection() {
   const [activePillar, setActivePillar] = useState(PURITY_PILLARS[0]);
 
   return (
-    <section className="relative py-16 sm:py-24 lg:py-32 bg-paper text-ink overflow-hidden">
+    <section className="relative py-12 sm:py-24 lg:py-32 bg-paper text-ink overflow-hidden">
       {/* Ambient light washes */}
 
       {/* Subtle grain overlay — replaces the generic dot pattern */}
@@ -95,7 +95,7 @@ export default function JainPuritySection() {
           </motion.span>
 
           <motion.h2
-            className="text-3xl sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.02em] text-ink leading-[1.06] sm:leading-[1.02] [text-wrap:balance]"
+            className="text-[32px] sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.02em] text-ink leading-[1.1] sm:leading-[1.02] [text-wrap:balance]"
           >
             Sacred Sattvik Taste. <br />
             <span className="text-brand-700">
@@ -111,7 +111,7 @@ export default function JainPuritySection() {
         </div>
 
         {/* Pillar Navigation Tabs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto mb-8 sm:mb-12">
+        <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar sm:grid sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto mb-8 sm:mb-12 pb-4 sm:pb-0 -mx-4 px-4 sm:mx-auto sm:px-0 mask-gradient-x sm:mask-none">
           {PURITY_PILLARS.map((pillar) => {
             const Icon = pillar.icon;
             const isActive = activePillar.id === pillar.id;
@@ -120,7 +120,7 @@ export default function JainPuritySection() {
               <button
                 key={pillar.id}
                 onClick={() => setActivePillar(pillar)}
-                className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-ui duration-300 border flex flex-col items-center sm:items-start text-center sm:text-left focus-ring active:scale-[0.98] ${isActive
+                className={`relative w-[200px] shrink-0 sm:w-auto sm:shrink-1 snap-start p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-ui duration-300 border flex flex-col items-center sm:items-start text-center sm:text-left focus-ring active:scale-[0.98] ${isActive
                     ? "bg-white border-brand-600 shadow-[0_12px_32px_-16px_rgba(20,82,24,0.35)]"
                     : "bg-white/60 border-ink-soft hover:bg-white hover:border-ink-mid"
                   }`}
@@ -185,7 +185,7 @@ export default function JainPuritySection() {
                 <div className="lg:col-span-5 flex justify-center">
                   <div className="w-full max-w-[280px] sm:max-w-[320px] relative">
                     {/* Main image with rounded corners — no gradient box behind it */}
-                    <div className="relative aspect-[4/5] rounded-2xl sm:rounded-3xl overflow-hidden border border-ink-faint shadow-[0_32px_80px_-20px_rgba(26,20,10,0.2)] bg-white group">
+                    <div className="relative aspect-[4/3] sm:aspect-[4/5] rounded-2xl sm:rounded-3xl overflow-hidden border border-ink-faint shadow-[0_32px_80px_-20px_rgba(26,20,10,0.2)] bg-white group">
                       <Image
                         src={NAMKEEN_IMAGES.sattvik}
                         alt="Pure Sattvik Jain Namkeen"

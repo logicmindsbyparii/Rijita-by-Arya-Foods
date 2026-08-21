@@ -18,8 +18,10 @@ import {
   Search, Command, ArrowRight, ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/lib/admin/auth-context";
-import { cn, getInitials } from "@/lib/admin/utils";
+import { cn, getInitials, getLogoUrl } from "@/lib/admin/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/admin-ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { contentApi } from "@/lib/api";
 
 interface NavItem {
   label: string;
@@ -73,6 +75,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => contentApi.getSiteSettings(),
+    staleTime: 30 * 1000,
+  });
+
+  const settings = settingsData?.data?.settings;
+  const siteName = settings?.siteName || "RIJITA";
+  const siteLogo = settings?.logo;
 
   // Focus search input when opened
   useEffect(() => {
@@ -198,11 +210,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
           {!sidebarCollapsed && (
             <Link href="/admin" className="flex items-center gap-2 min-w-0 group">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-[var(--color-accent)]/20 shrink-0 group-hover:scale-105 transition-transform">
-                R
-              </div>
-              <div className="leading-none">
-                <span className="text-sm font-bold text-white tracking-tight block leading-tight">RIJITA</span>
+              {(() => {
+                const logoUrl = getLogoUrl(siteLogo, settings?.updatedAt);
+                if (logoUrl) {
+                  return (
+                    <div className="h-8 w-auto shrink-0 group-hover:scale-105 transition-transform bg-white/90 rounded-md px-1 flex items-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={logoUrl} alt={siteName} className="h-6 w-auto object-contain" />
+                    </div>
+                  );
+                }
+                return (
+                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-[var(--color-accent)]/20 shrink-0 group-hover:scale-105 transition-transform">
+                    {siteName.charAt(0)}
+                  </div>
+                );
+              })()}
+              <div className="leading-none min-w-0">
+                <span className="text-sm font-bold text-white tracking-tight block leading-tight truncate">{siteName}</span>
                 <span className="text-[9px] text-white/40 font-medium tracking-wider uppercase block">Admin Panel</span>
               </div>
             </Link>
@@ -348,7 +373,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Breadcrumb-style context */}
             <div className="hidden lg:flex items-center gap-2 text-xs">
               <BadgeCheck size={12} className="text-[var(--color-brand)]" />
-              <span className="text-[var(--color-ink-3)] font-medium">RIJITA Admin</span>
+              <span className="text-[var(--color-ink-3)] font-medium">{siteName} Admin</span>
               <ChevronRight className="h-4 w-4 text-[var(--color-ink-3)]/30" />
               <span className="text-[var(--color-ink)] font-semibold">
                 {navItems.find(i => isActive(i.href))?.label || 'Dashboard'}

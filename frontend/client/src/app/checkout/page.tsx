@@ -408,7 +408,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-16">
+    <div className="min-h-dvh pt-32 sm:pt-40 lg:pt-48 xl:pt-[200px] pb-32 lg:pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -729,7 +729,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setOrderNotes(e.target.value)}
                     rows={2}
                     placeholder="Any special instructions for your order..."
-                    className="flex w-full rounded-xl border border-rule bg-paper px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] transition-ui resize-none"
+                    className="flex w-full rounded-xl border border-rule bg-paper px-4 py-3 sm:py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] transition-ui resize-none"
                   />
                 </CardContent>
               </Card>
@@ -868,7 +868,7 @@ export default function CheckoutPage() {
                             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                             placeholder="Coupon code"
                             disabled={!!appliedCoupon}
-                            className="w-full pl-8 pr-4 py-2 rounded-xl border border-rule bg-paper text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] transition-ui disabled:opacity-50"
+                            className="w-full pl-8 pr-4 h-12 rounded-xl border border-rule bg-paper text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] transition-ui disabled:opacity-50"
                           />
                         </div>
                         {appliedCoupon ? (
@@ -882,7 +882,7 @@ export default function CheckoutPage() {
                               setAppliedCoupon(null);
                               clearStoredCoupon();
                             }}
-                            className="shrink-0 gap-2 text-gold-700 hover:text-gold-800"
+                            className="shrink-0 gap-2 h-12 px-4 text-gold-700 hover:text-gold-800"
                           >
                             <X size={14} />
                             Remove
@@ -893,7 +893,7 @@ export default function CheckoutPage() {
                             size="sm"
                             onClick={handleApplyCoupon}
                             disabled={applyingCoupon || !couponCode.trim()}
-                            className="shrink-0"
+                            className="shrink-0 h-12 px-6"
                           >
                             {applyingCoupon ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -949,7 +949,7 @@ export default function CheckoutPage() {
                       onClick={handlePlaceOrder}
                       disabled={isPlacing || items.length === 0 || serviceability?.serviceable === false}
                       size="lg"
-                      className="w-full mt-6 gap-2"
+                      className="hidden lg:flex w-full mt-6 gap-2"
                     >
                       {isPlacing ? (
                         <>
@@ -987,6 +987,44 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Sticky Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-paper border-t border-rule p-4 lg:hidden pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col">
+            <span className="text-xs text-ink-2 font-medium">Total to pay</span>
+            <span className="font-bold text-brand-700 text-lg tabular-nums">{formatPrice(total)}</span>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-ink-2 block">
+              {items.length} {items.length === 1 ? 'item' : 'items'}
+            </span>
+            <span className="text-xs text-gold-600 font-medium">
+              {paymentMethod === "cod" ? "Pay on Delivery" : "UPI Payment"}
+            </span>
+          </div>
+        </div>
+        <Button
+          onClick={handlePlaceOrder}
+          disabled={isPlacing || items.length === 0 || serviceability?.serviceable === false}
+          size="lg"
+          className="w-full gap-2 py-6 text-base rounded-xl shadow-lg shadow-brand-900/20"
+        >
+          {isPlacing ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Placing Order...
+            </>
+          ) : serviceability?.serviceable === false ? (
+            "Pincode Not Serviceable"
+          ) : (
+            <>
+              Place Order
+              <ArrowRight size={18} />
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

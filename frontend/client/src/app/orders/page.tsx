@@ -473,7 +473,7 @@ export default function OrdersPage() {
                                <div className="border-t pt-4 flex flex-wrap gap-4">
                                  <button
                                    onClick={() => handleTrackOnWhatsApp(order)}
-                                   className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-xl transition-ui"
+                                   className="inline-flex items-center justify-center gap-2 px-5 h-11 sm:h-10 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-xl transition-ui"
                                  >
                                    <MessageCircle size={16} />
                                    Track on WhatsApp
@@ -481,7 +481,7 @@ export default function OrdersPage() {
 
                                  <Link
                                    href={`/orders/${order.orderNumber}`}
-                                   className="inline-flex items-center gap-2 px-4 py-2 border border-border hover:bg-muted/50 text-sm font-medium rounded-xl transition-ui"
+                                   className="inline-flex items-center justify-center gap-2 px-5 h-11 sm:h-10 border border-border hover:bg-muted/50 text-sm font-medium rounded-xl transition-ui"
                                    onClick={(e) => e.stopPropagation()}
                                  >
                                    <ExternalLink size={14} />
@@ -492,7 +492,7 @@ export default function OrdersPage() {
                                    <button
                                      onClick={(e) => { e.stopPropagation(); setPendingCancel(order); }}
                                      disabled={cancellingId === order._id}
-                                     className="inline-flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition-ui disabled:opacity-50"
+                                     className="inline-flex items-center justify-center gap-2 px-5 h-11 sm:h-10 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition-ui disabled:opacity-50"
                                    >
                                      {cancellingId === order._id ? (
                                        <Loader2 size={14} className="animate-spin" />

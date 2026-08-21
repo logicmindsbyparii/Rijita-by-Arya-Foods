@@ -469,7 +469,7 @@ export default function ProductDetailPage() {
               </Link>
             )}
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink tracking-tight leading-tight [text-wrap:balance]">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink tracking-tight leading-tight [text-wrap:balance]">
               {product.name}
             </h1>
 
@@ -562,7 +562,7 @@ export default function ProductDetailPage() {
                         }}
                         disabled={!isInStock}
                         className={cn(
-                          "relative flex flex-col items-center px-4 py-4 rounded-xl border-2 transition-ui min-w-[90px]",
+                          "relative flex flex-col items-center px-3 py-3 sm:px-4 sm:py-4 rounded-xl border-2 transition-ui min-w-[80px] sm:min-w-[90px]",
                           isActive
                             ? "border-brand-600 bg-brand-600/5 shadow-sm"
                             : isInStock
@@ -718,7 +718,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* ── Quick Info — palette-restrained, hairline-tinted ── */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-rule">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-rule">
               <div className="text-center">
                 <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-brand-600/10 border border-brand-600/15 flex items-center justify-center">
                   <Leaf size={18} className="text-brand-700" />
@@ -1191,21 +1191,21 @@ export default function ProductDetailPage() {
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30"
+                    className="w-11 h-11 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30"
                     aria-label="Decrease"
                   >
-                    <Minus size={12} />
+                    <Minus size={14} />
                   </button>
-                  <span className="w-8 h-8 flex items-center justify-center text-xs font-bold border-x border-rule text-ink select-none">
+                  <span className="w-10 h-11 flex items-center justify-center text-sm font-bold border-x border-rule text-ink select-none tabular-nums">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity((q) => Math.min(selectedVariant?.stock ?? 10, q + 1))}
                     disabled={quantity >= (selectedVariant?.stock ?? 10)}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30"
+                    className="w-11 h-11 flex items-center justify-center hover:bg-paper-3 transition-colors disabled:opacity-30"
                     aria-label="Increase"
                   >
-                    <Plus size={12} />
+                    <Plus size={14} />
                   </button>
                 </div>
 
@@ -1213,7 +1213,7 @@ export default function ProductDetailPage() {
                   disabled={!selectedVariant || selectedVariant.stock <= 0 || isAddingToCart || justAddedToCart}
                   onClick={handleAddToCart}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-ui",
+                    "px-5 h-11 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-ui",
                     justAddedToCart
                       ? "bg-brand-600/10 text-brand-700 border border-brand-600/25"
                       : "bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1240,7 +1240,7 @@ export default function ProductDetailPage() {
           <motion.div
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-brand-950/95 backdrop-blur-sm flex items-center justify-center p-4 md:p-8"
+            className="fixed inset-0 z-[400] bg-brand-950/95 backdrop-blur-sm flex items-center justify-center p-4 md:p-8"
           >
             <button
               onClick={() => setLightboxOpen(false)}

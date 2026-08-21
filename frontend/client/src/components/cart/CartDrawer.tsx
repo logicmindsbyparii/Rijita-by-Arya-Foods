@@ -485,7 +485,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                           type="text"
                           value={checkout.fullName}
                           onChange={(e) => updateField("fullName", e.target.value)}
-                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.fullName ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
+                          className={`w-full pl-8 pr-4 py-3 sm:py-2.5 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.fullName ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="Your full name"
                         />
                       </div>
@@ -501,7 +501,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                           inputMode="numeric"
                           value={checkout.phone}
                           onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.phone ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
+                          className={`w-full pl-8 pr-4 py-3 sm:py-2.5 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.phone ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="10-digit phone number"
                         />
                       </div>
@@ -516,7 +516,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                           type="text"
                           value={checkout.addressLine1}
                           onChange={(e) => updateField("addressLine1", e.target.value)}
-                          className={`w-full pl-8 pr-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.addressLine1 ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
+                          className={`w-full pl-8 pr-4 py-3 sm:py-2.5 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.addressLine1 ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="House, street, area"
                         />
                       </div>
@@ -527,18 +527,18 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                       type="text"
                       value={checkout.addressLine2}
                       onChange={(e) => updateField("addressLine2", e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border-2 border-rule text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600"
+                      className="w-full px-4 py-3 sm:py-2.5 rounded-xl border-2 border-rule text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600"
                       placeholder="Landmark (optional)"
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-medium text-ink-2 mb-2 block">City *</label>
                         <input
                           type="text"
                           value={checkout.city}
                           onChange={(e) => updateField("city", e.target.value)}
-                          className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.city ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
+                          className={`w-full px-4 py-3 sm:py-2.5 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.city ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                           placeholder="City"
                         />
                         {errors.city && <p className="text-xs text-rose-500 mt-2">{errors.city}</p>}
@@ -548,7 +548,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                         <select
                           value={checkout.state}
                           onChange={(e) => updateField("state", e.target.value)}
-                          className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.state ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
+                          className={`w-full px-4 py-3 sm:py-2.5 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.state ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                         >
                           <option value="">Select</option>
                           {INDIAN_STATES.map((s) => (
@@ -566,7 +566,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                         inputMode="numeric"
                         value={checkout.pincode}
                         onChange={(e) => updateField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        className={`w-full px-4 py-2 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.pincode ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
+                        className={`w-full px-4 py-3 sm:py-2.5 rounded-xl border-2 text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 ${errors.pincode ? "border-rose-300 focus:ring-rose-400" : "border-rule"}`}
                         placeholder="6-digit pincode"
                       />
                       {errors.pincode && <p className="text-xs text-rose-500 mt-2">{errors.pincode}</p>}
@@ -577,7 +577,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                       <textarea
                         value={checkout.notes}
                         onChange={(e) => updateField("notes", e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border-2 border-rule text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 resize-none"
+                        className="w-full px-4 py-3 sm:py-2.5 rounded-xl border-2 border-rule text-sm transition-ui bg-paper focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--color-focus)] focus:border-brand-600 resize-none"
                         rows={2}
                         placeholder="Special instructions..."
                       />

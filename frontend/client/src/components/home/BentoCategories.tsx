@@ -161,16 +161,16 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
 
   const getFeaturedSpan = () => {
     if (totalCount === 1)
-      return "lg:col-span-12 lg:row-span-2 min-h-[500px]";
+      return "col-span-2 lg:col-span-12 lg:row-span-2 min-h-[400px] sm:min-h-[500px]";
     if (totalCount === 2)
-      return "lg:col-span-8 lg:row-span-2 min-h-[580px]";
-    return "lg:col-span-8 lg:row-span-2 min-h-[580px] lg:h-auto";
+      return "col-span-2 lg:col-span-8 lg:row-span-2 min-h-[400px] sm:min-h-[580px]";
+    return "col-span-2 lg:col-span-8 lg:row-span-2 min-h-[350px] sm:min-h-[580px] lg:h-auto";
   };
 
   const getSecondary0Span = () => {
     if (totalCount === 2)
-      return "lg:col-span-4 lg:row-span-2 min-h-[580px]";
-    return "lg:col-span-4 lg:row-span-1 h-[276px]";
+      return "col-span-2 lg:col-span-4 lg:row-span-2 min-h-[300px] sm:min-h-[580px]";
+    return "col-span-1 lg:col-span-4 lg:row-span-1 min-h-[220px] sm:h-[276px]";
   };
 
   // ── Container stagger ────────────────────────────────────────────
@@ -215,7 +215,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
   return (
     <section
       ref={containerRef}
-      className="py-32 md:py-48 bg-paper text-ink border-t border-ink-faint relative overflow-hidden"
+      className="py-24 md:py-48 bg-paper text-ink border-t border-ink-faint relative overflow-hidden"
     >
       {/* ── Background layers ────────────────────────────────────── */}
       <div className="absolute inset-0 bg-[radial-gradient(#05140808_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
@@ -227,7 +227,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
         {/* ── Section Header ─────────────────────────────────────── */}
         <motion.div
           style={{ y: headingY, opacity: headingOpacity }}
-          className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-12"
+          className="flex flex-col md:flex-row md:items-end justify-between mb-16 sm:mb-24 gap-8 sm:gap-12"
         >
           <div className="max-w-4xl">
             <motion.div
@@ -260,7 +260,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
               {/* Heading with word-by-word stagger */}
               <div className="overflow-hidden">
                 <motion.h2
-                  className="text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.02] [text-wrap:balance]"
+                  className="text-[40px] sm:text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.02] [text-wrap:balance]"
                   initial={{ y: "110%" }}
                   whileInView={{ y: "0%" }}
                   viewport={{ once: true, margin: "-100px" }}
@@ -286,15 +286,15 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
           >
             <Link
               href="/products"
-              className="inline-flex items-center gap-4 group focus-ring rounded-full"
+              className="inline-flex items-center gap-3 sm:gap-4 group focus-ring rounded-full"
             >
-              <span className="text-xl font-bold uppercase tracking-widest text-ink-2 group-hover:text-brand-700 transition-colors duration-300">
+              <span className="text-base sm:text-xl font-bold uppercase tracking-widest text-ink-2 group-hover:text-brand-700 transition-colors duration-300">
                 View Catalog
               </span>
-              <div className="w-14 h-14 rounded-full bg-brand-700 text-white flex items-center justify-center group-hover:scale-110 group-hover:bg-gold-500 group-hover:text-brand-950 transition-all duration-500 shadow-xl shadow-brand-900/10">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-brand-700 text-white flex items-center justify-center group-hover:scale-110 group-hover:bg-gold-500 group-hover:text-brand-950 transition-all duration-500 shadow-xl shadow-brand-900/10">
                 <ArrowRight
-                  size={24}
-                  className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500"
+                  size={20}
+                  className="sm:w-6 sm:h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500"
                 />
               </div>
             </Link>
@@ -307,7 +307,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-80px" }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 grid-flow-dense auto-rows-auto"
+          className="grid grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-8 grid-flow-dense auto-rows-auto"
         >
           {/* ─── Card 1: Hero Featured ────────────────────────────── */}
           {featured && (
@@ -341,6 +341,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
               subtitle="View Details"
               slug={secondary[0].slug}
               accentColor="brand"
+              isHalfWidthMobile={totalCount > 2}
             />
           )}
 
@@ -348,7 +349,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
           {secondary[1] && (
             <BentoCard
               variants={cardVariants}
-              span="lg:col-span-4 lg:row-span-1 h-[276px]"
+              span="col-span-1 lg:col-span-4 lg:row-span-1 min-h-[220px] sm:h-[276px]"
               parallaxY={ySecondary1}
               image={categoryImage(secondary[1])}
               alt={secondary[1].name}
@@ -358,6 +359,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
               subtitle=""
               slug={secondary[1].slug}
               accentColor="brand"
+              isHalfWidthMobile
             />
           )}
 
@@ -365,7 +367,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
           {secondary[2] && (
             <BentoCard
               variants={cardVariants}
-              span="lg:col-span-12 lg:row-span-1 h-[240px]"
+              span="col-span-2 lg:col-span-12 lg:row-span-1 min-h-[200px] sm:h-[240px]"
               parallaxY={ySecondary2}
               image={categoryImage(secondary[2])}
               alt={secondary[2].name}
@@ -399,6 +401,7 @@ interface BentoCardProps {
   accentColor: "gold" | "brand";
   priority?: boolean;
   isFullWidth?: boolean;
+  isHalfWidthMobile?: boolean;
 }
 
 function BentoCard({
@@ -415,6 +418,7 @@ function BentoCard({
   accentColor,
   priority,
   isFullWidth,
+  isHalfWidthMobile,
 }: BentoCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -449,10 +453,12 @@ function BentoCard({
       : "hover:border-brand-500/30";
 
   const titleSize = isFullWidth
-    ? "text-4xl sm:text-5xl"
+    ? "text-3xl sm:text-5xl"
     : span.includes("row-span-2") || span.includes("h-[580px]")
-      ? "text-5xl sm:text-6xl md:text-8xl"
-      : "text-3xl sm:text-4xl";
+      ? "text-4xl sm:text-6xl md:text-8xl"
+      : isHalfWidthMobile
+        ? "text-2xl sm:text-4xl"
+        : "text-3xl sm:text-4xl";
 
   return (
     <motion.div
@@ -483,7 +489,7 @@ function BentoCard({
 
       <Link
         href={`/products?category=${slug}`}
-        className="relative block w-full h-full min-h-[400px] focus-ring"
+        className="relative block w-full h-full min-h-[320px] sm:min-h-[400px] focus-ring"
       >
         {/* ── Image with parallax ─────────────────────────────────── */}
         <div className="absolute inset-0 overflow-hidden">
@@ -496,7 +502,7 @@ function BentoCard({
               alt={alt}
               fill
               sizes={sizes}
-              className={`object-cover transition-all duration-[1200ms] ease-[0.16,1,0.3,1] ${
+              className={`object-cover transition-all duration-1200 ease-expo-out ${
                 isHovered
                   ? "opacity-100 scale-[1.04]"
                   : "opacity-80 scale-100"
@@ -530,19 +536,19 @@ function BentoCard({
         {/* ── Content ────────────────────────────────────────────── */}
         <div
           className={`absolute inset-0 z-20 flex flex-col justify-between ${
-            isFullWidth ? "p-8 md:p-12" : "p-8"
+            isFullWidth ? "p-8 md:p-12" : isHalfWidthMobile ? "p-5 sm:p-8" : "p-6 sm:p-8"
           }`}
         >
           {/* Top row: badge + arrow */}
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start gap-2">
             <span
               className={`font-bold uppercase tracking-[0.2em] ${
-                isFullWidth ? "text-xs" : "text-[10px] sm:text-xs"
+                isFullWidth ? "text-xs" : isHalfWidthMobile ? "text-[9px] sm:text-[10px] md:text-xs px-3 py-1.5 sm:px-4 sm:py-2" : "text-[10px] sm:text-xs px-4 py-2"
               } border backdrop-blur-md transition-all duration-500 ${
                 accentColor === "gold"
                   ? "text-white border-white/20 bg-white/10 group-hover:bg-gold-500/20 group-hover:border-gold-400/50 group-hover:text-gold-300"
                   : "text-brand-300 border-brand-500/30 bg-brand-950/60 group-hover:text-gold-300 group-hover:border-gold-500/40"
-              } px-4 py-2 rounded-full`}
+              } rounded-full`}
             >
               {badge}
             </span>
@@ -550,8 +556,8 @@ function BentoCard({
             {/* Animated arrow circle */}
             <motion.div
               className={`${
-                isFullWidth ? "w-14 h-14" : "w-12 h-12"
-              } rounded-full flex items-center justify-center shadow-md overflow-hidden transition-all duration-500 ${
+                isFullWidth ? "w-14 h-14" : isHalfWidthMobile ? "w-8 h-8 sm:w-12 sm:h-12" : "w-10 h-10 sm:w-12 sm:h-12"
+              } shrink-0 rounded-full flex items-center justify-center shadow-md overflow-hidden transition-all duration-500 ${
                 accentColor === "gold"
                   ? "bg-white text-brand-950 group-hover:bg-gold-400"
                   : "bg-white/90 text-brand-950 group-hover:bg-white"
@@ -562,7 +568,7 @@ function BentoCard({
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <ArrowRight
-                size={isFullWidth ? 24 : 20}
+                size={isFullWidth ? 24 : isHalfWidthMobile ? 16 : 20}
                 className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-500"
               />
             </motion.div>

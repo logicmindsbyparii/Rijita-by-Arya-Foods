@@ -221,16 +221,6 @@ export interface ShiprocketStatus {
   };
 }
 
-export interface PickupLocation {
-  id: number | string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  phone?: string;
-}
-
 export interface OrderItem {
   product: string;
   productName: string;
@@ -444,19 +434,6 @@ export interface Contact {
   type: string;
   isRead: boolean;
   createdAt: string;
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  error?: string;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
 }
 
 export interface DashboardStats {

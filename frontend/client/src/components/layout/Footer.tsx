@@ -174,7 +174,7 @@ export default function Footer() {
       {/* ── 1. Certifications & Brand Trust Ribbon ── */}
       <div className="bg-brand-900/90 border-b border-white/5 backdrop-blur-md relative z-10">
         <div className="max-w-7xl mx-auto px-6 sm:px-10 py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {trustBadges.map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-start gap-4 p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
@@ -194,42 +194,56 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 sm:px-10 py-16 lg:py-24 relative z-10">
 
         {/* Massive High-Contrast CTA */}
-        <div className="mb-20 text-center lg:text-left flex flex-col lg:flex-row justify-between items-center gap-10">
-          <h2 className="text-[40px] sm:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl">
+        <div className="mb-20 text-center lg:text-left flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-10">
+          <h2 className="text-5xl sm:text-6xl md:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl text-balance">
             Taste the <span className="font-serif italic text-gold-400 font-medium">Difference.</span>
           </h2>
-          <div className="shrink-0">
+          <div className="shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
             <Link
               href="/products"
-              className="group relative inline-flex items-center justify-center gap-4 px-10 py-5 bg-gold-500 text-brand-950 rounded-full font-black text-xl hover:bg-gold-400 hover:scale-105 shadow-[0_10px_30px_rgba(212,175,55,0.2)] transition-all duration-500"
+              className="group relative flex w-full sm:w-auto sm:inline-flex items-center justify-center gap-4 px-10 py-5 bg-gold-500 text-brand-950 rounded-full font-black text-xl hover:bg-gold-400 hover:scale-105 shadow-[0_10px_30px_rgba(212,175,55,0.2)] transition-all duration-500"
             >
               Shop Now <ArrowUpRight size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 border-t border-white/10 pt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-8 border-t border-white/10 pt-16">
 
           {/* Brand Header Column — Uploaded Logo & Story */}
           <div className="lg:col-span-5 space-y-6">
             {/* Uploaded Logo Display */}
             <Link href="/" className="inline-block group" aria-label="Go to Homepage">
               <div className="relative flex items-center bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-xl transition-ui duration-300 group-hover:scale-[1.02]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getLogoUrl(siteLogo || clientLogo || undefined, s?.updatedAt)}
-                  alt={siteName}
-                  suppressHydrationWarning
-                  // Matches the Header's fallback — without it a bad logo path
-                  // renders a broken-image icon in the footer.
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (!target.src.includes("logo.png")) {
-                      target.src = "/uploads/logo.png";
-                    }
-                  }}
-                  className="h-16 sm:h-20 md:h-24 w-auto max-w-[320px] sm:max-w-[420px] object-contain"
-                />
+                {(() => {
+                  const logoUrl = getLogoUrl(siteLogo || clientLogo || undefined, s?.updatedAt);
+                  if (logoUrl) {
+                    return (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={logoUrl}
+                        alt={siteName}
+                        suppressHydrationWarning
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent && parent.lastElementChild?.tagName !== 'SPAN') {
+                            const span = document.createElement('span');
+                            span.className = "text-xl sm:text-3xl md:text-4xl font-black text-brand-900 tracking-tight whitespace-nowrap font-serif";
+                            span.innerText = siteName;
+                            parent.appendChild(span);
+                          }
+                        }}
+                        className="h-16 sm:h-20 md:h-24 w-auto max-w-[320px] sm:max-w-[420px] object-contain"
+                      />
+                    );
+                  }
+                  return (
+                    <span className="text-xl sm:text-3xl md:text-4xl font-black text-brand-900 tracking-tight whitespace-nowrap font-serif px-2">
+                      {siteName}
+                    </span>
+                  );
+                })()}
               </div>
             </Link>
 
@@ -242,7 +256,7 @@ export default function Footer() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-black uppercase tracking-[0.2em] text-gold-300">Fresh batches &amp; recipes</span>
               </div>
-              <form onSubmit={handleSubscribe} className="flex gap-2" noValidate>
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3" noValidate>
                 <input
                   type="email"
                   value={email}
@@ -251,7 +265,7 @@ export default function Footer() {
                   aria-label="Email address for newsletter"
                   aria-invalid={subStatus === "error"}
                   aria-describedby={subStatus === "error" || subStatus === "success" ? "newsletter-status" : undefined}
-                  className="flex-1 min-w-0 px-6 py-4 rounded-full bg-white/5 border border-white/15 text-white text-base placeholder:text-brand-50/40 focus:outline-none focus:border-gold-400/60 focus:bg-white/10 transition-all"
+                  className="w-full sm:flex-1 min-w-0 px-6 py-4 rounded-full bg-white/5 border border-white/15 text-white text-base placeholder:text-brand-50/40 focus:outline-none focus:border-gold-400/60 focus:bg-white/10 transition-all"
                 />
                 <button
                   type="submit"
@@ -261,10 +275,10 @@ export default function Footer() {
                   // a screen reader announced just "button" on the newsletter
                   // form. The aria-label names it at every breakpoint.
                   aria-label="Subscribe to newsletter"
-                  className="inline-flex items-center gap-3 px-6 sm:px-8 py-4 rounded-full bg-gold-500 hover:bg-gold-400 text-brand-950 font-black text-sm tracking-widest uppercase shadow-lg shadow-gold-800/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex w-full sm:w-auto sm:inline-flex justify-center items-center gap-3 px-6 sm:px-8 py-4 rounded-full bg-gold-500 hover:bg-gold-400 text-brand-950 font-black text-sm tracking-widest uppercase shadow-lg shadow-gold-800/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send size={16} />
-                  <span className="hidden sm:inline">{subStatus === "loading" ? "Joining..." : "Join"}</span>
+                  <span>{subStatus === "loading" ? "Joining..." : "Join"}</span>
                 </button>
               </form>
               {/* Always rendered so assistive tech is already observing this
@@ -285,7 +299,7 @@ export default function Footer() {
             </div>
 
             {/* Quick Contact & WhatsApp Action */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-4 pt-4">
               <a
                 href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent("Hello! I have an inquiry about RIJITA Arya Foods.")}`}
                 target="_blank"
@@ -310,7 +324,7 @@ export default function Footer() {
             </div>
 
             {/* Social Media Links */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-4 pt-4">
               <span className="text-xs font-bold tracking-widest uppercase text-brand-50/80">Follow Us:</span>
               {[
                 { icon: Facebook, href: socialMedia.facebook, label: "Facebook" },
@@ -333,7 +347,7 @@ export default function Footer() {
           </div>
 
           {/* Navigation Links Columns */}
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8">
 
             {/* Column 1: Shop — built from live categories */}
             <div>

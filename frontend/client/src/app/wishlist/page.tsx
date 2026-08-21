@@ -86,7 +86,7 @@ export default function WishlistPage() {
                 </Link>
                 <button
                   onClick={() => removeMutation.mutate(product._id)}
-                  className="absolute top-2 right-2 p-2 bg-white/90 rounded-full shadow transition-opacity hover:bg-red-50"
+                  className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow transition-opacity hover:bg-red-50"
                   aria-label="Remove from wishlist"
                 >
                   <Trash2 size={14} className="text-red-500" />

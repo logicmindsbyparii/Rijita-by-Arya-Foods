@@ -135,9 +135,11 @@ const config: Config = {
       transitionDuration: {
         short: "var(--dur-short)",
         long: "var(--dur-long)",
+        "1200": "1200ms",
       },
       transitionTimingFunction: {
         "out-custom": "var(--ease-out)",
+        "expo-out": "cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },

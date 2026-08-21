@@ -54,20 +54,8 @@
 }
 
 
-[class="dark"] {
-  --color-paper:    oklch(13% 0.010 110);
-  --color-paper-2:  oklch(17% 0.010 110);
-  --color-paper-3:  oklch(21% 0.012 110);
-  --color-ink:      oklch(95% 0.008  90);
-  --color-ink-2:    oklch(85% 0.008  90);
-  --color-ink-3:    oklch(70% 0.008  90);
-  --color-surface:       oklch(15% 0.008 110);
-  --color-surface-2:     oklch(19% 0.010 110);
-  --color-surface-hover: oklch(23% 0.012 110);
-  --color-rule:     oklch(28% 0.008  90);
-  --color-neutral:  oklch(58% 0.006  70);
-  --color-muted:    oklch(50% 0.006  70);
-}
+/* No dark mode. Nothing sets class="dark" and tailwind.config.ts declares no
+   darkMode strategy, so the admin is a single light theme like the storefront. */
 
 /* ── Spacing scale (4pt base) ── */
 :root {

@@ -5,6 +5,8 @@ import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { Toaster } from "react-hot-toast";
 import StructuredData from "@/components/seo/StructuredData";
+import { getServerApiBase, fetchServerJson } from "@shared/api";
+import { getImageUrl } from "@/lib/utils";
 import "./globals.css";
 
 const marcellus = Marcellus({
@@ -54,78 +56,92 @@ export const viewport: Viewport = {
   ],
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
-  title: {
-    default: "RIJITA by Arya Foods | Premium Namkeen & Snacks",
-    template: "%s | RIJITA by Arya Foods",
-  },
-  description:
-    "Discover premium quality Jain namkeen, snacks, and traditional Indian food products from RIJITA by Arya Foods. Authentic taste, pure ingredients, delivered to your doorstep.",
-  keywords: [
-    "namkeen",
-    "jain food",
-    "indian snacks",
-    "arya foods",
-    "rijita",
-    "surat snacks",
-    "traditional namkeen",
-    "gujarat snacks",
-    "jain namkeen online",
-    "gujarati snacks",
-  ],
-  authors: [{ name: "RIJITA by Arya Foods" }],
-  creator: "RIJITA by Arya Foods",
-  publisher: "RIJITA by Arya Foods",
-  applicationName: "RIJITA",
-  manifest: "/manifest.json",
-  openGraph: {
-    title: "RIJITA by Arya Foods",
-    description: "Premium Quality Namkeen & Snacks",
-    type: "website",
-    locale: "en_IN",
-    siteName: "RIJITA by Arya Foods",
-    url: "/",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "RIJITA by Arya Foods - Premium Namkeen & Snacks",
-      },
+export async function generateMetadata(): Promise<Metadata> {
+  const settingsData = await fetchServerJson(`${getServerApiBase()}/settings`);
+  const settings = settingsData?.data?.settings || {};
+  const siteName = settings.siteName || "RIJITA by Arya Foods";
+  const tagline = settings.tagline || "Premium Namkeen & Snacks";
+  const aboutText = settings.footer?.aboutText || "Discover premium quality Jain namkeen, snacks, and traditional Indian food products from RIJITA by Arya Foods. Authentic taste, pure ingredients, delivered to your doorstep.";
+  
+  const favicon = settings.favicon ? getImageUrl(settings.favicon) : "/icons/icon.svg";
+  const logo = settings.logo ? getImageUrl(settings.logo) : "/og-image.jpg";
+
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+    title: {
+      default: `${siteName} | ${tagline}`,
+      template: `%s | ${siteName}`,
+    },
+    description: aboutText,
+    keywords: [
+      "namkeen",
+      "jain food",
+      "indian snacks",
+      "arya foods",
+      "rijita",
+      "surat snacks",
+      "traditional namkeen",
+      "gujarat snacks",
+      "jain namkeen online",
+      "gujarati snacks",
     ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "RIJITA by Arya Foods",
-    description: "Premium Quality Namkeen & Snacks",
-    images: ["/og-image.jpg"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    authors: [{ name: siteName }],
+    creator: siteName,
+    publisher: siteName,
+    applicationName: "RIJITA",
+    manifest: "/manifest.json",
+    icons: {
+      icon: favicon,
+      apple: favicon,
+    },
+    openGraph: {
+      title: siteName,
+      description: tagline,
+      type: "website",
+      locale: "en_IN",
+      siteName: siteName,
+      url: "/",
+      images: [
+        {
+          url: logo,
+          width: 1200,
+          height: 630,
+          alt: `${siteName} - ${tagline}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: siteName,
+      description: tagline,
+      images: [logo],
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-  appleWebApp: {
-    capable: true,
-    title: "RIJITA",
-    statusBarStyle: "default",
-  },
-  formatDetection: {
-    telephone: true,
-    email: true,
-    address: true,
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
-};
+    appleWebApp: {
+      capable: true,
+      title: siteName,
+      statusBarStyle: "default",
+    },
+    formatDetection: {
+      telephone: true,
+      email: true,
+      address: true,
+    },
+    other: {
+      "mobile-web-app-capable": "yes",
+    },
+  };
+}
 
 export default function RootLayout({
   children,
@@ -136,10 +152,6 @@ export default function RootLayout({
     <html lang="en" className={`${playfair.variable} ${marcellus.variable} ${jakarta.variable} ${cinzel.variable} ${outfit.variable}`} suppressHydrationWarning>
       <head>
         <StructuredData />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
         <script dangerouslySetInnerHTML={{
           __html: `(function(){'use strict';try{var s=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n&&n.indexOf('data-dashlane-')===0)return;s.call(this,n,v)};var n=new MutationObserver(function(m){m.forEach(function(mut){if(mut.type==='attributes'){var name=mut.attributeName;if(name&&name.indexOf('data-dashlane-')===0)mut.target.removeAttribute(name)}})});n.observe(document.documentElement,{attributes:true,subtree:true,attributeOldValue:false})}catch(e){}})()`
         }} />

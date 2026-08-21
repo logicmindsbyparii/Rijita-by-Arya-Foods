@@ -13,10 +13,7 @@
     "install:all": "cd frontend/client && npm install && cd ../../server && npm install",
     "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
     "start:client": "cd frontend/client && npm start",
-    "start:server": "cd server && npm start",
-    "tunnel:client": "npx ngrok http 3000",
-    "tunnel:server": "npx ngrok http 5001",
-    "tunnel:lt:client": "npx localtunnel --port 3000"
+    "start:server": "cd server && npm start"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
