@@ -70,7 +70,7 @@ export default function TestimonialsSection({
   if (reviews.length === 0) return null;
 
   return (
-    <section className="py-24 sm:py-32 md:py-48 bg-paper-2 text-ink relative overflow-hidden border-t border-ink-faint">
+    <section className="py-16 sm:py-32 md:py-48 bg-paper-2 text-ink relative overflow-hidden border-t border-ink-faint">
 
       {/* Editorial Noise Background */}
       <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
@@ -80,7 +80,7 @@ export default function TestimonialsSection({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header Area */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 mb-16 sm:mb-24">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 sm:gap-10 mb-10 sm:mb-20 lg:mb-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -182,7 +182,7 @@ export default function TestimonialsSection({
               <p className="text-brand-200 font-medium mb-6 sm:mb-8 text-base sm:text-lg">Experience our 100% Jain purity and let us know your thoughts.</p>
               <Link
                 href="/products"
-                className="inline-flex items-center gap-2 bg-gold-500 text-brand-900 px-8 py-4 rounded-xl font-bold hover:bg-gold-400 transition-colors focus-ring active:scale-95"
+                className="inline-flex items-center gap-2 bg-gold-500 text-brand-900 px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-bold hover:bg-gold-400 transition-colors focus-ring active:scale-95"
               >
                 Shop the Collection
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

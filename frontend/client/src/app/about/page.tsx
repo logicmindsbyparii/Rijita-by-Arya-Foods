@@ -249,10 +249,10 @@ export default function AboutPage() {
             {heroSubtitle}
           </p>
 
-          <div className="mt-16 flex flex-col sm:flex-row items-center gap-6">
+          <div className="mt-10 sm:mt-16 flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
             <Link
               href="/products"
-              className="px-10 py-5 bg-gold-500 text-brand-950 rounded-full font-black text-lg hover:bg-gold-400 hover:scale-105 shadow-[0_10px_30px_rgba(212,175,55,0.2)] transition-all duration-500 flex items-center gap-3"
+              className="px-8 py-4 sm:px-10 sm:py-5 bg-gold-500 text-brand-950 rounded-full font-black text-base sm:text-lg hover:bg-gold-400 hover:scale-105 shadow-[0_10px_30px_rgba(212,175,55,0.2)] transition-all duration-500 flex items-center gap-3"
             >
               Discover Our Range <ArrowRight size={20} />
             </Link>

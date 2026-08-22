@@ -215,7 +215,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
   return (
     <section
       ref={containerRef}
-      className="py-24 md:py-48 bg-paper text-ink border-t border-ink-faint relative overflow-hidden"
+      className="py-16 sm:py-24 md:py-48 bg-paper text-ink border-t border-ink-faint relative overflow-hidden"
     >
       {/* ── Background layers ────────────────────────────────────── */}
       <div className="absolute inset-0 bg-[radial-gradient(#05140808_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
@@ -227,7 +227,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
         {/* ── Section Header ─────────────────────────────────────── */}
         <motion.div
           style={{ y: headingY, opacity: headingOpacity }}
-          className="flex flex-col md:flex-row md:items-end justify-between mb-16 sm:mb-24 gap-8 sm:gap-12"
+          className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 lg:mb-24 gap-6 sm:gap-8 lg:gap-12"
         >
           <div className="max-w-4xl">
             <motion.div

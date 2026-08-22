@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Star, ShieldCheck, Leaf, Heart, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { getCategoryFallbackImage } from "@/lib/namkeen-images";
-import { getImageUrl, getPrimaryVariant, calculateDiscount } from "@/lib/utils";
+import { getImageUrl, getPrimaryVariant, calculateDiscount, formatPrice } from "@/lib/utils";
 
 export default function FeaturedProductSpotlight({ product }: { product: any }) {
   if (!product) return null;
@@ -19,7 +19,7 @@ export default function FeaturedProductSpotlight({ product }: { product: any }) 
     : 0;
 
   return (
-    <section className="py-24 sm:py-32 md:py-48 bg-paper-2 text-ink relative overflow-hidden">
+    <section className="py-16 sm:py-32 md:py-48 bg-paper-2 text-ink relative overflow-hidden">
 
       {/* Fine grain overlay for texture */}
       <div
@@ -69,7 +69,7 @@ export default function FeaturedProductSpotlight({ product }: { product: any }) 
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <div className="flex items-end gap-2.5">
                   <span className="text-4xl sm:text-5xl font-display font-black text-ink tracking-[-0.02em]">
-                    ₹{Number(spotlightVariant.sellingPrice ?? 0).toLocaleString("en-IN")}
+                    {formatPrice(Number(spotlightVariant.sellingPrice ?? 0))}
                   </span>
                   {spotlightVariant.weight && (
                     <span className="text-ink-3 mb-2 font-semibold text-sm tracking-wide">
@@ -81,7 +81,7 @@ export default function FeaturedProductSpotlight({ product }: { product: any }) 
                   Number(spotlightVariant.sellingPrice ?? 0) && (
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-ink-faint font-medium text-sm line-through decoration-brand-500/30">
-                      ₹{Number(spotlightVariant.mrp ?? 0).toLocaleString("en-IN")}
+                      {formatPrice(Number(spotlightVariant.mrp ?? 0))}
                     </span>
                     {discount > 0 && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-spice-green/10 text-spice-green text-xs font-extrabold tracking-wide">
@@ -97,7 +97,7 @@ export default function FeaturedProductSpotlight({ product }: { product: any }) 
             <div className="pt-4 flex flex-col sm:flex-row flex-wrap items-center gap-4">
               <Link
                 href={`/products/${product.slug || product._id}`}
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-10 py-4 sm:py-[1.125rem] bg-brand-700 text-white font-extrabold rounded-2xl hover:bg-brand-800 transition-all duration-300 focus-ring shadow-[0_20px_50px_-12px_rgba(20,82,24,0.35)] hover:shadow-[0_24px_60px_-12px_rgba(20,82,24,0.5)] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 sm:px-10 sm:py-4 bg-brand-700 text-white font-extrabold rounded-2xl hover:bg-brand-800 transition-all duration-300 focus-ring shadow-[0_20px_50px_-12px_rgba(20,82,24,0.35)] hover:shadow-[0_24px_60px_-12px_rgba(20,82,24,0.5)] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0"
               >
                 <span>Shop Now</span>
                 <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform duration-300" />
