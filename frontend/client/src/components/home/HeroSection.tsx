@@ -91,7 +91,7 @@ export default function HeroSection({
                 src={getImageUrl(banner.image)}
                 alt={banner.title ? `${banner.title} - ${banner.subtitle || ''}` : "Hero Background"}
                 fill
-                priority
+                priority={activeIndex === 0}
                 className="object-cover object-center filter saturate-[1.1] contrast-[1.05]"
                 sizes="100vw"
               />
@@ -164,7 +164,7 @@ export default function HeroSection({
       </div>
 
       {/* Bottom Purity Stats - Glassmorphism Dock */}
-      <div className="absolute bottom-4 sm:bottom-8 left-3 right-3 sm:left-8 sm:right-8 lg:left-16 lg:right-16 z-30">
+      <div className="absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-8 left-3 right-3 sm:left-8 sm:right-8 lg:left-16 lg:right-16 z-30">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 p-4 sm:p-6 sm:px-12 sm:py-8 bg-brand-950/70 sm:bg-brand-950/50 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(5,20,8,0.5)]">
 
           <div className="flex flex-1 items-center justify-between md:justify-start w-full md:w-auto gap-3 sm:gap-8 lg:gap-16 overflow-x-auto snap-x snap-mandatory no-scrollbar sm:mask-gradient-x px-1 sm:px-0">

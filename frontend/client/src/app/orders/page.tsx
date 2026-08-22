@@ -215,7 +215,7 @@ export default function OrdersPage() {
             </p>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
             {["", "pending", "confirmed", "dispatched", "delivered"].map((status) => (
               <button
                 key={status}
@@ -468,42 +468,43 @@ export default function OrdersPage() {
                               </div>
                             )}
 
-                            {/* Actions */}
-                            <div className="px-4 pb-4">
-                               <div className="border-t pt-4 flex flex-wrap gap-4">
-                                 <button
-                                   onClick={() => handleTrackOnWhatsApp(order)}
-                                   className="inline-flex items-center justify-center gap-2 px-5 h-11 sm:h-10 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-xl transition-ui"
-                                 >
-                                   <MessageCircle size={16} />
-                                   Track on WhatsApp
-                                 </button>
+                             {/* Actions */}
+                             <div className="px-4 pb-4">
+                                <div className="border-t pt-4 flex flex-col sm:flex-row gap-3">
+                                  <button
+                                    onClick={() => handleTrackOnWhatsApp(order)}
+                                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 h-11 sm:h-10 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-xl transition-ui"
+                                  >
+                                    <MessageCircle size={16} />
+                                    Track on WhatsApp
+                                  </button>
 
-                                 <Link
-                                   href={`/orders/${order.orderNumber}`}
-                                   className="inline-flex items-center justify-center gap-2 px-5 h-11 sm:h-10 border border-border hover:bg-muted/50 text-sm font-medium rounded-xl transition-ui"
-                                   onClick={(e) => e.stopPropagation()}
-                                 >
-                                   <ExternalLink size={14} />
-                                   View Details
-                                 </Link>
+                                  <Link
+                                    href={`/orders/${order.orderNumber}`}
+                                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 h-11 sm:h-10 border border-border hover:bg-muted/50 text-sm font-medium rounded-xl transition-ui"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <ExternalLink size={14} />
+                                    View Details
+                                  </Link>
 
-                                 {["pending", "confirmed", "packed"].includes(order.status) && (
-                                   <button
-                                     onClick={(e) => { e.stopPropagation(); setPendingCancel(order); }}
-                                     disabled={cancellingId === order._id}
-                                     className="inline-flex items-center justify-center gap-2 px-5 h-11 sm:h-10 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition-ui disabled:opacity-50"
-                                   >
-                                     {cancellingId === order._id ? (
-                                       <Loader2 size={14} className="animate-spin" />
-                                     ) : (
-                                       <X size={14} />
-                                     )}
-                                     Cancel Order
-                                   </button>
-                                 )}
+                                  {["pending", "confirmed", "packed"].includes(order.status) && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setPendingCancel(order); }}
+                                      disabled={cancellingId === order._id}
+                                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 h-11 sm:h-10 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition-ui disabled:opacity-50"
+                                    >
+                                      {cancellingId === order._id ? (
+                                        <Loader2 size={14} className="animate-spin" />
+                                      ) : (
+                                        <X size={14} />
+                                      )}
+                                      Cancel Order
+                                    </button>
+                                  )}
+                                </div>
                                 {order.tracking && order.tracking.length > 0 && (
-                                  <div className="w-full mt-2">
+                                  <div className="w-full mt-4 pt-4 border-t">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                                       Tracking History
                                     </p>
@@ -530,10 +531,9 @@ export default function OrdersPage() {
                                     </div>
                                   </div>
                                 )}
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </motion.div>
+                          </motion.div>
                       )}
                     </AnimatePresence>
                   </motion.div>

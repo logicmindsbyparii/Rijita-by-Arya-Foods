@@ -19,11 +19,8 @@ export default function ScrollToTop() {
   return (
     <div
       aria-hidden={!visible}
+      className="fixed z-50 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-[calc(2rem+env(safe-area-inset-bottom))] right-4 md:right-8"
       style={{
-        position: "fixed",
-        bottom: "1.5rem",
-        right: "1.5rem",
-        zIndex: 50,
         pointerEvents: visible ? "auto" : "none",
       }}
     >

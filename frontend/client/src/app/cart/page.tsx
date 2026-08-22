@@ -458,7 +458,7 @@ export default function CartPage() {
 
       {/* Mobile Sticky Action Bar */}
       {items.length > 0 && (
-        <div className="lg:hidden fixed bottom-safe left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-brand-950/10 z-40">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white/80 backdrop-blur-md border-t border-brand-950/10 z-40">
           <div className="flex items-center justify-between mb-3 px-2">
             <span className="text-sm font-semibold text-brand-950">Total</span>
             <span className="text-lg font-black text-brand-700">{formatPrice(total)}</span>

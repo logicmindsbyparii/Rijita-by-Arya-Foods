@@ -380,7 +380,7 @@ export default function AdminOrders() {
 
   const quickFilters = [
     { label: "Today", getValue: () => new Date().toISOString().split("T")[0] },
-    { label: "This Week", getValue: () => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().split("T")[0]; } },
+    { label: "This Week", getValue: () => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toISOString().split("T")[0]; } },
   ];
 
   return (
@@ -464,7 +464,7 @@ export default function AdminOrders() {
               <select
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                className="flex h-12 rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
+                className="h-12 rounded-xl border-2 border-[var(--color-rule)] bg-[var(--color-surface)] px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
               >
                 <option value="">All Status</option>
                 {statuses.map((s) => (
@@ -474,7 +474,7 @@ export default function AdminOrders() {
               <select
                 value={paymentFilter}
                 onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }}
-                className="flex h-12 rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
+                className="h-12 rounded-xl border-2 border-[var(--color-rule)] bg-[var(--color-surface)] px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
               >
                 <option value="">All Payment</option>
                 <option value="pending">Pending</option>
@@ -486,13 +486,13 @@ export default function AdminOrders() {
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="flex h-12 rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
+                className="h-12 rounded-xl border-2 border-[var(--color-rule)] bg-[var(--color-surface)] px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
               />
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="flex h-12 rounded-xl border border-border bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
+                className="h-12 rounded-xl border-2 border-[var(--color-rule)] bg-[var(--color-surface)] px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 transition-all"
               />
             </div>
           </div>

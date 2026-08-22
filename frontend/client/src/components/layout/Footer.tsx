@@ -173,10 +173,10 @@ export default function Footer() {
 
       {/* ── 1. Certifications & Brand Trust Ribbon ── */}
       <div className="bg-brand-900/90 border-b border-white/5 backdrop-blur-md relative z-10">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-10 py-6">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {trustBadges.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-start gap-4 p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+              <div key={label} className="flex items-center sm:items-start gap-4 p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
                   <Icon size={20} />
                 </div>
@@ -435,7 +435,7 @@ export default function Footer() {
 
       {/* ── 3. Bottom Copyright & Developer Bar ── */}
       <div className="bg-brand-950 border-t border-white/5 relative z-10">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-brand-50/80 font-medium text-center sm:text-left">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-brand-50/80 font-medium text-center sm:text-left">
           <p>{copyright}</p>
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-5">
             <p className="flex items-center gap-1.5 text-brand-50">

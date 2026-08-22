@@ -15,9 +15,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const shortName = settings.siteName ? (settings.siteName.split(' ')[0]) : "RIJITA";
   const tagline = settings.tagline || "Premium Quality Jain Namkeen & Traditional Indian Snacks. Order authentic snacks from RIJITA by Arya Foods.";
   
-  // Use logo dynamically if available, fallback to default icon
-  const appIcon = "/icons/rijita-logo.png";
-  const appIconLarge = "/icons/rijita-logo.png";
+  // Use the logo provided by the user for the PWA app icon
+  const appIcon = "/icons/app-icon.png";
+  const appIconLarge = "/icons/app-icon.png";
 
   return {
     name: siteName,
@@ -50,6 +50,18 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable'
+      },
+      {
+        src: appIcon,
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any'
+      },
+      {
+        src: appIconLarge,
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any'
       }
     ],
     shortcuts: [

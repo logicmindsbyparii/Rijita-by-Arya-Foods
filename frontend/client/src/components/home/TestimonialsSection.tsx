@@ -70,7 +70,7 @@ export default function TestimonialsSection({
   if (reviews.length === 0) return null;
 
   return (
-    <section className="py-24 sm:py-36 bg-paper-2 text-ink relative overflow-hidden border-t border-ink-faint">
+    <section className="py-24 sm:py-32 md:py-48 bg-paper-2 text-ink relative overflow-hidden border-t border-ink-faint">
 
       {/* Editorial Noise Background */}
       <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"

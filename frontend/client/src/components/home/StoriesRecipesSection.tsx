@@ -72,7 +72,7 @@ export default function StoriesRecipesSection({
   const hasFeatured = !!featured;
 
   return (
-    <section className="relative py-16 sm:py-24 lg:py-32 bg-paper text-ink border-t border-ink-faint overflow-hidden">
+    <section className="relative py-24 sm:py-32 md:py-48 bg-paper text-ink border-t border-ink-faint overflow-hidden">
       {/* Dotted texture — house editorial background */}
       <div className="absolute inset-0 bg-[radial-gradient(#1b5e2010_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gold-500/5 blur-[120px] rounded-full pointer-events-none" />
@@ -86,10 +86,9 @@ export default function StoriesRecipesSection({
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-flex items-center gap-3 px-4 py-2 border border-brand-500/20 rounded-full bg-brand-500/5 backdrop-blur-md mb-8"
+              className="inline-flex items-center gap-3 mb-6 sm:mb-8"
             >
-              <BookOpen size={14} className="text-brand-600" />
-              <span className="text-brand-700 text-xs font-bold uppercase tracking-widest">
+              <span className="text-brand-700 text-xs sm:text-sm font-bold uppercase tracking-[0.2em] relative z-10 before:absolute before:inset-0 before:-z-10 before:bg-brand-50 before:scale-150 before:blur-md">
                 From the Journal
               </span>
             </motion.div>

@@ -75,7 +75,7 @@ export default function ProductShowcase({
   const showingAll = active === "all";
 
   return (
-    <section className="relative pt-16 sm:pt-32 pb-20 sm:pb-48 bg-paper text-ink overflow-visible selection:bg-gold-500/30">
+    <section className="relative py-24 sm:py-32 md:py-48 bg-paper text-ink overflow-visible selection:bg-gold-500/30">
       {/* Editorial background texture */}
       <div className="absolute inset-0 bg-[radial-gradient(#05140806_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none" />
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-500/5 blur-[120px] rounded-full pointer-events-none translate-x-1/2 -translate-y-1/2" />
@@ -102,7 +102,7 @@ export default function ProductShowcase({
               </span>
             </div>
 
-            <h2 className="text-[36px] sm:text-5xl md:text-7xl lg:text-[7.5rem] font-display font-black text-ink tracking-tight leading-[1.05] sm:leading-[0.95] [text-wrap:balance]">
+            <h2 className="text-[clamp(2.25rem,8vw,7.5rem)] font-display font-black text-ink tracking-tight leading-[1.05] sm:leading-[0.95] [text-wrap:balance]">
               {title}{" "}
               <span className="text-gold-600 font-serif italic font-medium block mt-2 opacity-90">
                 {subtitle}
@@ -157,7 +157,7 @@ export default function ProductShowcase({
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="pointer-events-auto flex overflow-x-auto snap-x snap-mandatory no-scrollbar items-center gap-2 p-1.5 sm:p-2 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_-12px_rgba(5,20,8,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)] rounded-full w-full max-w-[calc(100vw-2rem)] sm:w-auto mask-gradient-x sm:mask-none px-4 sm:px-2 mx-auto"
+            className="pointer-events-auto flex overflow-x-auto snap-x snap-mandatory no-scrollbar items-center gap-2 p-1.5 sm:p-2 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_-12px_rgba(5,20,8,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)] rounded-full w-full max-w-[calc(100vw-2rem)] sm:w-auto mask-gradient-x sm:mask-none px-4 sm:px-2 mx-auto pb-3 sm:pb-2"
           >
             {categoryFilters.map((tab) => {
               const isActive = active === tab.id;
@@ -312,7 +312,7 @@ function ProductShowcaseEmpty({
   const isArrivals = variant === "arrivals";
 
   return (
-    <section className="relative py-16 sm:py-48 bg-paper text-ink overflow-hidden border-t border-ink-faint">
+    <section className="relative py-24 sm:py-32 md:py-48 bg-paper text-ink overflow-hidden border-t border-ink-faint">
       <div className="absolute inset-0 bg-[radial-gradient(#05140808_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-brand-500/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -336,7 +336,7 @@ function ProductShowcaseEmpty({
               </span>
             </div>
 
-            <h2 className="text-[36px] sm:text-6xl md:text-8xl lg:text-[7.5rem] font-display font-black text-ink tracking-tight leading-[1.05] sm:leading-[0.95] [text-wrap:balance]">
+            <h2 className="text-[clamp(2.25rem,8vw,7.5rem)] font-display font-black text-ink tracking-tight leading-[1.05] sm:leading-[0.95] [text-wrap:balance]">
               {title}{" "}
               <span className="text-gold-600 font-serif italic font-medium block mt-2 opacity-90">
                 {subtitle}
@@ -368,7 +368,7 @@ function ProductShowcaseEmpty({
             )}
           </motion.div>
 
-          <h3 className="relative text-3xl sm:text-5xl font-display font-black text-ink tracking-tight [text-wrap:balance]">
+          <h3 className="relative text-[clamp(1.875rem,5vw,3rem)] font-display font-black text-ink tracking-tight [text-wrap:balance]">
             {isArrivals ? "New batches are on the way." : "The next batch is in the kitchen."}
           </h3>
 

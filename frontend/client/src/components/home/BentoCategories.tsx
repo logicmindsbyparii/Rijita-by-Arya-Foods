@@ -260,7 +260,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
               {/* Heading with word-by-word stagger */}
               <div className="overflow-hidden">
                 <motion.h2
-                  className="text-[40px] sm:text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.02] [text-wrap:balance]"
+                  className="text-[clamp(2.5rem,8vw,6rem)] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.02] [text-wrap:balance]"
                   initial={{ y: "110%" }}
                   whileInView={{ y: "0%" }}
                   viewport={{ once: true, margin: "-100px" }}
@@ -453,12 +453,12 @@ function BentoCard({
       : "hover:border-brand-500/30";
 
   const titleSize = isFullWidth
-    ? "text-3xl sm:text-5xl"
+    ? "text-[clamp(1.75rem,5vw,3rem)]"
     : span.includes("row-span-2") || span.includes("h-[580px]")
-      ? "text-3xl sm:text-6xl md:text-8xl"
+      ? "text-[clamp(2rem,7vw,5rem)]"
       : isHalfWidthMobile
-        ? "text-xl sm:text-4xl"
-        : "text-2xl sm:text-4xl";
+        ? "text-[clamp(1.25rem,4vw,2.5rem)]"
+        : "text-[clamp(1.5rem,5vw,2.5rem)]";
 
   return (
     <motion.div

@@ -990,7 +990,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Mobile Sticky Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-paper border-t border-rule p-4 lg:hidden pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-paper border-t border-rule p-4 lg:hidden pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex flex-col">
             <span className="text-xs text-ink-2 font-medium">Total to pay</span>

@@ -178,7 +178,7 @@ export default function ProductCard({
             disabled={toggleWishlistMutation.isPending}
             aria-pressed={!!isInWishlist}
             className={cn(
-              "absolute top-2 right-2 sm:top-4 sm:right-4 z-30 w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-sm border border-white/60 flex items-center justify-center transition-[background-color,border-color] duration-short ease-out-custom shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] disabled:opacity-60",
+              "absolute top-2 right-2 sm:top-4 sm:right-4 z-30 w-12 h-12 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-sm border border-white/60 flex items-center justify-center transition-[background-color,border-color] duration-short ease-out-custom shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] disabled:opacity-60",
               isInWishlist ? "bg-rose-50 border-rose-200" : "hover:bg-rose-50 hover:border-rose-200"
             )}
             aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}

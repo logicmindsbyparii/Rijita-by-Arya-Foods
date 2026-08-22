@@ -44,7 +44,7 @@ export default function CookieConsent() {
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           role="region"
           aria-label="Cookie consent"
-          className="fixed bottom-4 left-4 right-4 sm:right-auto sm:max-w-sm z-[var(--z-toast)] bg-white border border-ink-soft rounded-2xl shadow-[0_24px_60px_-24px_rgba(26,20,10,0.35)] p-4"
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 sm:right-auto sm:max-w-sm z-[var(--z-toast)] bg-white border border-ink-soft rounded-2xl shadow-[0_24px_60px_-24px_rgba(26,20,10,0.35)] p-4"
         >
           <div className="flex items-start gap-4">
             <div className="w-8 h-8 rounded-xl bg-brand-600/10 text-brand-700 flex items-center justify-center shrink-0">

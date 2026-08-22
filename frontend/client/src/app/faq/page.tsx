@@ -113,7 +113,7 @@ const faqs: FaqItem[] = [
 const categories = [...new Set(faqs.map((f) => f.category))];
 
 export default function FaqPage() {
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const { data: settingsData } = useQuery({ queryKey: ["settings"], queryFn: () => contentApi.getSiteSettings(), staleTime: 10 * 60 * 1000 });
@@ -169,8 +169,10 @@ export default function FaqPage() {
           transition={{ delay: 0.1 }}
           className="relative max-w-xl mx-auto mb-8"
         >
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true" />
+          <label htmlFor="faq-search" className="sr-only">Search questions</label>
           <input
+            id="faq-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -236,14 +238,14 @@ export default function FaqPage() {
             className="space-y-4"
           >
             {filtered.map((faq, i) => {
-              const isOpen = openId === i;
+              const isOpen = openId === faq.question;
               return (
                 <div
-                  key={i}
+                  key={faq.question}
                   className="border border-rule rounded-xl overflow-hidden bg-paper-2"
                 >
                   <button
-                    onClick={() => setOpenId(isOpen ? null : i)}
+                    onClick={() => setOpenId(isOpen ? null : faq.question)}
                     className="w-full flex items-center justify-between p-4 text-left hover:bg-paper-3 transition-colors"
                   >
                     <span className="font-display font-bold text-ink pr-4 text-sm md:text-base">{faq.question}</span>

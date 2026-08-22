@@ -471,8 +471,8 @@ export default function Header() {
               <div className={cn(
                 "relative flex items-center transition-all duration-700 ease-out hover:scale-[1.02] origin-left",
                 isScrolled
-                  ? "h-9 sm:h-10 md:h-11 lg:h-12"
-                  : "h-[clamp(2.5rem,8vw,3.25rem)] sm:h-13 md:h-15 lg:h-16 xl:h-18"
+                  ? "h-10 sm:h-12 md:h-14 lg:h-16"
+                  : "h-[clamp(3rem,8vw,4rem)] sm:h-16 md:h-18 lg:h-20 xl:h-24"
               )}>
                 {(() => {
                   const logoUrl = getLogoUrl(settings?.logo || clientLogo || undefined, settings?.updatedAt);
@@ -1013,7 +1013,7 @@ export default function Header() {
             </nav>
 
             {/* WhatsApp CTA */}
-            <div className="p-4 bg-white border-t border-rule shrink-0">
+            <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-rule shrink-0">
               <a
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"

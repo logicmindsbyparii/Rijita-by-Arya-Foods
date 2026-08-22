@@ -41,7 +41,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             className={cn(
               // Base styles — border-width never shifts
-              "flex h-12 w-full rounded-xl border-2 bg-[var(--color-surface)] text-sm text-[var(--color-ink)]",
+              "flex h-12 w-full rounded-xl border-2 bg-[var(--color-surface)] text-[16px] md:text-sm text-[var(--color-ink)]",
               "px-4 py-2",
               "placeholder:text-[var(--color-ink-3)] placeholder:opacity-60",
               // Border-color transitions — NOT border-width

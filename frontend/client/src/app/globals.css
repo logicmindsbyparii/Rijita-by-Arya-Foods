@@ -39,11 +39,20 @@
   }
   body {
     overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
     @apply bg-background text-foreground font-body;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+  
+  /* Prevent iOS Safari from zooming in when focusing inputs */
+  @media screen and (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
     letter-spacing: -0.015em;

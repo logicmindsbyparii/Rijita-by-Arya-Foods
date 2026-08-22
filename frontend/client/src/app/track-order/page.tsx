@@ -359,7 +359,7 @@ export default function TrackOrderPage() {
               <div className="bg-cream rounded-2xl p-6 border text-center">
                 <p className="text-sm text-muted-foreground mb-4">Need help with your order?</p>
                 <a
-                  href={`https://wa.me/${whatsappNumber}`}
+                  href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-2 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"

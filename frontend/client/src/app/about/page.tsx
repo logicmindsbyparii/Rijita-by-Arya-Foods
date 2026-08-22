@@ -278,7 +278,7 @@ export default function AboutPage() {
       </div>
 
       {/* ═══ 2. INTEREST: GAPLESS BENTO GRID (The Values) ═══ */}
-      <section className="py-20 lg:py-48 px-4 sm:px-12 lg:px-24 bg-paper relative z-20">
+      <section className="py-24 sm:py-32 md:py-48 px-4 sm:px-12 lg:px-24 bg-paper relative z-20">
         <div className="max-w-[1600px] mx-auto">
           
           <div className="mb-12 lg:mb-20 flex flex-col items-center text-center">
@@ -427,7 +427,7 @@ export default function AboutPage() {
       </section>
 
       {/* ═══ 4. THE HERITAGE CHRONICLES (Blog/Story mapping) ═══ */}
-      <section className="py-20 lg:py-48 px-4 sm:px-12 lg:px-24 bg-[#FAF9F6] text-brand-950 relative">
+      <section className="py-24 sm:py-32 md:py-48 px-4 sm:px-12 lg:px-24 bg-[#FAF9F6] text-brand-950 relative">
         <div className="max-w-[1400px] mx-auto">
           
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 lg:mb-24 gap-8 lg:gap-12">

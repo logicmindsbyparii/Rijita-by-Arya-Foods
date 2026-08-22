@@ -171,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300",
           "bg-[var(--color-ink)] text-white",
-          "lg:sticky lg:top-0 lg:h-screen lg:z-auto",
+          "lg:fixed lg:top-0 lg:h-screen lg:z-auto",
           sidebarCollapsed ? "w-14" : "w-56",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -403,7 +403,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {children}
           </main>
           
-          <footer className="px-4 sm:px-6 py-4 border-t border-[var(--color-rule)] text-center text-[11px] text-[var(--color-muted)] shrink-0 mt-auto">
+          <footer className="px-4 sm:px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-[var(--color-rule)] text-center text-[11px] text-[var(--color-muted)] shrink-0 mt-auto">
             Design & Developed by <a href="https://logicmindsbyparii.com/index.php" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-brand)] font-medium transition-colors text-[var(--color-ink-3)]">Logic Minds by Parii</a>
           </footer>
         </div>

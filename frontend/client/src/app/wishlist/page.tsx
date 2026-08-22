@@ -2,14 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Heart, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Heart } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { authApi } from "@/lib/api";
-import { formatPrice, getImageUrl, getPrimaryVariant } from "@/lib/utils";
 import { Product } from "@/types";
+import ProductCard from "@/components/products/ProductCard";
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -24,20 +23,6 @@ export default function WishlistPage() {
     queryKey: ["wishlist"],
     queryFn: () => authApi.getWishlist(),
     enabled: isAuthenticated,
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: (productId: string) => authApi.toggleWishlist(productId),
-    onSuccess: (data) => {
-      // toggleWishlist returns the updated string-ID list — mirror it into the
-      // auth context so ProductCard hearts everywhere reflect the removal
-      // without a re-login.
-      const updatedList = data?.data?.wishlist;
-      if (Array.isArray(updatedList)) {
-        updateUser({ wishlist: updatedList });
-      }
-      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-    },
   });
 
   const items: Product[] = data?.data?.wishlist || [];
@@ -71,27 +56,7 @@ export default function WishlistPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {items.map((product) => (
-              <div key={product._id} className="bg-white rounded-xl border p-4 relative group">
-                <Link href={`/products/${product.slug}`}>
-                  <div className="aspect-square relative mb-2 rounded-lg overflow-hidden bg-stone-100">
-                    <Image
-                      src={getImageUrl(product.images?.[0])}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <p className="text-sm font-medium line-clamp-2 mb-2">{product.name}</p>
-                  <p className="text-sm font-bold text-brand-600 tabular-nums">{formatPrice(getPrimaryVariant(product.variants)?.sellingPrice ?? 0)}</p>
-                </Link>
-                <button
-                  onClick={() => removeMutation.mutate(product._id)}
-                  className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow transition-opacity hover:bg-red-50"
-                  aria-label="Remove from wishlist"
-                >
-                  <Trash2 size={14} className="text-red-500" />
-                </button>
-              </div>
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         )}

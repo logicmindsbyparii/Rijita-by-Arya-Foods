@@ -426,7 +426,7 @@ export default function ContactPage() {
             <div className="lg:col-span-7 relative min-h-[340px] bg-paper-3">
               <iframe
                 title="RIJITA Store Location Map"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3720.573199859942!2d72.7795!3d21.1685!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be04d9b4b9b9b9b%3A0x0!2zMjHCsDEwJzA2LjYiTiA3MsKwNDYnNDYuMiJF!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(storeAddress)}&t=&z=17&ie=UTF8&iwloc=&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0, minHeight: "340px" }}

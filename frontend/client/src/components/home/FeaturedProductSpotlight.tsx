@@ -19,7 +19,7 @@ export default function FeaturedProductSpotlight({ product }: { product: any }) 
     : 0;
 
   return (
-    <section className="py-20 sm:py-36 bg-paper-2 text-ink relative overflow-hidden">
+    <section className="py-24 sm:py-32 md:py-48 bg-paper-2 text-ink relative overflow-hidden">
 
       {/* Fine grain overlay for texture */}
       <div

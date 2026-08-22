@@ -524,7 +524,7 @@ export default function AdminDashboard() {
         </div>
         <div>
           {recentOrders.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto no-scrollbar">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[var(--color-rule)]/50">

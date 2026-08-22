@@ -155,7 +155,7 @@ export default function RootLayout({
           __html: `(function(){'use strict';try{var s=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n&&n.indexOf('data-dashlane-')===0)return;s.call(this,n,v)};var n=new MutationObserver(function(m){m.forEach(function(mut){if(mut.type==='attributes'){var name=mut.attributeName;if(name&&name.indexOf('data-dashlane-')===0)mut.target.removeAttribute(name)}})});n.observe(document.documentElement,{attributes:true,subtree:true,attributeOldValue:false})}catch(e){}})()`
         }} />
       </head>
-      <body className="min-h-screen flex flex-col relative" suppressHydrationWarning>
+      <body className="min-h-screen flex flex-col relative overflow-x-hidden w-full max-w-[100vw]" suppressHydrationWarning>
         <QueryProvider>
           <AuthProvider>
             <CartProvider>

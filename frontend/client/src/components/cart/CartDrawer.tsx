@@ -794,7 +794,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                   </div>
 
                   {items.length > 0 && (
-                    <div className="border-t border-rule p-4 space-y-4 shrink-0 bg-gradient-to-t from-paper-2 via-paper-2 to-transparent">
+                    <div className="border-t border-rule p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4 shrink-0 bg-gradient-to-t from-paper-2 via-paper-2 to-transparent">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-ink-2">Subtotal ({itemCount} items)</span>
                         <motion.span
@@ -851,7 +851,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
 
               {/* Checkout Footer */}
               {showCheckout && !orderDone && (
-                <div className="border-t border-rule p-4 space-y-4 shrink-0 bg-gradient-to-t from-paper-2 to-transparent">
+                <div className="border-t border-rule p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4 shrink-0 bg-gradient-to-t from-paper-2 to-transparent">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-ink-2">Total</span>
                     <motion.span

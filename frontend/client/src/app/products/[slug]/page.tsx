@@ -1169,7 +1169,7 @@ export default function ProductDetailPage() {
           <motion.div
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            className="fixed bottom-0 inset-x-0 z-40 bg-paper-2 border-t border-rule shadow-2xl px-4 py-4 lg:hidden"
+            className="fixed bottom-0 inset-x-0 z-40 bg-paper-2 border-t border-rule shadow-2xl px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:hidden"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">

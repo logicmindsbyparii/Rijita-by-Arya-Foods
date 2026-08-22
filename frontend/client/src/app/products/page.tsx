@@ -259,7 +259,7 @@ function ProductsContent() {
 
         {/* ── Category Quick-Filter Bar ── */}
         {categories.length > 0 && (
-          <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none scroll-smooth relative z-10">
+          <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth relative z-10">
             <button
               onClick={() => updateParams({ category: undefined })}
               className={cn(
@@ -914,16 +914,16 @@ function ProductsContent() {
                   </div>
 
                   {/* Sticky footer with apply */}
-                  <div className="px-4 py-4 border-t border-rule shrink-0 flex gap-2">
+                  <div className="px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-rule shrink-0 flex gap-2 bg-paper-2">
                     <button
                       onClick={clearFilters}
-                      className="flex-1 py-3 rounded-xl border border-rule text-sm font-medium text-ink-2 active:bg-paper-3 transition-colors"
+                      className="flex-1 py-3.5 rounded-xl border border-rule text-sm font-medium text-ink-2 active:bg-paper-3 transition-colors"
                     >
                       Clear
                     </button>
                     <button
                       onClick={() => setShowMobileFilters(false)}
-                      className="flex-1 py-3 rounded-xl bg-[var(--color-brand)] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                      className="flex-1 py-3.5 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors"
                     >
                       Show Results
                     </button>

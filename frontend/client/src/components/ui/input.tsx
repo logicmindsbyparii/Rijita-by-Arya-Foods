@@ -41,7 +41,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             className={cn(
               // Base styles — crisp contrast
-              "flex h-12 w-full rounded-xl border-2 bg-paper text-sm text-ink font-medium",
+              "flex h-12 w-full rounded-xl border-2 bg-paper text-[16px] sm:text-sm text-ink font-medium",
               "px-4 py-2",
               "placeholder:text-ink-3 placeholder:opacity-80",
               // Border-color transitions

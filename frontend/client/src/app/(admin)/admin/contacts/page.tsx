@@ -100,19 +100,21 @@ export default function AdminContacts() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <label htmlFor="contact-search" className="sr-only">Search contacts</label>
           <input
+            id="contact-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search contacts..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all text-sm"
+            className="w-full pl-10 pr-4 h-12 rounded-xl border-2 border-[var(--color-rule)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all text-sm"
           />
         </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="px-4 py-2 rounded-xl border bg-background focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm"
+          className="h-12 px-4 rounded-xl border-2 border-[var(--color-rule)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm"
         >
           <option value="">All Types</option>
           {types.map((t) => (

@@ -69,7 +69,7 @@ export default function JainPuritySection() {
   const [activePillar, setActivePillar] = useState(PURITY_PILLARS[0]);
 
   return (
-    <section className="relative py-12 sm:py-24 lg:py-32 bg-paper text-ink overflow-hidden">
+    <section className="relative py-24 sm:py-32 md:py-48 bg-paper text-ink overflow-hidden">
       {/* Ambient light washes */}
 
       {/* Subtle grain overlay — replaces the generic dot pattern */}
@@ -111,7 +111,7 @@ export default function JainPuritySection() {
         </div>
 
         {/* Pillar Navigation Tabs */}
-        <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar sm:grid sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto mb-8 sm:mb-12 pb-4 sm:pb-0 -mx-4 px-4 sm:mx-auto sm:px-0 mask-gradient-x sm:mask-none">
+        <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar sm:grid sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto mb-12 sm:mb-16 pb-6 sm:pb-0 -mx-4 px-4 sm:mx-auto sm:px-0 mask-gradient-x sm:mask-none">
           {PURITY_PILLARS.map((pillar) => {
             const Icon = pillar.icon;
             const isActive = activePillar.id === pillar.id;
