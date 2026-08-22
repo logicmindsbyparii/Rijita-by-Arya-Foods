@@ -472,7 +472,7 @@ export default function Header() {
                 "relative flex items-center transition-all duration-700 ease-out hover:scale-[1.02] origin-left",
                 isScrolled
                   ? "h-9 sm:h-10 md:h-11 lg:h-12"
-                  : "h-11 sm:h-13 md:h-15 lg:h-16 xl:h-18"
+                  : "h-[clamp(2.5rem,8vw,3.25rem)] sm:h-13 md:h-15 lg:h-16 xl:h-18"
               )}>
                 {(() => {
                   const logoUrl = getLogoUrl(settings?.logo || clientLogo || undefined, settings?.updatedAt);
@@ -487,7 +487,7 @@ export default function Header() {
                           "w-auto object-contain mix-blend-multiply filter contrast-[1.03] transition-all duration-700 ease-expo-out",
                           isScrolled
                             ? "h-9 sm:h-10 md:h-11 lg:h-12 max-w-[140px] sm:max-w-[180px] lg:max-w-[220px]"
-                            : "h-11 sm:h-13 md:h-15 lg:h-16 xl:h-18 max-w-[150px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]"
+                            : "h-[clamp(2.5rem,8vw,3.25rem)] sm:h-13 md:h-15 lg:h-16 xl:h-18 max-w-[150px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]"
                         )}
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
@@ -825,7 +825,7 @@ export default function Header() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Escape" && setIsSearchOpen(false)}
                     placeholder="Search for products..."
-                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl border-2 border-rule bg-paper-2/80 focus:outline-none focus:ring-0 focus:border-brand-600 focus:bg-white text-brand-800 font-semibold transition-ui placeholder:text-brand-600 text-sm shadow-inner"
+                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl border-2 border-rule bg-paper-2/80 focus:outline-none focus:ring-0 focus:border-brand-600 focus:bg-white text-brand-800 font-semibold transition-ui placeholder:text-brand-600 text-[16px] sm:text-sm shadow-inner"
                     tabIndex={isSearchOpen ? 0 : -1}
                   />
                   <button
@@ -911,8 +911,8 @@ export default function Header() {
             </div>
 
             {/* Nav links */}
-            <nav className="flex-1 overflow-y-auto py-4 px-4 bg-paper-2 min-h-0">
-              <div className="space-y-1.5">
+            <nav className="flex-1 overflow-y-auto py-4 px-4 bg-paper-2 min-h-0 flex flex-col">
+              <div className="space-y-1.5 shrink-0">
                 {dynamicMegaMenuItems.map((item: any) => (
                   <div key={item.label}>
                     <Link
@@ -967,10 +967,10 @@ export default function Header() {
                 ))}
               </div>
 
-              <div className="my-4 h-px bg-rule" />
+              <div className="my-4 h-px bg-rule shrink-0" />
 
               {isAuthenticated ? (
-                <div className="space-y-1.5 px-1">
+                <div className="space-y-1.5 px-1 mt-auto shrink-0 pb-2">
                   <div className="px-4 py-3.5 border border-rule rounded-xl bg-white shadow-xs mb-3">
                     <p className="text-sm font-extrabold text-brand-800 truncate">{user?.name}</p>
                     <p className="text-xs text-brand-600 truncate mt-0.5 font-medium">{user?.email}</p>
@@ -999,7 +999,7 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2.5 px-1">
+                <div className="flex flex-col gap-2.5 px-1 mt-auto shrink-0 pb-2">
                   <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}
                     className="text-center px-4 py-3.5 rounded-xl text-sm font-black bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-md">
                     Sign In to Account

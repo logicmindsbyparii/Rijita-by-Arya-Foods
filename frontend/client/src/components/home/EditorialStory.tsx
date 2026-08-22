@@ -110,7 +110,7 @@ export default function EditorialStory({
               </motion.div>
 
               <motion.h2
-                className="text-[32px] sm:text-5xl lg:text-6xl font-display font-black text-ink tracking-tighter leading-[1.1] sm:leading-[1.05] [text-wrap:balance]"
+                className="text-[clamp(2rem,6vw,4rem)] sm:text-5xl lg:text-6xl font-display font-black text-ink tracking-tighter leading-[1.1] sm:leading-[1.05] [text-wrap:balance]"
               >
                 {heading}
               </motion.h2>

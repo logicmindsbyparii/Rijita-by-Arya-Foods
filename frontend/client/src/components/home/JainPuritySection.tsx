@@ -95,7 +95,7 @@ export default function JainPuritySection() {
           </motion.span>
 
           <motion.h2
-            className="text-[32px] sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.02em] text-ink leading-[1.1] sm:leading-[1.02] [text-wrap:balance]"
+            className="text-[clamp(2rem,6vw,4rem)] sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.02em] text-ink leading-[1.1] sm:leading-[1.02] [text-wrap:balance]"
           >
             Sacred Sattvik Taste. <br />
             <span className="text-brand-700">

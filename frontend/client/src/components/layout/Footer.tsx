@@ -195,7 +195,7 @@ export default function Footer() {
 
         {/* Massive High-Contrast CTA */}
         <div className="mb-20 text-center lg:text-left flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-10">
-          <h2 className="text-5xl sm:text-6xl md:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl text-balance">
+          <h2 className="text-[clamp(2.5rem,8vw,5rem)] sm:text-6xl md:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl text-balance">
             Taste the <span className="font-serif italic text-gold-400 font-medium">Difference.</span>
           </h2>
           <div className="shrink-0 w-full sm:w-auto mt-4 sm:mt-0">

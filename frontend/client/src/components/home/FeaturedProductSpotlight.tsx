@@ -52,7 +52,7 @@ export default function FeaturedProductSpotlight({ product }: { product: any }) 
             </div>
 
             {/* Product Name */}
-            <h2 className="text-[2.25rem] sm:text-6xl lg:text-[4.5rem] font-display font-black text-ink tracking-[-0.03em] leading-[1.05] sm:leading-[1.02] [text-wrap:balance]">
+            <h2 className="text-[clamp(2rem,8vw,4.5rem)] sm:text-6xl lg:text-[4.5rem] font-display font-black text-ink tracking-[-0.03em] leading-[1.05] sm:leading-[1.02] [text-wrap:balance]">
               {product.name}
             </h2>
 

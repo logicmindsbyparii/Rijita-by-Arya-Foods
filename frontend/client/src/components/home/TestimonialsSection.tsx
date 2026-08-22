@@ -93,7 +93,7 @@ export default function TestimonialsSection({
               <span>Community Voices</span>
             </div>
 
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]">
+            <h2 className="text-[clamp(2rem,8vw,4rem)] sm:text-6xl lg:text-7xl font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]">
               Trusted by <br className="hidden sm:inline" /> purists.
             </h2>
 

@@ -99,7 +99,7 @@ export default function StoriesRecipesSection({
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[40px] sm:text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]"
+              className="text-[clamp(2.5rem,8vw,6rem)] sm:text-5xl md:text-7xl lg:text-[6rem] font-display font-black text-ink tracking-[-0.02em] leading-[1.06] sm:leading-[1.02] [text-wrap:balance]"
             >
               Stories &{" "}
               <span className="text-gold-600 font-serif italic font-medium block mt-2">

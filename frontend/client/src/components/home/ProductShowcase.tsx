@@ -157,7 +157,7 @@ export default function ProductShowcase({
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="pointer-events-auto flex overflow-x-auto snap-x snap-mandatory no-scrollbar items-center gap-2 p-1.5 sm:p-2 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_-12px_rgba(5,20,8,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)] rounded-full w-[calc(100vw-2rem)] sm:w-auto mask-gradient-x sm:mask-none px-4 sm:px-2 mx-auto"
+            className="pointer-events-auto flex overflow-x-auto snap-x snap-mandatory no-scrollbar items-center gap-2 p-1.5 sm:p-2 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_-12px_rgba(5,20,8,0.1),inset_0_1px_1px_rgba(255,255,255,0.9)] rounded-full w-full max-w-[calc(100vw-2rem)] sm:w-auto mask-gradient-x sm:mask-none px-4 sm:px-2 mx-auto"
           >
             {categoryFilters.map((tab) => {
               const isActive = active === tab.id;
@@ -208,7 +208,7 @@ export default function ProductShowcase({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex sm:grid flex-nowrap sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-x-10 sm:gap-y-24 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none no-scrollbar pb-8 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0"
+                className="flex sm:grid flex-nowrap sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-x-10 sm:gap-y-24 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none no-scrollbar pb-8 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 after:content-[''] after:shrink-0 after:w-4 sm:after:hidden"
               >
                 {displayProducts.map((product, i) => {
                   // Create a staggering effect for desktop grids

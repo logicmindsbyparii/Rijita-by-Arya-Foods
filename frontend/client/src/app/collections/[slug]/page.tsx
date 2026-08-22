@@ -177,7 +177,7 @@ export default function CollectionDetailPage() {
               <Sparkles size={14} />
               Collection
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold mb-2 md:mb-3 drop-shadow">
+            <h1 className="text-[clamp(2rem,8vw,3.5rem)] md:text-5xl font-display font-bold mb-2 md:mb-3 drop-shadow leading-[1.1]">
               {collection.name}
             </h1>
             {collection.description && (

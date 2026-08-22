@@ -69,7 +69,7 @@ export default function HeroSection({
 
   return (
     <section
-      className="relative w-full h-[100dvh] min-h-[700px] overflow-hidden flex items-center justify-center bg-brand-950 selection:bg-brand-500/30 selection:text-white group"
+      className="relative w-full h-[100dvh] min-h-[650px] sm:min-h-[700px] overflow-hidden flex items-center justify-center bg-brand-950 selection:bg-brand-500/30 selection:text-white group"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
@@ -110,7 +110,7 @@ export default function HeroSection({
       </div>
 
       {/* Main Content - Centered */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-16 flex flex-col items-center justify-center text-center mt-8 sm:mt-16">
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 flex flex-col items-center justify-center text-center mt-8 sm:mt-16 pb-24 sm:pb-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={`content-${activeIndex}`}
@@ -129,7 +129,7 @@ export default function HeroSection({
             </div>
 
             {/* Massive Heading */}
-            <h1 className="text-[36px] min-[400px]:text-[44px] sm:text-[88px] lg:text-[120px] font-black tracking-[-0.04em] leading-[1] sm:leading-[0.9] text-white drop-shadow-2xl text-balance">
+            <h1 className="text-[clamp(2.5rem,11vw,4rem)] sm:text-[88px] lg:text-[120px] font-black tracking-[-0.04em] leading-[1.05] sm:leading-[0.9] text-white drop-shadow-2xl text-balance w-full">
               <span className="block">{banner.title || "The Taste of"}</span>
               <span className="block font-serif italic font-medium text-gold-400 tracking-[-0.02em] mt-1 sm:mt-4">
                 {banner.subtitle || "Heritage."}
@@ -142,10 +142,10 @@ export default function HeroSection({
             </p>
 
             {/* CTAs */}
-            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center gap-3 sm:gap-6 justify-center w-full max-w-xs sm:max-w-none px-4 sm:px-0 mx-auto">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center gap-3 sm:gap-6 justify-center w-full max-w-[280px] sm:max-w-none mx-auto">
               <Link
                 href={banner.link || "/products"}
-                className="group w-full sm:w-auto relative inline-flex items-center justify-center gap-4 px-6 py-4 bg-white text-brand-950 rounded-full font-bold text-base sm:text-lg hover:bg-brand-50 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 overflow-hidden"
+                className="group w-full sm:w-auto relative inline-flex items-center justify-center gap-4 px-6 py-4 bg-white text-brand-950 rounded-full font-bold text-base sm:text-lg hover:bg-brand-50 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.2)]"
               >
                 <span className="relative z-10">Explore Our Shop</span>
                 <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform" />
@@ -164,8 +164,8 @@ export default function HeroSection({
       </div>
 
       {/* Bottom Purity Stats - Glassmorphism Dock */}
-      <div className="absolute bottom-6 sm:bottom-8 left-4 right-4 sm:left-8 sm:right-8 lg:left-16 lg:right-16 z-30">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 p-3 px-4 sm:p-6 sm:px-12 sm:py-8 bg-brand-950/50 backdrop-blur-2xl rounded-[2rem] sm:rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(5,20,8,0.5)]">
+      <div className="absolute bottom-4 sm:bottom-8 left-3 right-3 sm:left-8 sm:right-8 lg:left-16 lg:right-16 z-30">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 p-4 sm:p-6 sm:px-12 sm:py-8 bg-brand-950/70 sm:bg-brand-950/50 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(5,20,8,0.5)]">
 
           <div className="flex flex-1 items-center justify-between md:justify-start w-full md:w-auto gap-3 sm:gap-8 lg:gap-16 overflow-x-auto snap-x snap-mandatory no-scrollbar sm:mask-gradient-x px-1 sm:px-0">
             <div className="flex flex-col shrink-0 text-center md:text-left snap-start">

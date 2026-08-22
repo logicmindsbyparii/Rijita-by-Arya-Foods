@@ -98,7 +98,7 @@ export default function CategoriesPage() {
             </span>
           </div>
           
-          <h1 className="text-5xl sm:text-7xl lg:text-[6rem] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.05] max-w-4xl">
+          <h1 className="text-[clamp(2.5rem,8vw,6rem)] font-display font-black text-brand-950 tracking-[-0.03em] leading-[1.05] max-w-4xl">
             Sattvik <span className="text-gold-600 font-serif italic font-medium">Masterpieces.</span>
           </h1>
         </motion.div>
@@ -223,7 +223,7 @@ export default function CategoriesPage() {
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-bold uppercase tracking-wider text-white mb-4 w-fit">
                     {category.productCount || 0} Products
                   </div>
-                  <h2 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-white mb-2">
+                  <h2 className="text-[clamp(1.75rem,7vw,2.5rem)] font-display font-black tracking-tight text-white mb-2">
                     {category.name}
                   </h2>
                   <p className="text-white/80 text-sm font-medium line-clamp-2 mb-6">

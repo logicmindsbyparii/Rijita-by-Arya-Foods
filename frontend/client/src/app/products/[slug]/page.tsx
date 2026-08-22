@@ -469,7 +469,7 @@ export default function ProductDetailPage() {
               </Link>
             )}
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink tracking-tight leading-tight [text-wrap:balance]">
+            <h1 className="text-[clamp(2rem,8vw,3.5rem)] sm:text-4xl md:text-5xl lg:text-6xl font-display font-black text-ink tracking-tight leading-[1.1] sm:leading-tight [text-wrap:balance]">
               {product.name}
             </h1>
 

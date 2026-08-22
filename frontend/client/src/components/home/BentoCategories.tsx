@@ -161,16 +161,16 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
 
   const getFeaturedSpan = () => {
     if (totalCount === 1)
-      return "col-span-2 lg:col-span-12 lg:row-span-2 min-h-[400px] sm:min-h-[500px]";
+      return "col-span-2 lg:col-span-12 lg:row-span-2 min-h-[320px] sm:min-h-[500px]";
     if (totalCount === 2)
-      return "col-span-2 lg:col-span-8 lg:row-span-2 min-h-[400px] sm:min-h-[580px]";
-    return "col-span-2 lg:col-span-8 lg:row-span-2 min-h-[350px] sm:min-h-[580px] lg:h-auto";
+      return "col-span-2 lg:col-span-8 lg:row-span-2 min-h-[320px] sm:min-h-[580px]";
+    return "col-span-2 lg:col-span-8 lg:row-span-2 min-h-[280px] sm:min-h-[580px] lg:h-auto";
   };
 
   const getSecondary0Span = () => {
     if (totalCount === 2)
-      return "col-span-2 lg:col-span-4 lg:row-span-2 min-h-[300px] sm:min-h-[580px]";
-    return "col-span-1 lg:col-span-4 lg:row-span-1 min-h-[220px] sm:h-[276px]";
+      return "col-span-2 lg:col-span-4 lg:row-span-2 min-h-[240px] sm:min-h-[580px]";
+    return "col-span-1 lg:col-span-4 lg:row-span-1 min-h-[180px] sm:h-[276px]";
   };
 
   // ── Container stagger ────────────────────────────────────────────
@@ -349,7 +349,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
           {secondary[1] && (
             <BentoCard
               variants={cardVariants}
-              span="col-span-1 lg:col-span-4 lg:row-span-1 min-h-[220px] sm:h-[276px]"
+              span="col-span-1 lg:col-span-4 lg:row-span-1 min-h-[180px] sm:h-[276px]"
               parallaxY={ySecondary1}
               image={categoryImage(secondary[1])}
               alt={secondary[1].name}
@@ -367,7 +367,7 @@ function BentoCategoriesContent({ categories }: { categories: Category[] }) {
           {secondary[2] && (
             <BentoCard
               variants={cardVariants}
-              span="col-span-2 lg:col-span-12 lg:row-span-1 min-h-[200px] sm:h-[240px]"
+              span="col-span-2 lg:col-span-12 lg:row-span-1 min-h-[160px] sm:h-[240px]"
               parallaxY={ySecondary2}
               image={categoryImage(secondary[2])}
               alt={secondary[2].name}
@@ -455,10 +455,10 @@ function BentoCard({
   const titleSize = isFullWidth
     ? "text-3xl sm:text-5xl"
     : span.includes("row-span-2") || span.includes("h-[580px]")
-      ? "text-4xl sm:text-6xl md:text-8xl"
+      ? "text-3xl sm:text-6xl md:text-8xl"
       : isHalfWidthMobile
-        ? "text-2xl sm:text-4xl"
-        : "text-3xl sm:text-4xl";
+        ? "text-xl sm:text-4xl"
+        : "text-2xl sm:text-4xl";
 
   return (
     <motion.div
@@ -489,7 +489,7 @@ function BentoCard({
 
       <Link
         href={`/products?category=${slug}`}
-        className="relative block w-full h-full min-h-[320px] sm:min-h-[400px] focus-ring"
+        className="relative block w-full h-full min-h-full focus-ring"
       >
         {/* ── Image with parallax ─────────────────────────────────── */}
         <div className="absolute inset-0 overflow-hidden">
@@ -540,10 +540,10 @@ function BentoCard({
           }`}
         >
           {/* Top row: badge + arrow */}
-          <div className="flex justify-between items-start gap-2">
+          <div className="flex justify-between items-start gap-1 sm:gap-2">
             <span
               className={`font-bold uppercase tracking-[0.2em] ${
-                isFullWidth ? "text-xs" : isHalfWidthMobile ? "text-[9px] sm:text-[10px] md:text-xs px-3 py-1.5 sm:px-4 sm:py-2" : "text-[10px] sm:text-xs px-4 py-2"
+                isFullWidth ? "text-xs" : isHalfWidthMobile ? "text-[8px] sm:text-[10px] md:text-xs px-2.5 py-1.5 sm:px-4 sm:py-2" : "text-[9px] sm:text-xs px-3 py-1.5 sm:px-4 sm:py-2"
               } border backdrop-blur-md transition-all duration-500 ${
                 accentColor === "gold"
                   ? "text-white border-white/20 bg-white/10 group-hover:bg-gold-500/20 group-hover:border-gold-400/50 group-hover:text-gold-300"
@@ -556,7 +556,7 @@ function BentoCard({
             {/* Animated arrow circle */}
             <motion.div
               className={`${
-                isFullWidth ? "w-14 h-14" : isHalfWidthMobile ? "w-8 h-8 sm:w-12 sm:h-12" : "w-10 h-10 sm:w-12 sm:h-12"
+                isFullWidth ? "w-12 h-12 sm:w-14 sm:h-14" : isHalfWidthMobile ? "w-7 h-7 sm:w-12 sm:h-12" : "w-8 h-8 sm:w-12 sm:h-12"
               } shrink-0 rounded-full flex items-center justify-center shadow-md overflow-hidden transition-all duration-500 ${
                 accentColor === "gold"
                   ? "bg-white text-brand-950 group-hover:bg-gold-400"

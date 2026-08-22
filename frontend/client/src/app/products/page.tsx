@@ -237,7 +237,7 @@ function ProductsContent() {
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-600/10 border border-brand-600/20 text-brand-700 text-[10px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md">
               <Sparkles size={12} className="text-brand-600" /> Catalog
             </span>
-            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-display font-black text-ink tracking-tighter leading-[0.9] [text-wrap:balance]">
+            <h1 className="text-[clamp(2.5rem,8vw,6rem)] sm:text-7xl lg:text-8xl font-display font-black text-ink tracking-tighter leading-[0.9] [text-wrap:balance]">
               Our <span className="font-serif italic font-medium text-gold-600">Products</span>
             </h1>
             <p className="text-base sm:text-lg text-ink-2 mt-4 max-w-xl font-medium">
