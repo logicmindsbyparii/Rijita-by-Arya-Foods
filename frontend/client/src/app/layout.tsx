@@ -91,7 +91,7 @@ export async function generateMetadata(): Promise<Metadata> {
     applicationName: "RIJITA",
     icons: {
       icon: favicon,
-      apple: logo,
+      apple: favicon,
     },
     openGraph: {
       title: siteName,

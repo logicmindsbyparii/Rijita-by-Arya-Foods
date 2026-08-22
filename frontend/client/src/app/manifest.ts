@@ -16,8 +16,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const tagline = settings.tagline || "Premium Quality Jain Namkeen & Traditional Indian Snacks. Order authentic snacks from RIJITA by Arya Foods.";
   
   // Use logo dynamically if available, fallback to default icon
-  const appIcon = settings.logo ? getImageUrl(settings.logo) : (settings.favicon ? getImageUrl(settings.favicon) : "/icons/icon-192x192.png");
-  const appIconLarge = settings.logo ? getImageUrl(settings.logo) : (settings.favicon ? getImageUrl(settings.favicon) : "/icons/icon-512x512.png");
+  const appIcon = "/icons/rijita-logo.png";
+  const appIconLarge = "/icons/rijita-logo.png";
 
   return {
     name: siteName,
@@ -37,19 +37,19 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         src: appIcon,
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'maskable'
+        purpose: 'any maskable'
       },
       {
         src: appIconLarge,
         sizes: '384x384',
         type: 'image/png',
-        purpose: 'maskable'
+        purpose: 'any maskable'
       },
       {
         src: appIconLarge,
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'maskable'
+        purpose: 'any maskable'
       }
     ],
     shortcuts: [
