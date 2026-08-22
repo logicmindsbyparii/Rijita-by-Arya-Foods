@@ -37,19 +37,19 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         src: appIcon,
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'any maskable'
+        purpose: 'maskable'
       },
       {
         src: appIconLarge,
         sizes: '384x384',
         type: 'image/png',
-        purpose: 'any maskable'
+        purpose: 'maskable'
       },
       {
         src: appIconLarge,
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any maskable'
+        purpose: 'maskable'
       }
     ],
     shortcuts: [
