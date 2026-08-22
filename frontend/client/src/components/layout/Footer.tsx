@@ -174,7 +174,7 @@ export default function Footer() {
       {/* ── 1. Certifications & Brand Trust Ribbon ── */}
       <div className="bg-brand-900/90 border-b border-white/5 backdrop-blur-md relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-10 py-3 sm:py-5">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {trustBadges.map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
