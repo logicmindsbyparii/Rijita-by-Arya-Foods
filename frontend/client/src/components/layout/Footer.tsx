@@ -173,16 +173,16 @@ export default function Footer() {
 
       {/* ── 1. Certifications & Brand Trust Ribbon ── */}
       <div className="bg-brand-900/90 border-b border-white/5 backdrop-blur-md relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-10 py-6">
-          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-10 py-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {trustBadges.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-center sm:items-start gap-4 p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
-                  <Icon size={20} />
+              <div key={label} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
+                  <Icon size={16} />
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white tracking-wide uppercase">{label}</h4>
-                  <p className="text-xs text-brand-50/90 font-medium mt-0.5">{desc}</p>
+                <div className="min-w-0">
+                  <h4 className="text-[10px] sm:text-xs font-bold text-white tracking-wide uppercase leading-tight">{label}</h4>
+                  <p className="text-[10px] sm:text-xs text-brand-50/90 font-medium mt-0 leading-tight">{desc}</p>
                 </div>
               </div>
             ))}
@@ -191,30 +191,30 @@ export default function Footer() {
       </div>
 
       {/* ── 2. Main Footer Body ── */}
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 py-16 lg:py-24 relative z-10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 sm:py-16 lg:py-24 relative z-10">
 
         {/* Massive High-Contrast CTA */}
-        <div className="mb-20 text-center lg:text-left flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-10">
+        <div className="mb-10 sm:mb-16 lg:mb-20 text-center lg:text-left flex flex-col lg:flex-row justify-between items-center gap-5 sm:gap-10">
           <h2 className="text-[clamp(2.5rem,8vw,5rem)] sm:text-6xl md:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl text-balance">
             Taste the <span className="font-serif italic text-gold-400 font-medium">Difference.</span>
           </h2>
           <div className="shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
             <Link
               href="/products"
-              className="group relative flex w-full sm:w-auto sm:inline-flex items-center justify-center gap-4 px-10 py-5 bg-gold-500 text-brand-950 rounded-full font-black text-xl hover:bg-gold-400 hover:scale-105 shadow-[0_10px_30px_rgba(212,175,55,0.2)] transition-all duration-500"
+              className="group relative flex w-full sm:w-auto sm:inline-flex items-center justify-center gap-3 px-8 py-4 sm:px-10 sm:py-5 bg-gold-500 text-brand-950 rounded-full font-black text-lg sm:text-xl hover:bg-gold-400 hover:scale-105 shadow-[0_10px_30px_rgba(212,175,55,0.2)] transition-all duration-500"
             >
               Shop Now <ArrowUpRight size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-8 border-t border-white/10 pt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-14 lg:gap-8 border-t border-white/10 pt-10 sm:pt-16">
 
           {/* Brand Header Column — Uploaded Logo & Story */}
           <div className="lg:col-span-5 space-y-6">
             {/* Uploaded Logo Display */}
             <Link href="/" className="inline-block group" aria-label="Go to Homepage">
-              <div className="relative flex items-center bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-xl transition-ui duration-300 group-hover:scale-[1.02]">
+              <div className="relative flex items-center bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/20 shadow-xl transition-ui duration-300 group-hover:scale-[1.02]">
                 {(() => {
                   const logoUrl = getLogoUrl(siteLogo || clientLogo || undefined, s?.updatedAt);
                   if (logoUrl) {
@@ -234,7 +234,7 @@ export default function Footer() {
                             parent.appendChild(span);
                           }
                         }}
-                        className="h-16 sm:h-20 md:h-24 w-auto max-w-[320px] sm:max-w-[420px] object-contain"
+                        className="h-12 sm:h-20 md:h-24 w-auto max-w-[200px] sm:max-w-[420px] object-contain"
                       />
                     );
                   }
@@ -304,7 +304,7 @@ export default function Footer() {
                 href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent("Hello! I have an inquiry about RIJITA Arya Foods.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-6 py-4 rounded-full bg-whatsapp hover:bg-whatsapp-600 text-white font-black text-sm tracking-widest uppercase shadow-lg shadow-whatsapp/40 transition-all hover:scale-[1.02]"
+                className="inline-flex items-center gap-2.5 px-5 py-3 sm:px-6 sm:py-4 rounded-full bg-whatsapp hover:bg-whatsapp-600 text-white font-black text-xs sm:text-sm tracking-widest uppercase shadow-lg shadow-whatsapp/40 transition-all hover:scale-[1.02]"
               >
                 <MessageCircle size={16} className="fill-white" />
                 <span>Order via WhatsApp</span>
@@ -347,20 +347,20 @@ export default function Footer() {
           </div>
 
           {/* Navigation Links Columns */}
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8">
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8 sm:gap-8">
 
             {/* Column 1: Shop — built from live categories */}
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gold-300 mb-5 flex items-center gap-2">
+              <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-gold-300 mb-4 flex items-center gap-2">
                 <Sparkles size={13} className="text-gold-300" />
                 Quick Shop
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {shopLinks.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-xs font-semibold text-brand-50/90 hover:text-gold-300 transition-colors flex items-center gap-1.5 group"
+                      className="text-[11px] sm:text-xs font-semibold text-brand-50/90 hover:text-gold-300 transition-colors flex items-center gap-1.5 group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-brand-50/40 text-gold-400 transition-colors" />
                       {link.label}
@@ -372,16 +372,16 @@ export default function Footer() {
 
             {/* Column 2: Our World */}
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gold-300 mb-5 flex items-center gap-2">
+              <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-gold-300 mb-4 flex items-center gap-2">
                 <Leaf size={13} className="text-gold-300" />
                 Our Story
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {companyLinks.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-xs font-semibold text-brand-50/90 hover:text-gold-300 transition-colors flex items-center gap-1.5 group"
+                      className="text-[11px] sm:text-xs font-semibold text-brand-50/90 hover:text-gold-300 transition-colors flex items-center gap-1.5 group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-brand-50/40 text-gold-400 transition-colors" />
                       {link.label}
@@ -393,16 +393,16 @@ export default function Footer() {
 
             {/* Column 3: Customer Care */}
             <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gold-300 mb-5 flex items-center gap-2">
+              <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-gold-300 mb-4 flex items-center gap-2">
                 <Shield size={13} className="text-gold-300" />
                 Customer Support
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {customerLinks.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-xs font-semibold text-brand-50/90 hover:text-gold-300 transition-colors flex items-center gap-1.5 group"
+                      className="text-[11px] sm:text-xs font-semibold text-brand-50/90 hover:text-gold-300 transition-colors flex items-center gap-1.5 group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-brand-50/40 text-gold-400 transition-colors" />
                       {link.label}
@@ -416,7 +416,7 @@ export default function Footer() {
         </div>
 
         {/* Store Address Banner */}
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/10">
+        <div className="mt-8 sm:mt-12 pt-5 sm:pt-6 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white/5 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-white/10">
           <div className="flex items-start gap-3 text-xs text-brand-50/90 font-medium">
             <MapPin size={18} className="text-gold-300 shrink-0 mt-0.5" />
             <div>
