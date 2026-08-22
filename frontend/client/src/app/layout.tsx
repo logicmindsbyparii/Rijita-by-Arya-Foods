@@ -89,7 +89,6 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: siteName,
     publisher: siteName,
     applicationName: "RIJITA",
-    manifest: "/manifest.json",
     icons: {
       icon: favicon,
       apple: favicon,
