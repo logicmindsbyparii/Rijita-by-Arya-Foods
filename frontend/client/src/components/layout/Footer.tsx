@@ -173,16 +173,17 @@ export default function Footer() {
 
       {/* ── 1. Certifications & Brand Trust Ribbon ── */}
       <div className="bg-brand-900/90 border-b border-white/5 backdrop-blur-md relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-10 py-5">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="max-w-7xl mx-auto sm:px-10">
+          {/* Mobile: horizontal scroll strip. Desktop: 2x2 grid. */}
+          <div className="flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 gap-2 py-3 px-4 sm:px-6 sm:py-5 -mx-4 sm:mx-0 sm:px-6">
             {trustBadges.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
-                  <Icon size={16} />
+              <div key={label} className="flex items-center gap-2 sm:gap-3 px-3 py-2 sm:p-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors shrink-0 sm:shrink sm:w-auto w-auto">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gold-500/15 text-gold-300 border border-gold-400/30 flex items-center justify-center shrink-0">
+                  <Icon size={14} />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-[10px] sm:text-xs font-bold text-white tracking-wide uppercase leading-tight">{label}</h4>
-                  <p className="text-[10px] sm:text-xs text-brand-50/90 font-medium mt-0 leading-tight">{desc}</p>
+                  <h4 className="text-[11px] sm:text-xs font-bold text-white tracking-wide uppercase leading-tight whitespace-nowrap">{label}</h4>
+                  <p className="text-[10px] sm:text-xs text-brand-50/90 font-medium leading-tight hidden sm:block">{desc}</p>
                 </div>
               </div>
             ))}
