@@ -195,7 +195,7 @@ export default function Footer() {
 
         {/* Massive High-Contrast CTA */}
         <div className="mb-10 sm:mb-16 lg:mb-20 text-center lg:text-left flex flex-col lg:flex-row justify-between items-center gap-5 sm:gap-10">
-          <h2 className="text-[clamp(2.5rem,8vw,5rem)] sm:text-6xl md:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl text-balance">
+          <h2 className="text-[clamp(2rem,8vw,5rem)] sm:text-6xl md:text-[64px] lg:text-[80px] font-black tracking-tight leading-[0.9] text-white max-w-3xl text-balance">
             Taste the <span className="font-serif italic text-gold-400 font-medium">Difference.</span>
           </h2>
           <div className="shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
@@ -265,7 +265,7 @@ export default function Footer() {
                   aria-label="Email address for newsletter"
                   aria-invalid={subStatus === "error"}
                   aria-describedby={subStatus === "error" || subStatus === "success" ? "newsletter-status" : undefined}
-                  className="w-full sm:flex-1 min-w-0 px-6 py-4 rounded-full bg-white/5 border border-white/15 text-white text-base placeholder:text-brand-50/40 focus:outline-none focus:border-gold-400/60 focus:bg-white/10 transition-all"
+                  className="w-full sm:flex-1 min-w-0 px-5 py-3 sm:px-6 sm:py-4 rounded-full bg-white/5 border border-white/15 text-white text-sm sm:text-base placeholder:text-brand-50/40 focus:outline-none focus:border-gold-400/60 focus:bg-white/10 transition-all"
                 />
                 <button
                   type="submit"
@@ -275,7 +275,7 @@ export default function Footer() {
                   // a screen reader announced just "button" on the newsletter
                   // form. The aria-label names it at every breakpoint.
                   aria-label="Subscribe to newsletter"
-                  className="flex w-full sm:w-auto sm:inline-flex justify-center items-center gap-3 px-6 sm:px-8 py-4 rounded-full bg-gold-500 hover:bg-gold-400 text-brand-950 font-black text-sm tracking-widest uppercase shadow-lg shadow-gold-800/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex w-full sm:w-auto sm:inline-flex justify-center items-center gap-2 sm:gap-3 px-5 py-3 sm:px-8 sm:py-4 rounded-full bg-gold-500 hover:bg-gold-400 text-brand-950 font-black text-xs sm:text-sm tracking-widest uppercase shadow-lg shadow-gold-800/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send size={16} />
                   <span>{subStatus === "loading" ? "Joining..." : "Join"}</span>
@@ -299,33 +299,33 @@ export default function Footer() {
             </div>
 
             {/* Quick Contact & WhatsApp Action */}
-            <div className="space-y-4 pt-4">
+            <div className="space-y-3 pt-2">
               <a
                 href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent("Hello! I have an inquiry about RIJITA Arya Foods.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-5 py-3 sm:px-6 sm:py-4 rounded-full bg-whatsapp hover:bg-whatsapp-600 text-white font-black text-xs sm:text-sm tracking-widest uppercase shadow-lg shadow-whatsapp/40 transition-all hover:scale-[1.02]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-4 rounded-full bg-whatsapp hover:bg-whatsapp-600 text-white font-black text-[11px] sm:text-sm tracking-widest uppercase shadow-lg shadow-whatsapp/40 transition-all hover:scale-[1.02]"
               >
-                <MessageCircle size={16} className="fill-white" />
+                <MessageCircle size={14} className="fill-white" />
                 <span>Order via WhatsApp</span>
-                <ArrowUpRight size={14} />
+                <ArrowUpRight size={12} />
               </a>
 
-              <div className="flex flex-wrap gap-4 text-xs text-brand-50/90 pt-2 font-medium">
-                <a href={telHref(sitePhone)} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <Phone size={14} className="text-gold-300" />
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1.5 sm:gap-3 text-[11px] sm:text-xs text-brand-50/90 font-medium">
+                <a href={telHref(sitePhone)} className="flex items-center gap-1.5 hover:text-white transition-colors">
+                  <Phone size={12} className="text-gold-300" />
                   <span>{sitePhone}</span>
                 </a>
-                <a href={`mailto:${siteEmail}`} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <Mail size={14} className="text-gold-300" />
+                <a href={`mailto:${siteEmail}`} className="flex items-center gap-1.5 hover:text-white transition-colors">
+                  <Mail size={12} className="text-gold-300" />
                   <span>{siteEmail}</span>
                 </a>
               </div>
             </div>
 
             {/* Social Media Links */}
-            <div className="flex items-center gap-4 pt-4">
-              <span className="text-xs font-bold tracking-widest uppercase text-brand-50/80">Follow Us:</span>
+            <div className="flex items-center gap-3 sm:gap-4 pt-2">
+              <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-brand-50/80">Follow Us:</span>
               {[
                 { icon: Facebook, href: socialMedia.facebook, label: "Facebook" },
                 { icon: Instagram, href: socialMedia.instagram, label: "Instagram" },
@@ -338,16 +338,16 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   aria-label={label}
                   whileHover={{ y: -3, scale: 1.05 }}
-                  className="w-9 h-9 rounded-xl bg-white/10 hover:bg-gold-500 hover:text-brand-950 border border-white/15 flex items-center justify-center text-white transition-ui shadow-sm"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white/10 hover:bg-gold-500 hover:text-brand-950 border border-white/15 flex items-center justify-center text-white transition-ui shadow-sm"
                 >
-                  <Icon size={16} />
+                  <Icon size={14} />
                 </motion.a>
               ))}
             </div>
           </div>
 
           {/* Navigation Links Columns */}
-          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8 sm:gap-8">
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8">
 
             {/* Column 1: Shop — built from live categories */}
             <div>
@@ -416,41 +416,41 @@ export default function Footer() {
         </div>
 
         {/* Store Address Banner */}
-        <div className="mt-8 sm:mt-12 pt-5 sm:pt-6 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white/5 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-white/10">
-          <div className="flex items-start gap-3 text-xs text-brand-50/90 font-medium">
-            <MapPin size={18} className="text-gold-300 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-white block">Flagship Store Location:</span>
-              <span>{siteAddress}</span>
+        <div className="mt-6 sm:mt-12 pt-4 sm:pt-6 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 bg-white/5 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-white/10">
+          <div className="flex items-start gap-2.5 text-[11px] sm:text-xs text-brand-50/90 font-medium min-w-0">
+            <MapPin size={14} className="text-gold-300 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <span className="font-bold text-white block">Flagship Store:</span>
+              <span className="line-clamp-2">{siteAddress}</span>
             </div>
           </div>
           <Link
             href="/contact"
-            className="text-xs font-bold text-gold-300 hover:text-white uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"
+            className="text-[10px] sm:text-xs font-bold text-gold-300 hover:text-white uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"
           >
-            Visit Store / Directions <ArrowUpRight size={14} />
+            Directions <ArrowUpRight size={12} />
           </Link>
         </div>
       </div>
 
       {/* ── 3. Bottom Copyright & Developer Bar ── */}
       <div className="bg-brand-950 border-t border-white/5 relative z-10">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-brand-50/80 font-medium text-center sm:text-left">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 pt-4 sm:pt-5 pb-[calc(1rem+env(safe-area-inset-bottom))] flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-[10px] sm:text-xs text-brand-50/80 font-medium text-center sm:text-left">
           <p>{copyright}</p>
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-5">
-            <p className="flex items-center gap-1.5 text-brand-50">
-              Made with <Heart size={11} className="text-rose-400 fill-rose-400" /> in Surat, India
+          <div className="flex items-center gap-2 sm:gap-5">
+            <p className="flex items-center gap-1 text-brand-50">
+              Made with <Heart size={10} className="text-rose-400 fill-rose-400" /> in Surat
             </p>
-            <span className="hidden sm:inline opacity-30">|</span>
+            <span className="opacity-30">|</span>
             <p>
-              Design & Developed by{" "}
+              by{' '}
               <a
                 href="https://logicmindsbyparii.com/index.php"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-gold-300 transition-colors font-bold text-white underline underline-offset-2"
               >
-                Logic Minds by Parii
+                Logic Minds
               </a>
             </p>
           </div>
